@@ -92,6 +92,15 @@ public final class SchematicScreen extends Screen {
         add("Z +1", left+105, top+180, 95, 20, b -> SchematicManager.move(0,0,1));
         add("ROTATE 90", left+205, top+126, 95, 20, b -> { SchematicManager.rotate(); rebuildWidgets(); });
         add("CLOSE", left+205, top+153, 95, 20, b -> onClose());
+        add(SchematicManager.locked() ? "LOCK: ON" : "LOCK: OFF", left+205, top+180, 95, 20, b -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player == null || !SchematicManager.toggleLock(mc.player.blockPosition())) {
+                showMessage("Load a schematic first.");
+                return;
+            }
+            showMessage(SchematicManager.locked() ? "Schematic position locked." : "Schematic position unlocked.");
+            rebuildWidgets();
+        });
     }
 
     private void add(String text, int x, int y, int w, int h, java.util.function.Consumer<Button> action) {
@@ -129,7 +138,8 @@ public final class SchematicScreen extends Screen {
                 "  X "+SchematicManager.offsetX()+"  Y "+SchematicManager.offsetY()+
                 "  Z "+SchematicManager.offsetZ()+"  ROT "+(SchematicManager.rotation()*90)+" DEG"),
                 width/2,top+207,0xFFAAAAAA);
-            graphics.centeredText(font,label("SHIFT + M: MENU | PASTE ONLY WHEN PRESSED"),
+            String lockStatus = SchematicManager.locked() ? "POSITION LOCKED" : "FOLLOWING PLAYER";
+            graphics.centeredText(font,label("SHIFT + M: MENU | "+lockStatus+" | PASTE ONLY WHEN PRESSED"),
                 width/2,top+220,0xFFAAAAAA);
         }
     }
