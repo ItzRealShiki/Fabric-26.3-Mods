@@ -1,4 +1,5 @@
 name: SimpleLitematica Build
+# Rebuild after schematic wireframe renderer update
 
 on:
   push:
