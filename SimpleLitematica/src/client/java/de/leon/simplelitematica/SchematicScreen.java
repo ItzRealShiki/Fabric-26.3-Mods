@@ -33,7 +33,7 @@ public final class SchematicScreen extends Screen {
                 selected = -1;
                 deleteCandidate = null;
                 rebuildWidgets();
-            }).bounds(left, top + 125, 300, 20).build());
+            }).bounds(left, top + 209, 300, 20).build());
 
             int visible = Math.min(files.size(), 8);
             for (int i = 0; i < visible; i++) {
@@ -67,7 +67,7 @@ public final class SchematicScreen extends Screen {
                     selected = -1;
                     rebuildWidgets();
                     showMessage(deleted ? "Schematic file deleted." : "Could not delete selected file.");
-                }).bounds(left, top + 95, 145, 20).build());
+                }).bounds(left, top + 182, 145, 20).build());
             }
             return;
         }
@@ -159,10 +159,6 @@ public final class SchematicScreen extends Screen {
                 width / 2, height / 2 - 100, 0xFFAAAAAA);
             if (files.isEmpty()) {
                 graphics.centeredText(font, label("NO .SLITE FILES FOUND"), width / 2, height / 2 - 45, 0xFFAAAAAA);
-            }
-            if (view == View.DELETE && deleteCandidate != null) {
-                graphics.centeredText(font, label("CONFIRM TO PERMANENTLY DELETE"),
-                    width / 2, height / 2 + 78, 0xFFFF7777);
             }
         } else {
             SchematicData active = SchematicManager.active();
