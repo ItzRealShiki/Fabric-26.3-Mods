@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -116,7 +116,7 @@ public final class SchematicManager {
                 for (int x=minX; x<=maxX; x++) {
                     BlockState state = level.getBlockState(new BlockPos(x,y,z));
                     if (state.isAir()) continue;
-                    ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+                    Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
                     data.blocks.add(new SchematicData.BlockEntry(x-minX, y-minY, z-minZ, id.toString()));
                 }
             }
@@ -135,15 +135,15 @@ public final class SchematicManager {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.gameMode == null) return 0;
         if (!mc.player.getAbilities().instabuild) {
-            mc.player.displayClientMessage(Component.literal("§c/liteprint ist nur im Kreativmodus verfügbar."), false);
+            mc.gui.getChat().addMessage(Component.literal("§c/liteprint ist nur im Kreativmodus verfügbar."));
             return 0;
         }
         if (active == null || active.blocks.isEmpty()) {
-            mc.player.displayClientMessage(Component.literal("§cKeine Schematic geladen. Öffne /slitematica."), false);
+            mc.gui.getChat().addMessage(Component.literal("§cKeine Schematic geladen. Öffne /slitematica."));
             return 0;
         }
         if (!mc.hasSingleplayerServer()) {
-            mc.player.displayClientMessage(Component.literal("§eDrucken ist in dieser ersten Version nur in Einzelspielerwelten verfügbar."), false);
+            mc.gui.getChat().addMessage(Component.literal("§eDrucken ist aktuell nur in Einzelspielerwelten verfügbar."));
             return 0;
         }
         var server = mc.getSingleplayerServer();
@@ -157,18 +157,18 @@ public final class SchematicManager {
         Runnable placement = () -> {
             for (SchematicData.BlockEntry entry : blocks) {
                 if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
-                Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(entry.block));
+                Block block = BuiltInRegistries.BLOCK.get(Identifier.parse(entry.block));
                 if (block == Blocks.AIR) continue;
                 BlockPos target = worldPosition(entry, origin);
                 serverLevel.setBlock(target, block.defaultBlockState(), 3);
             }
         };
         if (slow) {
-            mc.player.displayClientMessage(Component.literal("§eLangsamer Druck: wird vorbereitet. (Sequenzmodus folgt in einem Update.)"), false);
+            mc.gui.getChat().addMessage(Component.literal("§eDer langsame Druckmodus wird in einem kommenden Update vervollständigt."));
             return 1;
         }
         server.execute(placement);
-        mc.player.displayClientMessage(Component.literal("§aSchematic lokal gesetzt: " + blocks.size() + " Blöcke."), false);
+        mc.gui.getChat().addMessage(Component.literal("§aSchematic lokal gesetzt: " + blocks.size() + " Blöcke."));
         return 1;
     }
 }
