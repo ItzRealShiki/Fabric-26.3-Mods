@@ -128,19 +128,23 @@ public final class SchematicManager {
         }
         return missing;
     }
-    public static List<BlockPos> missingPositions(Level level, BlockPos origin, int limit) {
-        if (active == null || level == null || limit <= 0) return List.of();
-        List<BlockPos> result = new ArrayList<>(Math.min(limit, 512));
-        for (SchematicData.BlockEntry entry : active.blocks) {
+    public static List<BlockPos> missingPositionsBatch(Level level, BlockPos origin, int start, int scanCount, int resultLimit) {
+        if (active == null || level == null || scanCount <= 0 || resultLimit <= 0) return List.of();
+        List<BlockPos> result = new ArrayList<>(Math.min(resultLimit, 512));
+        int end = Math.min(active.blocks.size(), start + scanCount);
+        for (int i = Math.max(0, start); i < end; i++) {
+            SchematicData.BlockEntry entry = active.blocks.get(i);
             if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
             BlockPos target = worldPosition(entry, origin);
+            if (target.distSqr(origin) > 128.0 * 128.0) continue;
             if (!BuiltInRegistries.BLOCK.getKey(level.getBlockState(target).getBlock()).toString().equals(entry.block)) {
                 result.add(target);
-                if (result.size() >= limit) break;
+                if (result.size() >= resultLimit) break;
             }
         }
         return result;
     }
+    public static int blockEntryCount() { return active == null ? 0 : active.blocks.size(); }
     public static int totalVisibleBlocks() {
         if (active == null) return 0;
         if (visibleLayer < 0) return active.blocks.size();
