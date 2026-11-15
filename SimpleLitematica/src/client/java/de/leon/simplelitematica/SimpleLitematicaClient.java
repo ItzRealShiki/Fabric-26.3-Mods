@@ -41,7 +41,7 @@ public final class SimpleLitematicaClient implements ClientModInitializer {
                         IntegerArgumentType.getInteger(context, "y2"),
                         IntegerArgumentType.getInteger(context, "z2")
                     );
-                    if (mc.player != null) mc.gui.getChat().addMessage(Component.literal(
+                    if (mc.player != null) mc.player.sendSystemMessage(Component.literal(
                         saved ? "§aSimpleLitematica: Schematic gespeichert." :
                             "§cSimpleLitematica: Speichern fehlgeschlagen (Bereich zu groß oder ungültiger Name)."));
                     return saved ? 1 : 0;
