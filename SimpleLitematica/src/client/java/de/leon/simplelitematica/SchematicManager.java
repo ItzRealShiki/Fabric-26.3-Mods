@@ -135,7 +135,7 @@ public final class SchematicManager {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.gameMode == null) return 0;
         if (!mc.player.getAbilities().instabuild) {
-            mc.gui.getChat().addMessage(Component.literal("§c/liteprint ist nur im Kreativmodus verfügbar."));
+            mc.player.sendSystemMessage(Component.literal("§c/liteprint ist nur im Kreativmodus verfügbar."));
             return 0;
         }
         if (active == null || active.blocks.isEmpty()) {
@@ -157,7 +157,7 @@ public final class SchematicManager {
         Runnable placement = () -> {
             for (SchematicData.BlockEntry entry : blocks) {
                 if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
-                Block block = BuiltInRegistries.BLOCK.get(Identifier.parse(entry.block));
+                Block block = BuiltInRegistries.BLOCK.get(Identifier.parse(entry.block)).map(reference -> reference.value()).orElse(Blocks.AIR);
                 if (block == Blocks.AIR) continue;
                 BlockPos target = worldPosition(entry, origin);
                 serverLevel.setBlock(target, block.defaultBlockState(), 3);
