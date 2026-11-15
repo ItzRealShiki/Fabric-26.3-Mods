@@ -35,7 +35,11 @@ public final class MissingBlockRenderer {
             .withDepthStencilState(Optional.empty())
             .build()
     );
-    private static final RenderPipeline HOLOGRAM = RenderPipelines.DEBUG_FILLED_SNIPPET;
+    private static final RenderPipeline HOLOGRAM = RenderPipelines.register(
+        RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath("simplelitematica", "pipeline/schematic_hologram"))
+            .build()
+    );
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
     private static final Vector3f MODEL_OFFSET = new Vector3f();
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
@@ -46,6 +50,12 @@ public final class MissingBlockRenderer {
     private static int ticks;
     private static int scanCursor;
     private static SchematicData scannedSchematic;
+    private static int scannedLayer = Integer.MIN_VALUE;
+    private static int scannedOffsetX = Integer.MIN_VALUE;
+    private static int scannedOffsetY = Integer.MIN_VALUE;
+    private static int scannedOffsetZ = Integer.MIN_VALUE;
+    private static int scannedRotation = Integer.MIN_VALUE;
+    private static BlockPos scannedPlayerPosition;
     private static final java.util.ArrayList<BlockPos> scanResults = new java.util.ArrayList<>();
 
     private MissingBlockRenderer() {}
@@ -70,8 +80,22 @@ public final class MissingBlockRenderer {
                 scannedSchematic = active;
                 return;
             }
-            if (active != scannedSchematic) {
+            BlockPos playerPosition = client.player.blockPosition();
+            boolean scanContextChanged = active != scannedSchematic
+                || scannedLayer != SchematicManager.visibleLayer()
+                || scannedOffsetX != SchematicManager.offsetX()
+                || scannedOffsetY != SchematicManager.offsetY()
+                || scannedOffsetZ != SchematicManager.offsetZ()
+                || scannedRotation != SchematicManager.rotation()
+                || !playerPosition.equals(scannedPlayerPosition);
+            if (scanContextChanged) {
                 scannedSchematic = active;
+                scannedLayer = SchematicManager.visibleLayer();
+                scannedOffsetX = SchematicManager.offsetX();
+                scannedOffsetY = SchematicManager.offsetY();
+                scannedOffsetZ = SchematicManager.offsetZ();
+                scannedRotation = SchematicManager.rotation();
+                scannedPlayerPosition = playerPosition;
                 scanCursor = 0;
                 scanResults.clear();
                 missing = List.of();
