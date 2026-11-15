@@ -42,19 +42,39 @@ public final class MissingBlockRenderer {
         new StagedVertexBuffer(() -> "SimpleLitematica missing blocks", RenderType.SMALL_BUFFER_SIZE);
     private static volatile List<BlockPos> missing = List.of();
     private static int ticks;
+    private static int scanCursor;
+    private static SchematicData scannedSchematic;
+    private static final java.util.ArrayList<BlockPos> scanResults = new java.util.ArrayList<>();
 
     private MissingBlockRenderer() {}
 
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (++ticks % 5 != 0) return;
-            if (!SchematicManager.missingBlocksEnabled() || client.level == null || client.player == null
-                || SchematicManager.active() == null) {
+            SchematicData active = SchematicManager.active();
+            if (!SchematicManager.missingBlocksEnabled() || client.level == null || client.player == null || active == null) {
                 missing = List.of();
+                scanCursor = 0;
+                scanResults.clear();
+                scannedSchematic = active;
                 return;
             }
-            missing = List.copyOf(SchematicManager.missingPositions(
-                client.level, client.player.blockPosition(), 4096));
+            if (active != scannedSchematic) {
+                scannedSchematic = active;
+                scanCursor = 0;
+                scanResults.clear();
+                missing = List.of();
+            }
+            int count = SchematicManager.blockEntryCount();
+            scanResults.addAll(SchematicManager.missingPositionsBatch(
+                client.level, client.player.blockPosition(), scanCursor, 10_000,
+                Math.max(0, 4096 - scanResults.size())));
+            scanCursor += 10_000;
+            if (scanCursor >= count) {
+                missing = List.copyOf(scanResults);
+                scanCursor = 0;
+                scanResults.clear();
+            }
         });
         LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(MissingBlockRenderer::render);
     }
