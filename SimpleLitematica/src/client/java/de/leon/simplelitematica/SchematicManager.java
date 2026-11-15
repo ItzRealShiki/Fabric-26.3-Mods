@@ -139,11 +139,11 @@ public final class SchematicManager {
             return 0;
         }
         if (active == null || active.blocks.isEmpty()) {
-            mc.gui.getChat().addMessage(Component.literal("§cKeine Schematic geladen. Öffne /slitematica."));
+            mc.player.sendSystemMessage(Component.literal("§cKeine Schematic geladen. Öffne /slitematica."));
             return 0;
         }
         if (!mc.hasSingleplayerServer()) {
-            mc.gui.getChat().addMessage(Component.literal("§eDrucken ist aktuell nur in Einzelspielerwelten verfügbar."));
+            mc.player.sendSystemMessage(Component.literal("§eDrucken ist aktuell nur in Einzelspielerwelten verfügbar."));
             return 0;
         }
         var server = mc.getSingleplayerServer();
@@ -164,11 +164,11 @@ public final class SchematicManager {
             }
         };
         if (slow) {
-            mc.gui.getChat().addMessage(Component.literal("§eDer langsame Druckmodus wird in einem kommenden Update vervollständigt."));
+            mc.player.sendSystemMessage(Component.literal("§eDer langsame Druckmodus wird in einem kommenden Update vervollständigt."));
             return 1;
         }
         server.execute(placement);
-        mc.gui.getChat().addMessage(Component.literal("§aSchematic lokal gesetzt: " + blocks.size() + " Blöcke."));
+        mc.player.sendSystemMessage(Component.literal("§aSchematic lokal gesetzt: " + blocks.size() + " Blöcke."));
         return 1;
     }
 }
