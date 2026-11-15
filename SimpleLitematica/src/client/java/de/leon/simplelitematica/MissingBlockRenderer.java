@@ -130,7 +130,7 @@ public final class MissingBlockRenderer {
                 block.state(),
                 0xF000F0,
                 OverlayTexture.NO_OVERLAY,
-                0xFF62B8FF
+                0xDFFFFFFF
             );
             matrices.popPose();
         }
