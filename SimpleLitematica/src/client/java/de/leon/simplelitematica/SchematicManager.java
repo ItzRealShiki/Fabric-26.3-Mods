@@ -31,6 +31,7 @@ public final class SchematicManager {
     private static int offsetZ;
     private static int rotation;
     private static int visibleLayer = -1;
+    private static boolean missingBlocksEnabled = false;
 
     private SchematicManager() {}
 
@@ -60,7 +61,7 @@ public final class SchematicManager {
     public static List<Path> files() {
         ensureDirectory();
         try (var stream = Files.list(DIRECTORY)) {
-            return stream.filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".slite"))
+            return stream.filter(path -> { String n = path.getFileName().toString().toLowerCase(Locale.ROOT); return n.endsWith(".slite") || n.endsWith(".litematic") || n.endsWith(".schem") || n.endsWith(".nbt"); })
                 .sorted(Comparator.comparing(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)))
                 .toList();
         } catch (IOException exception) {
@@ -70,12 +71,19 @@ public final class SchematicManager {
 
     public static boolean load(Path path) {
         try {
-            SchematicData data = GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), SchematicData.class);
-            if (data == null || data.formatVersion != 1 || data.blocks == null) return false;
+            String file = path.getFileName().toString().toLowerCase(Locale.ROOT);
+            SchematicData data;
+            if (file.endsWith(".slite")) {
+                data = GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), SchematicData.class);
+                if (data == null || data.formatVersion != 1 || data.blocks == null) return false;
+            } else if (file.endsWith(".litematic") || file.endsWith(".schem") || file.endsWith(".nbt")) {
+                data = NbtSchematicImporter.read(path);
+            } else return false;
             active = data;
             offsetX = offsetY = offsetZ = 0;
             rotation = 0;
             visibleLayer = -1;
+            missingBlocksEnabled = false;
             return true;
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -107,12 +115,37 @@ public final class SchematicManager {
         visibleLayer = visibleLayer < 0 ? 0 : -1;
     }
     public static boolean layerMode() { return visibleLayer >= 0; }
+    public static boolean missingBlocksEnabled() { return missingBlocksEnabled; }
+    public static void toggleMissingBlocks() { missingBlocksEnabled = !missingBlocksEnabled; }
+    public static int missingBlockCount(Level level, BlockPos origin) {
+        if (active == null || level == null) return 0;
+        int missing = 0;
+        for (SchematicData.BlockEntry entry : active.blocks) {
+            if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
+            BlockPos target = worldPosition(entry, origin);
+            String current = BuiltInRegistries.BLOCK.getKey(level.getBlockState(target).getBlock()).toString();
+            if (!current.equals(entry.block)) missing++;
+        }
+        return missing;
+    }
+    public static int totalVisibleBlocks() {
+        if (active == null) return 0;
+        if (visibleLayer < 0) return active.blocks.size();
+        int count = 0;
+        for (SchematicData.BlockEntry entry : active.blocks) if (entry.y == visibleLayer) count++;
+        return count;
+    }
+    public static int offsetX() { return offsetX; }
+    public static int offsetY() { return offsetY; }
+    public static int offsetZ() { return offsetZ; }
+    public static int rotation() { return rotation; }
     public static boolean unload() {
         boolean hadSchematic = active != null;
         active = null;
         visibleLayer = -1;
         offsetX = offsetY = offsetZ = 0;
         rotation = 0;
+        missingBlocksEnabled = false;
         return hadSchematic;
     }
     public static void rotate() { rotation = (rotation + 1) & 3; }
