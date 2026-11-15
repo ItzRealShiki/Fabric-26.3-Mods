@@ -1,6 +1,6 @@
 package de.leon.simplelitematica;
 
-import net.minecraft.Util;
+import com.mojang.blaze3d.Blaze3D;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -45,7 +45,7 @@ public final class SchematicScreen extends Screen {
 
         addRenderableWidget(Button.builder(label("OPEN FOLDER"), button -> {
             try {
-                Util.getPlatform().openFile(SchematicManager.directory().toFile());
+                Blaze3D.openPath(SchematicManager.directory());
             } catch (Exception exception) {
                 exception.printStackTrace();
                 showMessage("Could not open schematic folder. Check the game log.");
