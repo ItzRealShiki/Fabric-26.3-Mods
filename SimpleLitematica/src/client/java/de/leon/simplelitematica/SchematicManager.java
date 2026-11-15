@@ -34,6 +34,19 @@ public final class SchematicManager {
 
     private SchematicManager() {}
 
+    public static String smallCaps(String value) {
+        String lower = value.toLowerCase(Locale.ROOT);
+        String normal = "abcdefghijklmnopqrstuvwxyz";
+        String small = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ";
+        StringBuilder result = new StringBuilder(lower.length());
+        for (int i = 0; i < lower.length(); i++) {
+            char c = lower.charAt(i);
+            int index = normal.indexOf(c);
+            result.append(index >= 0 ? small.charAt(index) : c);
+        }
+        return result.toString();
+    }
+
     public static void ensureDirectory() {
         try { Files.createDirectories(DIRECTORY); }
         catch (IOException exception) { exception.printStackTrace(); }
@@ -135,15 +148,15 @@ public final class SchematicManager {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.gameMode == null) return 0;
         if (!mc.player.getAbilities().instabuild) {
-            mc.player.sendSystemMessage(Component.literal("§c/liteprint ist nur im Kreativmodus verfügbar."));
+            mc.player.sendSystemMessage(Component.literal(smallCaps("Liteprint is only available in creative mode.")));
             return 0;
         }
         if (active == null || active.blocks.isEmpty()) {
-            mc.player.sendSystemMessage(Component.literal("§cKeine Schematic geladen. Öffne /slitematica."));
+            mc.player.sendSystemMessage(Component.literal(smallCaps("No schematic loaded. Open the menu with Shift + M.")));
             return 0;
         }
         if (!mc.hasSingleplayerServer()) {
-            mc.player.sendSystemMessage(Component.literal("§eDrucken ist aktuell nur in Einzelspielerwelten verfügbar."));
+            mc.player.sendSystemMessage(Component.literal(smallCaps("Printing is currently available in singleplayer worlds only.")));
             return 0;
         }
         var server = mc.getSingleplayerServer();
@@ -164,11 +177,11 @@ public final class SchematicManager {
             }
         };
         if (slow) {
-            mc.player.sendSystemMessage(Component.literal("§eDer langsame Druckmodus wird in einem kommenden Update vervollständigt."));
+            mc.player.sendSystemMessage(Component.literal(smallCaps("Slow print mode is not implemented yet.")));
             return 1;
         }
         server.execute(placement);
-        mc.player.sendSystemMessage(Component.literal("§aSchematic lokal gesetzt: " + blocks.size() + " Blöcke."));
+        mc.player.sendSystemMessage(Component.literal(smallCaps("Schematic placed locally: " + blocks.size() + " blocks.")));
         return 1;
     }
 }
