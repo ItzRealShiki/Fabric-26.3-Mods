@@ -1,8 +1,6 @@
 package de.leon.simplelitematica;
 
 import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 
@@ -23,10 +21,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.block.BlockModelRenderState;
-import net.minecraft.client.renderer.block.BlockModelResolver;
-import net.minecraft.client.renderer.block.model.BlockDisplayContext;
-import net.minecraft.world.level.block.state.BlockState;
+import net.fabricmc.fabric.api.client.rendering.v1.render.FabricOrderedSubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -48,10 +43,6 @@ public final class MissingBlockRenderer {
     private static final StagedVertexBuffer BUFFER =
         new StagedVertexBuffer(() -> "SimpleLitematica overlays", RenderType.SMALL_BUFFER_SIZE);
     private static volatile List<BlockPos> missing = List.of();
-    private static BlockModelResolver blockModelResolver;
-    private static net.minecraft.client.resources.model.ModelManager cachedModelManager;
-    private static final BlockDisplayContext BLOCK_DISPLAY_CONTEXT = BlockDisplayContext.create();
-    private static final Map<BlockState, BlockModelRenderState> MODEL_STATES = new HashMap<>();
     private static volatile List<SchematicManager.PreviewBlock> preview = List.of();
     private static int ticks;
     private static int scanCursor;
@@ -78,7 +69,8 @@ public final class MissingBlockRenderer {
                 scannedSchematic = active;
                 return;
             }
-            preview = SchematicManager.previewBlocks(client.player.blockPosition(), 4096, 128.0);
+            BlockPos schematicOrigin = SchematicManager.resolveOrigin(client.player.blockPosition());
+            preview = SchematicManager.previewBlocks(schematicOrigin, 8192, 128.0);
             if (!SchematicManager.missingBlocksEnabled()) {
                 missing = List.of();
                 scanCursor = 0;
@@ -86,7 +78,7 @@ public final class MissingBlockRenderer {
                 scannedSchematic = active;
                 return;
             }
-            BlockPos playerPosition = client.player.blockPosition();
+            BlockPos playerPosition = SchematicManager.resolveOrigin(client.player.blockPosition());
             boolean scanContextChanged = active != scannedSchematic
                 || scannedLayer != SchematicManager.visibleLayer()
                 || scannedOffsetX != SchematicManager.offsetX()
@@ -108,7 +100,7 @@ public final class MissingBlockRenderer {
             }
             int count = SchematicManager.blockEntryCount();
             scanResults.addAll(SchematicManager.missingPositionsBatch(
-                client.level, client.player.blockPosition(), scanCursor, 10_000,
+                client.level, playerPosition, scanCursor, 10_000,
                 Math.max(0, 4096 - scanResults.size())));
             scanCursor += 10_000;
             if (scanCursor >= count) {
@@ -126,11 +118,8 @@ public final class MissingBlockRenderer {
         Minecraft client = Minecraft.getInstance();
         if (blocks.isEmpty() || client.level == null) return;
 
-        if (cachedModelManager != client.getModelManager()) {
-            cachedModelManager = client.getModelManager();
-            blockModelResolver = new BlockModelResolver(cachedModelManager);
-            MODEL_STATES.clear();
-        }
+        FabricOrderedSubmitNodeCollector collector =
+            (FabricOrderedSubmitNodeCollector) context.submitNodeCollector();
         PoseStack matrices = context.poseStack();
         Vec3 camera = context.levelState().cameraRenderState.pos;
 
@@ -138,15 +127,20 @@ public final class MissingBlockRenderer {
             BlockPos pos = block.position();
             matrices.pushPose();
             matrices.translate(pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z);
-            // Resolve the actual vanilla block model (including special block
-            // models) and submit it with its original textures and render layers.
-            BlockModelRenderState model = MODEL_STATES.computeIfAbsent(block.state(), state -> {
-                BlockModelRenderState renderState = new BlockModelRenderState();
-                blockModelResolver.update(renderState, state, BLOCK_DISPLAY_CONTEXT);
-                return renderState;
-            });
-            model.submit(matrices, context.submitNodeCollector(), 0xF000F0,
-                OverlayTexture.NO_OVERLAY, 0xFF62B8FF);
+            // Use the normal world-aware block submission path. It resolves the
+            // block model at its actual world position, preserving state-dependent
+            // rotations, textures, connected models and vanilla render layers.
+            // Neutral white keeps the original block texture colors instead of
+            // applying the previous blue tint; alpha makes it read as a hologram.
+            collector.submitBlock(
+                matrices,
+                block.state(),
+                0xF000F0,
+                OverlayTexture.NO_OVERLAY,
+                0xA0FFFFFF,
+                client.level,
+                pos
+            );
             matrices.popPose();
         }
     }
