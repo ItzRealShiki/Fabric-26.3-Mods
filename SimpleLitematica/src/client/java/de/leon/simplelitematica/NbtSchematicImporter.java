@@ -169,7 +169,23 @@ final class NbtSchematicImporter {
             case 9 -> {
                 int child=in.readUnsignedByte(), n=checkedLength(in.readInt());
                 List<Object> values=new ArrayList<>(Math.min(n,100_000));
-                for(int i=0;i<n;i++) values.add(readPayload(in,child,depth+1));
+                for(int i=0;i<n;i++) {
+                    if (child == 10) {
+                        // Some schematic exporters incorrectly include a full unnamed
+                        // TAG_Compound header for each compound-list element. Accept
+                        // that wrapper as well as standard NBT list encoding.
+                        in.mark(3);
+                        int first = in.readUnsignedByte();
+                        if (first == 10 && in.readUnsignedShort() == 0) {
+                            values.add(readPayload(in,10,depth+1));
+                        } else {
+                            in.reset();
+                            values.add(readPayload(in,child,depth+1));
+                        }
+                    } else {
+                        values.add(readPayload(in,child,depth+1));
+                    }
+                }
                 yield values;
             }
             case 10 -> {
