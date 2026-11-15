@@ -3,16 +3,16 @@ package de.leon.simplelitematica;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.OptionalInt;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -87,7 +87,7 @@ public final class MissingBlockRenderer {
         if (format == null) return;
         var primitive = THROUGH_WALLS.getPrimitiveTopology();
         StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, primitive,
-            primitive == com.mojang.blaze3d.PrimitiveTopology.QUADS
+            primitive == PrimitiveTopology.QUADS
                 ? RenderSystem.getProjectionType().vertexSorting() : null);
 
         PoseStack matrices = context.poseStack();
