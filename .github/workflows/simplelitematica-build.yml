@@ -39,13 +39,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f SimpleLitematica/build/libs/simplelitematica-0.1.14.jar
-          jar tf SimpleLitematica/build/libs/simplelitematica-0.1.14.jar >/dev/null
+          test -f SimpleLitematica/build/libs/simplelitematica-0.1.15.jar
+          jar tf SimpleLitematica/build/libs/simplelitematica-0.1.15.jar >/dev/null
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
-          name: SimpleLitematica-0.1.14
-          path: SimpleLitematica/build/libs/simplelitematica-0.1.14.jar
+          name: SimpleLitematica-0.1.15
+          path: SimpleLitematica/build/libs/simplelitematica-0.1.15.jar
           if-no-files-found: error
           retention-days: 14
