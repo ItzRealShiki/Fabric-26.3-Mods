@@ -42,6 +42,14 @@ public final class MissingBlockRenderer {
             .withDepthStencilState(Optional.empty())
             .build()
     );
+
+    // Inherit the vanilla debug-filled depth test so world geometry occludes
+    // schematic outlines. The depth attachment is supplied by the render pass.
+    private static final RenderPipeline DEPTH_TESTED_OUTLINES = RenderPipelines.register(
+        RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath("simplelitematica", "pipeline/schematic_outlines"))
+            .build()
+    );
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
     private static final Vector3f MODEL_OFFSET = new Vector3f();
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
@@ -163,7 +171,7 @@ public final class MissingBlockRenderer {
             for (SchematicManager.PreviewBlock block : schematicBlocks) {
                 outlinePositions.add(block.position());
             }
-            renderOutlines(context, outlinePositions, THROUGH_WALLS, 0.38f, 0.88f, 1.0f, 0.95f);
+            renderOutlines(context, outlinePositions, DEPTH_TESTED_OUTLINES, 0.38f, 0.88f, 1.0f, 0.95f);
         }
 
         List<BlockPos> missingPositions = missing;
