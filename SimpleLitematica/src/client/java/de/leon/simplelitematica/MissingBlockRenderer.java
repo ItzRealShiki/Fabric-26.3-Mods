@@ -42,18 +42,12 @@ public final class MissingBlockRenderer {
             .withDepthStencilState(Optional.empty())
             .build()
     );
-    private static final RenderPipeline SCHEMATIC_OUTLINES = RenderPipelines.register(
-        RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
-            .withLocation(Identifier.fromNamespaceAndPath("simplelitematica", "pipeline/schematic_outlines"))
-            .withDepthStencilState(Optional.empty())
-            .build()
-    );
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
     private static final Vector3f MODEL_OFFSET = new Vector3f();
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
-    // 8,192 blocks × 24 line vertices fit in this shared staging buffer.
+    // 8,192 blocks × 12 four-vertex outline strips fit in this shared staging buffer.
     private static final StagedVertexBuffer BUFFER =
-        new StagedVertexBuffer(() -> "SimpleLitematica overlays", 4 * 1024 * 1024);
+        new StagedVertexBuffer(() -> "SimpleLitematica overlays", 8 * 1024 * 1024);
     private static volatile List<BlockPos> missing = List.of();
     private static BlockModelResolver blockModelResolver;
     private static net.minecraft.client.resources.model.ModelManager cachedModelManager;
@@ -169,7 +163,7 @@ public final class MissingBlockRenderer {
             for (SchematicManager.PreviewBlock block : schematicBlocks) {
                 outlinePositions.add(block.position());
             }
-            renderOutlines(context, outlinePositions, SCHEMATIC_OUTLINES, 0.38f, 0.88f, 1.0f, 0.95f);
+            renderOutlines(context, outlinePositions, THROUGH_WALLS, 0.38f, 0.88f, 1.0f, 0.95f);
         }
 
         List<BlockPos> missingPositions = missing;
@@ -184,7 +178,9 @@ public final class MissingBlockRenderer {
         VertexFormat format = pipeline.getVertexFormatBinding(0);
         if (format == null || positions.isEmpty()) return;
         PrimitiveTopology primitive = pipeline.getPrimitiveTopology();
-        StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, primitive, null);
+        StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, primitive,
+            primitive == PrimitiveTopology.QUADS
+                ? RenderSystem.getProjectionType().vertexSorting() : null);
         PoseStack matrices = context.poseStack();
         Vec3 camera = context.levelState().cameraRenderState.pos;
         matrices.pushPose();
@@ -192,8 +188,6 @@ public final class MissingBlockRenderer {
         VertexConsumer builder = BUFFER.getVertexBuilder(draw);
         Matrix4f pose = matrices.last().pose();
         for (BlockPos pos : positions) {
-            // Slightly expand the wireframe so it stays visible over the
-            // translucent block model and does not z-fight with block faces.
             addWireframeBox(pose, builder,
                 pos.getX() - 0.002f, pos.getY() - 0.002f, pos.getZ() - 0.002f,
                 pos.getX() + 1.002f, pos.getY() + 1.002f, pos.getZ() + 1.002f,
@@ -206,31 +200,41 @@ public final class MissingBlockRenderer {
         BUFFER.endFrame();
     }
 
+    /**
+     * Draws each cube edge as a thin quad instead of GL line primitives.
+     * DEBUG_FILLED_SNIPPET uses POSITION_COLOR; supplying line vertices to
+     * LINES_SNIPPET in 26.3 required additional vertex attributes and crashed
+     * BufferBuilder with "Missing elements in vertex".
+     */
     private static void addWireframeBox(Matrix4f m, VertexConsumer b,
                                         float x1, float y1, float z1, float x2, float y2, float z2,
                                         float r, float g, float blue, float a) {
-        // Bottom face
-        line(m, b, x1, y1, z1, x2, y1, z1, r, g, blue, a);
-        line(m, b, x2, y1, z1, x2, y1, z2, r, g, blue, a);
-        line(m, b, x2, y1, z2, x1, y1, z2, r, g, blue, a);
-        line(m, b, x1, y1, z2, x1, y1, z1, r, g, blue, a);
-        // Top face
-        line(m, b, x1, y2, z1, x2, y2, z1, r, g, blue, a);
-        line(m, b, x2, y2, z1, x2, y2, z2, r, g, blue, a);
-        line(m, b, x2, y2, z2, x1, y2, z2, r, g, blue, a);
-        line(m, b, x1, y2, z2, x1, y2, z1, r, g, blue, a);
-        // Four vertical edges
-        line(m, b, x1, y1, z1, x1, y2, z1, r, g, blue, a);
-        line(m, b, x2, y1, z1, x2, y2, z1, r, g, blue, a);
-        line(m, b, x2, y1, z2, x2, y2, z2, r, g, blue, a);
-        line(m, b, x1, y1, z2, x1, y2, z2, r, g, blue, a);
+        float t = 0.009f;
+        // Four edges parallel to X (bottom and top).
+        outlineQuad(m, b, x1,y1-t,z1-t, x2,y1-t,z1-t, x2,y1+t,z1-t, x1,y1+t,z1-t, r,g,blue,a);
+        outlineQuad(m, b, x1,y1-t,z2+t, x2,y1-t,z2+t, x2,y1+t,z2+t, x1,y1+t,z2+t, r,g,blue,a);
+        outlineQuad(m, b, x1,y2-t,z1-t, x2,y2-t,z1-t, x2,y2+t,z1-t, x1,y2+t,z1-t, r,g,blue,a);
+        outlineQuad(m, b, x1,y2-t,z2+t, x2,y2-t,z2+t, x2,y2+t,z2+t, x1,y2+t,z2+t, r,g,blue,a);
+        // Four edges parallel to Z (bottom and top).
+        outlineQuad(m, b, x1-t,y1-t,z1, x1-t,y1-t,z2, x1+t,y1-t,z2, x1+t,y1-t,z1, r,g,blue,a);
+        outlineQuad(m, b, x2-t,y1-t,z1, x2-t,y1-t,z2, x2+t,y1-t,z2, x2+t,y1-t,z1, r,g,blue,a);
+        outlineQuad(m, b, x1-t,y2+t,z1, x1-t,y2+t,z2, x1+t,y2+t,z2, x1+t,y2+t,z1, r,g,blue,a);
+        outlineQuad(m, b, x2-t,y2+t,z1, x2-t,y2+t,z2, x2+t,y2+t,z2, x2+t,y2+t,z1, r,g,blue,a);
+        // Four vertical edges parallel to Y.
+        outlineQuad(m, b, x1-t,y1,z1-t, x1-t,y2,z1-t, x1+t,y2,z1-t, x1+t,y1,z1-t, r,g,blue,a);
+        outlineQuad(m, b, x2+t,y1,z1-t, x2+t,y2,z1-t, x2-t,y2,z1-t, x2-t,y1,z1-t, r,g,blue,a);
+        outlineQuad(m, b, x1-t,y1,z2+t, x1-t,y2,z2+t, x1+t,y2,z2+t, x1+t,y1,z2+t, r,g,blue,a);
+        outlineQuad(m, b, x2+t,y1,z2+t, x2+t,y2,z2+t, x2-t,y2,z2+t, x2-t,y1,z2+t, r,g,blue,a);
     }
 
-    private static void line(Matrix4f m, VertexConsumer b,
-                             float x1, float y1, float z1, float x2, float y2, float z2,
-                             float r, float g, float blue, float a) {
-        b.addVertex(m, x1, y1, z1).setColor(r, g, blue, a);
-        b.addVertex(m, x2, y2, z2).setColor(r, g, blue, a);
+    private static void outlineQuad(Matrix4f m, VertexConsumer b,
+                                    float x1,float y1,float z1, float x2,float y2,float z2,
+                                    float x3,float y3,float z3, float x4,float y4,float z4,
+                                    float r,float g,float blue,float a) {
+        b.addVertex(m,x1,y1,z1).setColor(r,g,blue,a);
+        b.addVertex(m,x2,y2,z2).setColor(r,g,blue,a);
+        b.addVertex(m,x3,y3,z3).setColor(r,g,blue,a);
+        b.addVertex(m,x4,y4,z4).setColor(r,g,blue,a);
     }
 
     private static void renderBoxes(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context,
