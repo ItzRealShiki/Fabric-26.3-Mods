@@ -22,7 +22,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.client.renderer.v1.render.FabricOrderedSubmitNodeCollector;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -127,17 +126,14 @@ public final class MissingBlockRenderer {
             BlockPos pos = block.position();
             matrices.pushPose();
             matrices.translate(pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z);
-            collector.submitBlockStateModel(
+            collector.submitBlock(
                 matrices,
-                layer -> RenderTypes.translucentMovingBlock(),
-                client.getModelManager().getBlockStateModelSet().get(block.state()),
-                0.62f, 0.82f, 1.0f,
+                block.state(),
                 0xF000F0,
                 OverlayTexture.NO_OVERLAY,
                 0xFF62B8FF,
                 client.level,
-                pos,
-                block.state()
+                pos
             );
             matrices.popPose();
         }
