@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "simplelitematica",
+  "version": "${version}",
+  "name": "SimpleLitematica",
+  "description": "A lightweight schematic preview and building helper for Minecraft 26.3.",
+  "authors": ["Leon"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["de.leon.simplelitematica.SimpleLitematicaClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
