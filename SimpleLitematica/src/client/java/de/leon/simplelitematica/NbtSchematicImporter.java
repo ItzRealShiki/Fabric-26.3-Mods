@@ -52,7 +52,7 @@ final class NbtSchematicImporter {
         return data;
     }
 
-    private record AbsoluteBlock(int x, int y, int z, String block) {}
+    private record AbsoluteBlock(int x, int y, int z, String block, String blockState) {}
 
     private static void readLitematic(Map<String, Object> root, SchematicData out) throws IOException {
         Map<String, Object> regions = map(get(root, "Regions"));
@@ -83,17 +83,18 @@ final class NbtSchematicImporter {
             for(int index=0;index<volume;index++){
                 int paletteIndex=packed(states,index,bits,mask);
                 if(paletteIndex<0 || paletteIndex>=palette.size()) continue;
-                String block=blockName(map(palette.get(paletteIndex)));
+                String blockState=blockState(map(palette.get(paletteIndex)));
+                String block=blockId(blockState);
                 if(isAir(block)) continue;
                 int x=index%sx, z=(index/sx)%sz, y=index/(sx*sz);
                 absolute.add(new AbsoluteBlock(rx+(size[0]<0?-x:x), ry+(size[1]<0?-y:y),
-                    rz+(size[2]<0?-z:z), block));
+                    rz+(size[2]<0?-z:z), block, blockState));
             }
         }
         if(absolute.isEmpty()) return;
         out.sizeX=maxX-minX; out.sizeY=maxY-minY; out.sizeZ=maxZ-minZ;
         for(AbsoluteBlock block:absolute) out.blocks.add(new SchematicData.BlockEntry(
-            block.x-minX,block.y-minY,block.z-minZ,block.block));
+            block.x-minX,block.y-minY,block.z-minZ,block.block,block.blockState));
     }
 
     private static void readSponge(Map<String, Object> root, SchematicData out) throws IOException {
@@ -107,10 +108,13 @@ final class NbtSchematicImporter {
         int[] cursor = {0};
         for (int i=0; i<(long)width*height*length && cursor[0]<encoded.length; i++) {
             int state = readVarInt(encoded, cursor);
-            String block = palette.get(state);
-            if (block == null || isAir(block)) continue;
+            String blockState = palette.get(state);
+            if (blockState == null) continue;
+            blockState = normalizeState(blockState);
+            String block = blockId(blockState);
+            if (isAir(block)) continue;
             int x=i%width, z=(i/width)%length, y=i/(width*length);
-            out.blocks.add(new SchematicData.BlockEntry(x,y,z,normalize(block)));
+            out.blocks.add(new SchematicData.BlockEntry(x,y,z,block,blockState));
         }
         out.sizeX=width; out.sizeY=height; out.sizeZ=length;
     }
@@ -118,7 +122,7 @@ final class NbtSchematicImporter {
     private static void readStructure(Map<String, Object> root, SchematicData out) throws IOException {
         List<?> paletteTags = list(get(root, "palette"));
         List<String> palette = new ArrayList<>();
-        for (Object item : paletteTags) palette.add(blockName(map(item)));
+        for (Object item : paletteTags) palette.add(blockState(map(item)));
         int[] size = coordinates(get(root, "size"));
         if (size.length >= 3) { out.sizeX=size[0]; out.sizeY=size[1]; out.sizeZ=size[2]; }
         for (Object item : list(get(root, "blocks"))) {
@@ -126,9 +130,10 @@ final class NbtSchematicImporter {
             int[] pos = coordinates(get(blockTag, "pos"));
             int state = number(get(blockTag, "state"));
             if (pos.length < 3 || state < 0 || state >= palette.size()) continue;
-            String block = palette.get(state);
+            String blockState = palette.get(state);
+            String block = blockId(blockState);
             if (isAir(block)) continue;
-            out.blocks.add(new SchematicData.BlockEntry(pos[0],pos[1],pos[2],block));
+            out.blocks.add(new SchematicData.BlockEntry(pos[0],pos[1],pos[2],block,blockState));
             out.sizeX=Math.max(out.sizeX,pos[0]+1);
             out.sizeY=Math.max(out.sizeY,pos[1]+1);
             out.sizeZ=Math.max(out.sizeZ,pos[2]+1);
@@ -226,8 +231,28 @@ final class NbtSchematicImporter {
     private static long[] longs(Object o) { return o instanceof long[] a ? a : new long[0]; }
     private static byte[] bytes(Object o) { return o instanceof byte[] a ? a : new byte[0]; }
     private static int number(Object o) { return o instanceof Number n ? n.intValue() : 0; }
-    private static String blockName(Map<String,Object> state) { return normalize(String.valueOf(state.getOrDefault("Name","minecraft:air"))); }
-    private static String normalize(String id) { int properties=id.indexOf("["); if(properties>=0) id=id.substring(0,properties); return id.contains(":") ? id : "minecraft:"+id; }
+    private static String blockState(Map<String,Object> state) {
+        String id = normalizeId(String.valueOf(state.getOrDefault("Name","minecraft:air")));
+        Object raw = get(state, "Properties");
+        if (raw instanceof Map<?, ?> properties && !properties.isEmpty()) {
+            StringBuilder result = new StringBuilder(id).append('[');
+            boolean first = true;
+            for (var entry : properties.entrySet()) {
+                if (!first) result.append(',');
+                first = false;
+                result.append(entry.getKey()).append('=').append(entry.getValue());
+            }
+            return result.append(']').toString();
+        }
+        return id;
+    }
+    private static String normalizeState(String state) {
+        int open = state.indexOf('[');
+        String id = normalizeId(open < 0 ? state : state.substring(0, open));
+        return open < 0 ? id : id + state.substring(open);
+    }
+    private static String normalizeId(String id) { return id.contains(":") ? id : "minecraft:"+id; }
+    private static String blockId(String state) { int properties=state.indexOf('['); return properties<0 ? state : state.substring(0,properties); }
     private static boolean isAir(String id) { return id.equals("minecraft:air") || id.equals("minecraft:cave_air") || id.equals("minecraft:void_air"); }
     private static String stripExtension(String name) { int i=name.lastIndexOf('.'); return i>0 ? name.substring(0,i) : name; }
 }

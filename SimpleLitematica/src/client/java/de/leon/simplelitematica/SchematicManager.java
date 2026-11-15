@@ -9,6 +9,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.network.chat.Component;
 
@@ -123,8 +124,7 @@ public final class SchematicManager {
         for (SchematicData.BlockEntry entry : active.blocks) {
             if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
             BlockPos target = worldPosition(entry, origin);
-            String current = BuiltInRegistries.BLOCK.getKey(level.getBlockState(target).getBlock()).toString();
-            if (!current.equals(entry.block)) missing++;
+            if (!matches(level.getBlockState(target), entry)) missing++;
         }
         return missing;
     }
@@ -137,13 +137,68 @@ public final class SchematicManager {
             if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
             BlockPos target = worldPosition(entry, origin);
             if (target.distSqr(origin) > 128.0 * 128.0) continue;
-            if (!BuiltInRegistries.BLOCK.getKey(level.getBlockState(target).getBlock()).toString().equals(entry.block)) {
+            if (!matches(level.getBlockState(target), entry)) {
                 result.add(target);
                 if (result.size() >= resultLimit) break;
             }
         }
         return result;
     }
+    public static List<BlockPos> previewPositions(BlockPos origin, int resultLimit, double radius) {
+        if (active == null || origin == null || resultLimit <= 0) return List.of();
+        List<BlockPos> result = new ArrayList<>(Math.min(resultLimit, 1024));
+        double radiusSquared = radius * radius;
+        for (SchematicData.BlockEntry entry : active.blocks) {
+            if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
+            BlockPos target = worldPosition(entry, origin);
+            if (target.distSqr(origin) > radiusSquared) continue;
+            result.add(target);
+            if (result.size() >= resultLimit) break;
+        }
+        return result;
+    }
+
+    public static BlockState blockState(SchematicData.BlockEntry entry) {
+        if (entry == null || entry.block == null) return Blocks.AIR.defaultBlockState();
+        Block block = BuiltInRegistries.BLOCK.get(Identifier.parse(entry.block))
+            .map(reference -> reference.value()).orElse(Blocks.AIR);
+        BlockState state = block.defaultBlockState();
+        String encoded = entry.blockState;
+        if (encoded == null || encoded.isBlank()) return state;
+        int open = encoded.indexOf('['), close = encoded.lastIndexOf(']');
+        if (open < 0 || close <= open) return state;
+        for (String pair : encoded.substring(open + 1, close).split(",")) {
+            int equals = pair.indexOf('=');
+            if (equals <= 0 || equals == pair.length() - 1) continue;
+            Property<?> property = block.getStateDefinition().getProperty(pair.substring(0, equals).trim());
+            if (property != null) state = applyProperty(state, property, pair.substring(equals + 1).trim());
+        }
+        return state;
+    }
+
+    private static <T extends Comparable<T>> BlockState applyProperty(BlockState state, Property<T> property, String value) {
+        return property.getValue(value).map(parsed -> state.setValue(property, parsed)).orElse(state);
+    }
+
+    private static String encodeState(BlockState state, String id) {
+        StringBuilder encoded = new StringBuilder(id).append('[');
+        boolean first = true;
+        for (Property<?> property : state.getProperties()) {
+            if (!first) encoded.append(',');
+            first = false;
+            encoded.append(property.getName()).append('=').append(propertyValue(state, property));
+        }
+        return encoded.append(']').toString();
+    }
+
+    private static <T extends Comparable<T>> String propertyValue(BlockState state, Property<T> property) {
+        return property.getName(state.getValue(property));
+    }
+
+    private static boolean matches(BlockState current, SchematicData.BlockEntry expected) {
+        return current.equals(blockState(expected));
+    }
+
     public static int blockEntryCount() { return active == null ? 0 : active.blocks.size(); }
     public static int totalVisibleBlocks() {
         if (active == null) return 0;
@@ -196,7 +251,8 @@ public final class SchematicManager {
                     BlockState state = level.getBlockState(new BlockPos(x,y,z));
                     if (state.isAir()) continue;
                     Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
-                    data.blocks.add(new SchematicData.BlockEntry(x-minX, y-minY, z-minZ, id.toString()));
+                    data.blocks.add(new SchematicData.BlockEntry(x-minX, y-minY, z-minZ,
+                        id.toString(), encodeState(state, id.toString())));
                 }
             }
         }
@@ -236,18 +292,20 @@ public final class SchematicManager {
         Runnable placement = () -> {
             for (SchematicData.BlockEntry entry : blocks) {
                 if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
-                Block block = BuiltInRegistries.BLOCK.get(Identifier.parse(entry.block)).map(reference -> reference.value()).orElse(Blocks.AIR);
-                if (block == Blocks.AIR) continue;
+                BlockState state = blockState(entry);
+                if (state.isAir()) continue;
                 BlockPos target = worldPosition(entry, origin);
-                serverLevel.setBlock(target, block.defaultBlockState(), 3);
+                serverLevel.setBlock(target, state, 3);
             }
         };
         if (slow) {
             mc.player.sendSystemMessage(Component.literal(smallCaps("Slow print mode is not implemented yet.")));
             return 1;
         }
+        int placedCount = 0;
+        for (SchematicData.BlockEntry entry : blocks) if (visibleLayer < 0 || entry.y == visibleLayer) placedCount++;
         server.execute(placement);
-        mc.player.sendSystemMessage(Component.literal(smallCaps("Schematic placed locally: " + blocks.size() + " blocks.")));
+        mc.player.sendSystemMessage(Component.literal(smallCaps("Schematic placed locally: " + placedCount + " blocks.")));
         return 1;
     }
 }

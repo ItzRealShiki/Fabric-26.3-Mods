@@ -16,14 +16,19 @@ public final class SchematicData {
         public int y;
         public int z;
         public String block;
+        public String blockState;
         public int layer;
 
         public BlockEntry() {}
         public BlockEntry(int x, int y, int z, String block) {
+            this(x, y, z, block, block);
+        }
+        public BlockEntry(int x, int y, int z, String block, String blockState) {
             this.x = x;
             this.y = y;
             this.z = z;
             this.block = block;
+            this.blockState = blockState == null || blockState.isBlank() ? block : blockState;
             this.layer = y;
         }
     }

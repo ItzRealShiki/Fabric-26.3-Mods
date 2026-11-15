@@ -27,7 +27,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
-/** X-ray style overlay for blocks that still differ from the loaded schematic. */
+/** Schematic preview and missing-block overlays. Direct GPU work runs at END_MAIN. */
 public final class MissingBlockRenderer {
     private static final RenderPipeline THROUGH_WALLS = RenderPipelines.register(
         RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
@@ -35,12 +35,14 @@ public final class MissingBlockRenderer {
             .withDepthStencilState(Optional.empty())
             .build()
     );
+    private static final RenderPipeline HOLOGRAM = RenderPipelines.DEBUG_FILLED_SNIPPET;
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
     private static final Vector3f MODEL_OFFSET = new Vector3f();
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
     private static final StagedVertexBuffer BUFFER =
-        new StagedVertexBuffer(() -> "SimpleLitematica missing blocks", RenderType.SMALL_BUFFER_SIZE);
+        new StagedVertexBuffer(() -> "SimpleLitematica overlays", RenderType.SMALL_BUFFER_SIZE);
     private static volatile List<BlockPos> missing = List.of();
+    private static volatile List<BlockPos> preview = List.of();
     private static int ticks;
     private static int scanCursor;
     private static SchematicData scannedSchematic;
@@ -52,7 +54,16 @@ public final class MissingBlockRenderer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (++ticks % 5 != 0) return;
             SchematicData active = SchematicManager.active();
-            if (!SchematicManager.missingBlocksEnabled() || client.level == null || client.player == null || active == null) {
+            if (active == null || client.level == null || client.player == null) {
+                missing = List.of();
+                preview = List.of();
+                scanCursor = 0;
+                scanResults.clear();
+                scannedSchematic = active;
+                return;
+            }
+            preview = SchematicManager.previewPositions(client.player.blockPosition(), 4096, 128.0);
+            if (!SchematicManager.missingBlocksEnabled()) {
                 missing = List.of();
                 scanCursor = 0;
                 scanResults.clear();
@@ -76,20 +87,25 @@ public final class MissingBlockRenderer {
                 scanResults.clear();
             }
         });
-        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(MissingBlockRenderer::render);
+        LevelRenderEvents.END_MAIN.register(MissingBlockRenderer::render);
     }
 
     private static void render(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context) {
-        List<BlockPos> positions = missing;
-        if (positions.isEmpty()) return;
+        List<BlockPos> previewPositions = preview;
+        if (!previewPositions.isEmpty()) renderBoxes(context, previewPositions, HOLOGRAM, 0.20f, 0.62f, 1.0f, 0.22f);
+        List<BlockPos> missingPositions = missing;
+        if (!missingPositions.isEmpty()) renderBoxes(context, missingPositions, THROUGH_WALLS, 1.0f, 0.12f, 0.08f, 0.30f);
+    }
 
-        VertexFormat format = THROUGH_WALLS.getVertexFormatBinding(0);
+    private static void renderBoxes(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context,
+                                    List<BlockPos> positions, RenderPipeline pipeline,
+                                    float red, float green, float blue, float alpha) {
+        VertexFormat format = pipeline.getVertexFormatBinding(0);
         if (format == null) return;
-        var primitive = THROUGH_WALLS.getPrimitiveTopology();
+        PrimitiveTopology primitive = pipeline.getPrimitiveTopology();
         StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, primitive,
             primitive == PrimitiveTopology.QUADS
                 ? RenderSystem.getProjectionType().vertexSorting() : null);
-
         PoseStack matrices = context.poseStack();
         Vec3 camera = context.levelState().cameraRenderState.pos;
         matrices.pushPose();
@@ -97,14 +113,13 @@ public final class MissingBlockRenderer {
         VertexConsumer builder = BUFFER.getVertexBuilder(draw);
         Matrix4f pose = matrices.last().pose();
         for (BlockPos pos : positions) {
-            addBox(pose, builder, pos.getX()+0.03f, pos.getY()+0.03f, pos.getZ()+0.03f,
-                pos.getX()+0.97f, pos.getY()+0.97f, pos.getZ()+0.97f, 1f, 0.12f, 0.08f, 0.30f);
+            addBox(pose, builder, pos.getX()+0.025f, pos.getY()+0.025f, pos.getZ()+0.025f,
+                pos.getX()+0.975f, pos.getY()+0.975f, pos.getZ()+0.975f, red, green, blue, alpha);
         }
         matrices.popPose();
-
         BUFFER.upload();
         StagedVertexBuffer.ExecuteInfo info = BUFFER.getExecuteInfo(draw);
-        if (info != null) draw(Minecraft.getInstance(), info, THROUGH_WALLS);
+        if (info != null) draw(Minecraft.getInstance(), info, pipeline);
         BUFFER.endFrame();
     }
 
@@ -131,7 +146,7 @@ public final class MissingBlockRenderer {
         GpuTextureView color = target.getColorTextureView();
         if (color == null) return;
         try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-            () -> "SimpleLitematica missing blocks", color, Optional.empty(),
+            () -> "SimpleLitematica overlay", color, Optional.empty(),
             target.getDepthTextureView(), OptionalDouble.empty())) {
             pass.setPipeline(RenderSystem.getCompiledPipeline(pipeline));
             RenderSystem.bindDefaultUniforms(pass);

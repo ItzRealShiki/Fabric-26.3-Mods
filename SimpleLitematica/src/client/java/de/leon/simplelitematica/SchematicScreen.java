@@ -125,7 +125,8 @@ public final class SchematicScreen extends Screen {
             SchematicData data=SchematicManager.active();
             String active=data==null ? "NO SCHEMATIC LOADED" : "LOADED: "+data.name+"  ("+data.blocks.size()+" BLOCKS)";
             graphics.centeredText(font,label(active),width/2,top-2,0xFFFFFFFF);
-            graphics.centeredText(font,label("X "+SchematicManager.offsetX()+"  Y "+SchematicManager.offsetY()+
+            graphics.centeredText(font,label("MODE "+(SchematicManager.layerMode() ? "LAYER "+SchematicManager.visibleLayer() : "ALL")+
+                "  X "+SchematicManager.offsetX()+"  Y "+SchematicManager.offsetY()+
                 "  Z "+SchematicManager.offsetZ()+"  ROT "+(SchematicManager.rotation()*90)+" DEG"),
                 width/2,top+207,0xFFAAAAAA);
             graphics.centeredText(font,label("SHIFT + M: MENU | PASTE ONLY WHEN PRESSED"),
