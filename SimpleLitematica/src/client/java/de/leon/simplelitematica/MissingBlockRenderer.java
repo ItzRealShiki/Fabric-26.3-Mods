@@ -1,6 +1,8 @@
 package de.leon.simplelitematica;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 
@@ -18,10 +20,13 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.render.FabricOrderedSubmitNodeCollector;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.block.BlockModelRenderState;
+import net.minecraft.client.renderer.block.BlockModelResolver;
+import net.minecraft.client.renderer.block.model.BlockDisplayContext;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -43,6 +48,10 @@ public final class MissingBlockRenderer {
     private static final StagedVertexBuffer BUFFER =
         new StagedVertexBuffer(() -> "SimpleLitematica overlays", RenderType.SMALL_BUFFER_SIZE);
     private static volatile List<BlockPos> missing = List.of();
+    private static BlockModelResolver blockModelResolver;
+    private static net.minecraft.client.resources.model.ModelManager cachedModelManager;
+    private static final BlockDisplayContext BLOCK_DISPLAY_CONTEXT = BlockDisplayContext.create();
+    private static final Map<BlockState, BlockModelRenderState> MODEL_STATES = new HashMap<>();
     private static volatile List<SchematicManager.PreviewBlock> preview = List.of();
     private static int ticks;
     private static int scanCursor;
@@ -117,8 +126,11 @@ public final class MissingBlockRenderer {
         Minecraft client = Minecraft.getInstance();
         if (blocks.isEmpty() || client.level == null) return;
 
-        FabricOrderedSubmitNodeCollector collector =
-            (FabricOrderedSubmitNodeCollector) context.submitNodeCollector();
+        if (cachedModelManager != client.getModelManager()) {
+            cachedModelManager = client.getModelManager();
+            blockModelResolver = new BlockModelResolver(cachedModelManager);
+            MODEL_STATES.clear();
+        }
         PoseStack matrices = context.poseStack();
         Vec3 camera = context.levelState().cameraRenderState.pos;
 
@@ -126,17 +138,15 @@ public final class MissingBlockRenderer {
             BlockPos pos = block.position();
             matrices.pushPose();
             matrices.translate(pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z);
-            // Submit the real vanilla block model, preserving its textures,
-            // render layers and position-dependent model data.
-            collector.submitBlock(
-                matrices,
-                block.state(),
-                0xF000F0,
-                OverlayTexture.NO_OVERLAY,
-                0xFF62B8FF,
-                client.level,
-                pos
-            );
+            // Resolve the actual vanilla block model (including special block
+            // models) and submit it with its original textures and render layers.
+            BlockModelRenderState model = MODEL_STATES.computeIfAbsent(block.state(), state -> {
+                BlockModelRenderState renderState = new BlockModelRenderState();
+                blockModelResolver.update(renderState, state, BLOCK_DISPLAY_CONTEXT);
+                return renderState;
+            });
+            model.submit(matrices, context.submitNodeCollector(), 0xF000F0,
+                OverlayTexture.NO_OVERLAY, 0xFF62B8FF);
             matrices.popPose();
         }
     }
