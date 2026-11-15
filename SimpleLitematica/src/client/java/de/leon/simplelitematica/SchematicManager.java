@@ -85,7 +85,7 @@ public final class SchematicManager {
 
     public static boolean delete(Path path) {
         try {
-            if (active != null && path.getFileName().toString().equalsIgnoreCase(active.name + ".slite")) active = null;
+            if (active != null && path.getFileName().toString().equalsIgnoreCase(active.name + ".slite")) unload();
             return Files.deleteIfExists(path);
         } catch (IOException exception) {
             return false;
@@ -96,8 +96,24 @@ public final class SchematicManager {
     public static int visibleLayer() { return visibleLayer; }
     public static void cycleLayer() {
         if (active == null || active.sizeY <= 0) return;
-        visibleLayer++;
-        if (visibleLayer >= active.sizeY) visibleLayer = -1;
+        if (visibleLayer < 0) visibleLayer = 0;
+        else {
+            visibleLayer++;
+            if (visibleLayer >= active.sizeY) visibleLayer = -1;
+        }
+    }
+    public static void toggleLayerMode() {
+        if (active == null || active.sizeY <= 0) return;
+        visibleLayer = visibleLayer < 0 ? 0 : -1;
+    }
+    public static boolean layerMode() { return visibleLayer >= 0; }
+    public static boolean unload() {
+        boolean hadSchematic = active != null;
+        active = null;
+        visibleLayer = -1;
+        offsetX = offsetY = offsetZ = 0;
+        rotation = 0;
+        return hadSchematic;
     }
     public static void rotate() { rotation = (rotation + 1) & 3; }
     public static void move(int x, int y, int z) { offsetX += x; offsetY += y; offsetZ += z; }
