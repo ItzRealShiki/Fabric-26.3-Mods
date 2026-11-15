@@ -44,32 +44,32 @@ final class NbtSchematicImporter {
         Map<String, Object> tag = map(root);
         SchematicData data = new SchematicData();
         data.name = stripExtension(path.getFileName().toString());
-        if (tag.containsKey("Regions")) readLitematic(tag, data);
-        else if (tag.containsKey("Blocks") && tag.containsKey("Palette")) readStructure(tag, data);
-        else if (tag.containsKey("BlockData") && tag.containsKey("Palette")) readSponge(tag, data);
+        if (get(tag, "Regions") != null) readLitematic(tag, data);
+        else if (get(tag, "BlockData") != null && get(tag, "Palette") instanceof Map<?, ?>) readSponge(tag, data);
+        else if (get(tag, "blocks") instanceof List<?> && get(tag, "palette") instanceof List<?>) readStructure(tag, data);
         else throw new IOException("Unsupported NBT schematic layout");
         if (data.blocks.isEmpty()) throw new IOException("No blocks were found in this schematic");
         return data;
     }
 
     private static void readLitematic(Map<String, Object> root, SchematicData out) throws IOException {
-        Map<String, Object> regions = map(root.get("Regions"));
+        Map<String, Object> regions = map(get(root, "Regions"));
         int minX = 0, minY = 0, minZ = 0;
         int maxX = 0, maxY = 0, maxZ = 0;
         boolean first = true;
         for (Object regionValue : regions.values()) {
             Map<String, Object> region = map(regionValue);
-            int[] size = ints(region.get("Size"));
+            int[] size = ints(get(region, "Size"));
             if (size.length < 3) continue;
             int sx = Math.abs(size[0]), sy = Math.abs(size[1]), sz = Math.abs(size[2]);
             if (sx == 0 || sy == 0 || sz == 0) continue;
-            List<?> palette = list(region.get("BlockStatePalette"));
-            long[] states = longs(region.get("BlockStates"));
+            List<?> palette = list(get(region, "BlockStatePalette"));
+            long[] states = longs(get(region, "BlockStates"));
             if (palette.isEmpty() || states.length == 0) continue;
             int bits = Math.max(2, 32 - Integer.numberOfLeadingZeros(palette.size() - 1));
             long mask = (1L << bits) - 1L;
             int rx = 0, ry = 0, rz = 0;
-            int[] pos = ints(region.get("Position"));
+            int[] pos = ints(get(region, "Position"));
             if (pos.length >= 3) { rx = pos[0]; ry = pos[1]; rz = pos[2]; }
             if (first) { minX=rx; minY=ry; minZ=rz; maxX=rx+sx; maxY=ry+sy; maxZ=rz+sz; first=false; }
             else { minX=Math.min(minX,rx); minY=Math.min(minY,ry); minZ=Math.min(minZ,rz);
@@ -91,13 +91,13 @@ final class NbtSchematicImporter {
     }
 
     private static void readSponge(Map<String, Object> root, SchematicData out) throws IOException {
-        int width = number(root.get("Width")), height = number(root.get("Height")), length = number(root.get("Length"));
+        int width = number(get(root, "Width")), height = number(get(root, "Height")), length = number(get(root, "Length"));
         if (width <= 0 || height <= 0 || length <= 0 || (long)width*height*length > 2_000_000L)
             throw new IOException("Invalid or oversized Sponge schematic dimensions");
-        Map<String, Object> paletteTag = map(root.get("Palette"));
+        Map<String, Object> paletteTag = map(get(root, "Palette"));
         Map<Integer, String> palette = new LinkedHashMap<>();
         for (var entry : paletteTag.entrySet()) palette.put(number(entry.getValue()), entry.getKey());
-        byte[] encoded = bytes(root.get("BlockData"));
+        byte[] encoded = bytes(get(root, "BlockData"));
         int[] cursor = {0};
         for (int i=0; i<(long)width*height*length && cursor[0]<encoded.length; i++) {
             int state = readVarInt(encoded, cursor);
@@ -110,15 +110,15 @@ final class NbtSchematicImporter {
     }
 
     private static void readStructure(Map<String, Object> root, SchematicData out) throws IOException {
-        List<?> paletteTags = list(root.get("Palette"));
+        List<?> paletteTags = list(get(root, "palette"));
         List<String> palette = new ArrayList<>();
         for (Object item : paletteTags) palette.add(blockName(map(item)));
-        int[] size = ints(root.get("size"));
+        int[] size = ints(get(root, "size"));
         if (size.length >= 3) { out.sizeX=size[0]; out.sizeY=size[1]; out.sizeZ=size[2]; }
-        for (Object item : list(root.get("Blocks"))) {
+        for (Object item : list(get(root, "blocks"))) {
             Map<String, Object> blockTag = map(item);
-            int[] pos = ints(blockTag.get("pos"));
-            int state = number(blockTag.get("state"));
+            int[] pos = ints(get(blockTag, "pos"));
+            int state = number(get(blockTag, "state"));
             if (pos.length < 3 || state < 0 || state >= palette.size()) continue;
             String block = palette.get(state);
             if (isAir(block)) continue;
@@ -182,6 +182,7 @@ final class NbtSchematicImporter {
         };
     }
 
+    private static Object get(Map<String,Object> map, String key) { Object value=map.get(key); if(value!=null)return value; for(var e:map.entrySet()) if(e.getKey().equalsIgnoreCase(key)) return e.getValue(); return null; }
     private static int checkedLength(int n) throws IOException {
         if (n < 0 || n > 8_000_000) throw new IOException("NBT array/list is too large");
         return n;
