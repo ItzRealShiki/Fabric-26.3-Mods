@@ -42,11 +42,18 @@ public final class MissingBlockRenderer {
             .withDepthStencilState(Optional.empty())
             .build()
     );
+    private static final RenderPipeline SCHEMATIC_OUTLINES = RenderPipelines.register(
+        RenderPipeline.builder(RenderPipelines.LINES)
+            .withLocation(Identifier.fromNamespaceAndPath("simplelitematica", "pipeline/schematic_outlines"))
+            .withDepthStencilState(Optional.empty())
+            .build()
+    );
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
     private static final Vector3f MODEL_OFFSET = new Vector3f();
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
+    // 8,192 blocks × 24 line vertices fit in this shared staging buffer.
     private static final StagedVertexBuffer BUFFER =
-        new StagedVertexBuffer(() -> "SimpleLitematica overlays", RenderType.SMALL_BUFFER_SIZE);
+        new StagedVertexBuffer(() -> "SimpleLitematica overlays", 4 * 1024 * 1024);
     private static volatile List<BlockPos> missing = List.of();
     private static BlockModelResolver blockModelResolver;
     private static net.minecraft.client.resources.model.ModelManager cachedModelManager;
@@ -154,8 +161,76 @@ public final class MissingBlockRenderer {
     }
 
     private static void render(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context) {
+        List<SchematicManager.PreviewBlock> schematicBlocks = preview;
+        if (!schematicBlocks.isEmpty()) {
+            // Outline every schematic block, including blocks that already match
+            // the world. This keeps the target cell visible while building.
+            java.util.ArrayList<BlockPos> outlinePositions = new java.util.ArrayList<>(schematicBlocks.size());
+            for (SchematicManager.PreviewBlock block : schematicBlocks) {
+                outlinePositions.add(block.position());
+            }
+            renderOutlines(context, outlinePositions, SCHEMATIC_OUTLINES, 0.38f, 0.88f, 1.0f, 0.95f);
+        }
+
         List<BlockPos> missingPositions = missing;
-        if (!missingPositions.isEmpty()) renderBoxes(context, missingPositions, THROUGH_WALLS, 1.0f, 0.12f, 0.08f, 0.30f);
+        if (!missingPositions.isEmpty()) {
+            renderBoxes(context, missingPositions, THROUGH_WALLS, 1.0f, 0.12f, 0.08f, 0.30f);
+        }
+    }
+
+    private static void renderOutlines(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context,
+                                       List<BlockPos> positions, RenderPipeline pipeline,
+                                       float red, float green, float blue, float alpha) {
+        VertexFormat format = pipeline.getVertexFormatBinding(0);
+        if (format == null || positions.isEmpty()) return;
+        PrimitiveTopology primitive = pipeline.getPrimitiveTopology();
+        StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, primitive, null);
+        PoseStack matrices = context.poseStack();
+        Vec3 camera = context.levelState().cameraRenderState.pos;
+        matrices.pushPose();
+        matrices.translate(-camera.x, -camera.y, -camera.z);
+        VertexConsumer builder = BUFFER.getVertexBuilder(draw);
+        Matrix4f pose = matrices.last().pose();
+        for (BlockPos pos : positions) {
+            // Slightly expand the wireframe so it stays visible over the
+            // translucent block model and does not z-fight with block faces.
+            addWireframeBox(pose, builder,
+                pos.getX() - 0.002f, pos.getY() - 0.002f, pos.getZ() - 0.002f,
+                pos.getX() + 1.002f, pos.getY() + 1.002f, pos.getZ() + 1.002f,
+                red, green, blue, alpha);
+        }
+        matrices.popPose();
+        BUFFER.upload();
+        StagedVertexBuffer.ExecuteInfo info = BUFFER.getExecuteInfo(draw);
+        if (info != null) draw(Minecraft.getInstance(), info, pipeline);
+        BUFFER.endFrame();
+    }
+
+    private static void addWireframeBox(Matrix4f m, VertexConsumer b,
+                                        float x1, float y1, float z1, float x2, float y2, float z2,
+                                        float r, float g, float blue, float a) {
+        // Bottom face
+        line(m, b, x1, y1, z1, x2, y1, z1, r, g, blue, a);
+        line(m, b, x2, y1, z1, x2, y1, z2, r, g, blue, a);
+        line(m, b, x2, y1, z2, x1, y1, z2, r, g, blue, a);
+        line(m, b, x1, y1, z2, x1, y1, z1, r, g, blue, a);
+        // Top face
+        line(m, b, x1, y2, z1, x2, y2, z1, r, g, blue, a);
+        line(m, b, x2, y2, z1, x2, y2, z2, r, g, blue, a);
+        line(m, b, x2, y2, z2, x1, y2, z2, r, g, blue, a);
+        line(m, b, x1, y2, z2, x1, y2, z1, r, g, blue, a);
+        // Four vertical edges
+        line(m, b, x1, y1, z1, x1, y2, z1, r, g, blue, a);
+        line(m, b, x2, y1, z1, x2, y2, z1, r, g, blue, a);
+        line(m, b, x2, y1, z2, x2, y2, z2, r, g, blue, a);
+        line(m, b, x1, y1, z2, x1, y2, z2, r, g, blue, a);
+    }
+
+    private static void line(Matrix4f m, VertexConsumer b,
+                             float x1, float y1, float z1, float x2, float y2, float z2,
+                             float r, float g, float blue, float a) {
+        b.addVertex(m, x1, y1, z1).setColor(r, g, blue, a);
+        b.addVertex(m, x2, y2, z2).setColor(r, g, blue, a);
     }
 
     private static void renderBoxes(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context,
