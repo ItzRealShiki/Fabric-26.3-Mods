@@ -130,7 +130,7 @@ public final class MissingBlockRenderer {
             collector.submitBlockStateModel(
                 matrices,
                 layer -> RenderTypes.translucentMovingBlock(),
-                client.getBlockRenderer().getBlockModel(block.state()),
+                client.getModelManager().getBlockStateModelSet().get(block.state()),
                 0.62f, 0.82f, 1.0f,
                 0xF000F0,
                 OverlayTexture.NO_OVERLAY,
