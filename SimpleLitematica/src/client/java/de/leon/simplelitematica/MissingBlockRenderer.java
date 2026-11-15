@@ -43,7 +43,7 @@ public final class MissingBlockRenderer {
             .build()
     );
     private static final RenderPipeline SCHEMATIC_OUTLINES = RenderPipelines.register(
-        RenderPipeline.builder(RenderPipelines.LINES)
+        RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath("simplelitematica", "pipeline/schematic_outlines"))
             .withDepthStencilState(Optional.empty())
             .build()
