@@ -56,7 +56,7 @@ public final class SchematicScreen extends Screen {
         }).bounds(left, top + 79, 145, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Verschieben +1 X"), button -> {
             SchematicManager.move(1,0,0);
-            Minecraft.getInstance().gui.getChat().addMessage(Component.literal("§aSchematic verschoben."));
+            Minecraft.getInstance().player.sendSystemMessage(Component.literal("§aSchematic verschoben."));
         }).bounds(left + 155, top + 79, 145, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Schließen"), button -> onClose())
             .bounds(left, top + 115, 300, 20).build());
