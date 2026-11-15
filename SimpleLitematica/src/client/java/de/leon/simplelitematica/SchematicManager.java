@@ -33,6 +33,7 @@ public final class SchematicManager {
     private static int rotation;
     private static int visibleLayer = -1;
     private static boolean missingBlocksEnabled = false;
+    private static BlockPos lockedOrigin;
 
     private SchematicManager() {}
 
@@ -85,6 +86,7 @@ public final class SchematicManager {
             rotation = 0;
             visibleLayer = -1;
             missingBlocksEnabled = false;
+            lockedOrigin = null;
             return true;
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -216,6 +218,24 @@ public final class SchematicManager {
         return current.equals(blockState(expected));
     }
 
+    public static boolean locked() { return lockedOrigin != null; }
+
+    /** Toggle a fixed world-space anchor for the active schematic. */
+    public static boolean toggleLock(BlockPos currentPlayerOrigin) {
+        if (active == null || currentPlayerOrigin == null) return false;
+        if (lockedOrigin == null) {
+            lockedOrigin = new BlockPos(currentPlayerOrigin.getX(), currentPlayerOrigin.getY(), currentPlayerOrigin.getZ());
+        } else {
+            lockedOrigin = null;
+        }
+        return true;
+    }
+
+    /** Resolve the placement anchor; locked schematics no longer follow the player. */
+    public static BlockPos resolveOrigin(BlockPos playerOrigin) {
+        return lockedOrigin != null ? lockedOrigin : playerOrigin;
+    }
+
     public static int blockEntryCount() { return active == null ? 0 : active.blocks.size(); }
     public static int totalVisibleBlocks() {
         if (active == null) return 0;
@@ -235,6 +255,7 @@ public final class SchematicManager {
         offsetX = offsetY = offsetZ = 0;
         rotation = 0;
         missingBlocksEnabled = false;
+        lockedOrigin = null;
         return hadSchematic;
     }
     public static void rotate() { rotation = (rotation + 1) & 3; }
@@ -302,7 +323,7 @@ public final class SchematicManager {
         if (server == null) return 0;
         var serverLevel = server.getLevel(mc.level.dimension());
         if (serverLevel == null) return 0;
-        BlockPos origin = mc.player.blockPosition();
+        BlockPos origin = resolveOrigin(mc.player.blockPosition());
         List<SchematicData.BlockEntry> blocks = new ArrayList<>(active.blocks);
         blocks.sort(Comparator.comparingInt((SchematicData.BlockEntry b) -> b.y)
             .thenComparingInt(b -> b.z).thenComparingInt(b -> b.x));
