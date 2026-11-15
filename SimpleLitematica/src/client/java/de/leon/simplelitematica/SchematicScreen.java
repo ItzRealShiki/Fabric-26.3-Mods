@@ -26,7 +26,7 @@ public final class SchematicScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("Laden"), button -> {
             if (!files.isEmpty() && selected >= 0 && selected < files.size()) {
                 if (SchematicManager.load(files.get(selected))) {
-                    Minecraft.getInstance().gui.getChat().addMessage(
+                    Minecraft.getInstance().player.sendSystemMessage(
                         Component.literal("§aGeladen: " + files.get(selected).getFileName()));
                     onClose();
                 }
@@ -52,7 +52,7 @@ public final class SchematicScreen extends Screen {
         }).bounds(left + 155, top + 52, 145, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Drehen 90°"), button -> {
             SchematicManager.rotate();
-            Minecraft.getInstance().gui.getChat().addMessage(Component.literal("§aSchematic gedreht."));
+            Minecraft.getInstance().player.sendSystemMessage(Component.literal("§aSchematic gedreht."));
         }).bounds(left, top + 79, 145, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Verschieben +1 X"), button -> {
             SchematicManager.move(1,0,0);
