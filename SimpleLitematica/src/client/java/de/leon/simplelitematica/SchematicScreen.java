@@ -11,7 +11,10 @@ import java.nio.file.Path;
 import java.util.List;
 
 public final class SchematicScreen extends Screen {
-    private int selected = 0;
+    private enum View { MAIN, LOAD, DELETE }
+    private View view = View.MAIN;
+    private int selected = -1;
+    private Path deleteCandidate;
     private List<Path> files = List.of();
 
     public SchematicScreen() {
@@ -22,26 +25,85 @@ public final class SchematicScreen extends Screen {
     protected void init() {
         refresh();
         int left = width / 2 - 150;
-        int top = height / 2 - 90;
-        addRenderableWidget(Button.builder(label("LOAD"), button -> {
-            if (selected >= 0 && selected < files.size()) {
-                Path chosen = files.get(selected);
-                if (SchematicManager.load(chosen)) {
-                    showMessage("Loaded: " + chosen.getFileName());
-                    onClose();
-                } else showMessage("Could not load selected schematic.");
+        int top = height / 2 - 105;
+
+        if (view == View.LOAD || view == View.DELETE) {
+            addRenderableWidget(Button.builder(label("BACK"), button -> {
+                view = View.MAIN;
+                selected = -1;
+                deleteCandidate = null;
+                rebuildWidgets();
+            }).bounds(left, top + 125, 300, 20).build());
+
+            int visible = Math.min(files.size(), 8);
+            for (int i = 0; i < visible; i++) {
+                final Path file = files.get(i);
+                final int index = i;
+                String prefix = (view == View.DELETE && file.equals(deleteCandidate)) ? "[X] " : "";
+                addRenderableWidget(Button.builder(label(prefix + file.getFileName().toString()), button -> {
+                    selected = index;
+                    if (view == View.LOAD) {
+                        if (SchematicManager.load(file)) {
+                            showMessage("Schematic loaded.");
+                            view = View.MAIN;
+                            selected = -1;
+                        } else showMessage("Could not load this schematic.");
+                    } else {
+                        deleteCandidate = file;
+                    }
+                    rebuildWidgets();
+                }).bounds(left, top + 20 + i * 22, 300, 20).build());
             }
-        }).bounds(left, top + 25, 145, 20).build());
+
+            if (view == View.DELETE) {
+                addRenderableWidget(Button.builder(label("CONFIRM DELETE"), button -> {
+                    if (deleteCandidate == null) {
+                        showMessage("Select a schematic first.");
+                        return;
+                    }
+                    boolean deleted = SchematicManager.delete(deleteCandidate);
+                    deleteCandidate = null;
+                    refresh();
+                    selected = -1;
+                    rebuildWidgets();
+                    showMessage(deleted ? "Schematic file deleted." : "Could not delete selected file.");
+                }).bounds(left, top + 95, 145, 20).build());
+            }
+            return;
+        }
+
+        addRenderableWidget(Button.builder(label("LOAD"), button -> {
+            view = View.LOAD;
+            selected = -1;
+            refresh();
+            rebuildWidgets();
+        }).bounds(left, top + 18, 145, 20).build());
 
         addRenderableWidget(Button.builder(label("DELETE"), button -> {
-            if (selected >= 0 && selected < files.size()) {
-                boolean deleted = SchematicManager.delete(files.get(selected));
-                refresh();
-                selected = Math.max(0, Math.min(selected, files.size() - 1));
-                rebuildWidgets();
-                if (!deleted) showMessage("Could not delete selected file.");
-            }
-        }).bounds(left + 155, top + 25, 145, 20).build());
+            view = View.DELETE;
+            selected = -1;
+            deleteCandidate = null;
+            refresh();
+            rebuildWidgets();
+        }).bounds(left + 155, top + 18, 145, 20).build());
+
+        addRenderableWidget(Button.builder(label("UNLOAD"), button -> {
+            boolean unloaded = SchematicManager.unload();
+            showMessage(unloaded ? "Schematic unloaded. File kept." : "No schematic is currently loaded.");
+        }).bounds(left, top + 45, 145, 20).build());
+
+        addRenderableWidget(Button.builder(label("PASTE"), button -> SchematicManager.print(false))
+            .bounds(left + 155, top + 45, 145, 20).build());
+
+        addRenderableWidget(Button.builder(layerModeLabel(), button -> {
+            SchematicManager.toggleLayerMode();
+            button.setMessage(layerModeLabel());
+        }).bounds(left, top + 72, 145, 20).build());
+
+        addRenderableWidget(Button.builder(label("NEXT LAYER"), button -> {
+            SchematicManager.cycleLayer();
+            button.setMessage(layerLabel());
+        }).bounds(left + 155, top + 72, 145, 20).build());
 
         addRenderableWidget(Button.builder(label("OPEN FOLDER"), button -> {
             try {
@@ -50,29 +112,28 @@ public final class SchematicScreen extends Screen {
                 exception.printStackTrace();
                 showMessage("Could not open schematic folder. Check the game log.");
             }
-        }).bounds(left, top + 52, 145, 20).build());
-
-        addRenderableWidget(Button.builder(layerLabel(), button -> {
-            SchematicManager.cycleLayer();
-            button.setMessage(layerLabel());
-        }).bounds(left + 155, top + 52, 145, 20).build());
+        }).bounds(left, top + 99, 145, 20).build());
 
         addRenderableWidget(Button.builder(label("ROTATE 90"), button -> {
             SchematicManager.rotate();
             showMessage("Schematic rotated.");
-        }).bounds(left, top + 79, 145, 20).build());
+        }).bounds(left + 155, top + 99, 145, 20).build());
 
         addRenderableWidget(Button.builder(label("MOVE +1 X"), button -> {
             SchematicManager.move(1, 0, 0);
             showMessage("Schematic moved.");
-        }).bounds(left + 155, top + 79, 145, 20).build());
+        }).bounds(left, top + 126, 145, 20).build());
 
         addRenderableWidget(Button.builder(label("CLOSE"), button -> onClose())
-            .bounds(left, top + 115, 300, 20).build());
+            .bounds(left + 155, top + 126, 145, 20).build());
     }
 
     private static Component label(String value) {
         return Component.literal(SchematicManager.smallCaps(value));
+    }
+
+    private Component layerModeLabel() {
+        return label(SchematicManager.layerMode() ? "MODE: LAYER" : "MODE: ALL");
     }
 
     private Component layerLabel() {
@@ -92,30 +153,28 @@ public final class SchematicScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
-        graphics.centeredText(font, title, width / 2, height / 2 - 105, 0xFFFFFFFF);
-        if (files.isEmpty()) {
-            graphics.centeredText(font, label("NO .SLITE FILES FOUND"), width / 2, height / 2 - 55, 0xFFAAAAAA);
-        } else {
-            for (int i = 0; i < files.size() && i < 5; i++) {
-                int color = i == selected ? 0xFFFFFF55 : 0xFFFFFFFF;
-                String prefix = i == selected ? "> " : "";
-                graphics.centeredText(font, Component.literal(prefix +
-                    SchematicManager.smallCaps(files.get(i).getFileName().toString())),
-                    width / 2, height / 2 - 55 + i * 12, color);
+        graphics.centeredText(font, title, width / 2, height / 2 - 120, 0xFFFFFFFF);
+        if (view == View.LOAD || view == View.DELETE) {
+            graphics.centeredText(font, label(view == View.LOAD ? "SELECT SCHEMATIC TO LOAD" : "SELECT FILE TO DELETE"),
+                width / 2, height / 2 - 100, 0xFFAAAAAA);
+            if (files.isEmpty()) {
+                graphics.centeredText(font, label("NO .SLITE FILES FOUND"), width / 2, height / 2 - 45, 0xFFAAAAAA);
             }
-            graphics.centeredText(font, label("RIGHT CLICK A FILE TO SELECT"),
-                width / 2, height / 2 + 16, 0xFFAAAAAA);
+            if (view == View.DELETE && deleteCandidate != null) {
+                graphics.centeredText(font, label("CONFIRM TO PERMANENTLY DELETE"),
+                    width / 2, height / 2 + 78, 0xFFFF7777);
+            }
+        } else {
+            SchematicData active = SchematicManager.active();
+            String activeName = active == null ? "NO SCHEMATIC LOADED" : "LOADED: " + active.name;
+            graphics.centeredText(font, label(activeName), width / 2, height / 2 - 82, 0xFFFFFFFF);
+            graphics.centeredText(font, label("SHIFT + M: MENU | UP/DOWN: MOVE"),
+                width / 2, height / 2 + 88, 0xFFAAAAAA);
         }
-        graphics.centeredText(font, label("SHIFT + M: MENU | UP/DOWN: MOVE"),
-            width / 2, height / 2 + 30, 0xFFAAAAAA);
     }
 
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
-        if (event.button() == 1 && !files.isEmpty()) {
-            int row = ((int) event.y() - (height / 2 - 55)) / 12;
-            if (row >= 0 && row < Math.min(files.size(), 5)) selected = row;
-        }
         return super.mouseClicked(event, doubleClick);
     }
 }
