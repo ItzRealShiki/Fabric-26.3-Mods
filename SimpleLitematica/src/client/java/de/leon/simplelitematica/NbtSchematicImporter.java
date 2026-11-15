@@ -73,11 +73,15 @@ final class NbtSchematicImporter {
             int rx=0,ry=0,rz=0;
             int[] pos=coordinates(get(region,"Position"));
             if(pos.length>=3){rx=pos[0];ry=pos[1];rz=pos[2];}
-            int endX=rx+(size[0]<0 ? -(sx-1) : sx-1);
-            int endY=ry+(size[1]<0 ? -(sy-1) : sy-1);
-            int endZ=rz+(size[2]<0 ? -(sz-1) : sz-1);
-            minX=Math.min(minX,Math.min(rx,endX)); minY=Math.min(minY,Math.min(ry,endY)); minZ=Math.min(minZ,Math.min(rz,endZ));
-            maxX=Math.max(maxX,Math.max(rx,endX)+1); maxY=Math.max(maxY,Math.max(ry,endY)+1); maxZ=Math.max(maxZ,Math.max(rz,endZ)+1);
+            // Position is the signed region anchor. BlockStates are always stored
+            // from the effective minimum corner in positive local x/y/z order.
+            // For a negative axis, shift the origin by Size + 1; do NOT reverse
+            // the packed local coordinate a second time.
+            int regionMinX = rx + (size[0] < 0 ? size[0] + 1 : 0);
+            int regionMinY = ry + (size[1] < 0 ? size[1] + 1 : 0);
+            int regionMinZ = rz + (size[2] < 0 ? size[2] + 1 : 0);
+            minX=Math.min(minX,regionMinX); minY=Math.min(minY,regionMinY); minZ=Math.min(minZ,regionMinZ);
+            maxX=Math.max(maxX,regionMinX+sx); maxY=Math.max(maxY,regionMinY+sy); maxZ=Math.max(maxZ,regionMinZ+sz);
             long volume=(long)sx*sy*sz;
             if(volume>2_000_000L || absolute.size()+volume>2_000_000L) throw new IOException("Schematic is too large");
             for(int index=0;index<volume;index++){
@@ -88,16 +92,11 @@ final class NbtSchematicImporter {
                 if(isAir(block)) continue;
                 int x=index%sx, z=(index/sx)%sz, y=index/(sx*sz);
 
-                // Litematica's signed Size points from the region anchor in the
-                // declared direction. Packed indices still use folded dimensions
-                // (x fastest, then z, then y), so a negative axis reverses its
-                // coordinate relative to Position. Normalize to the global minimum
-                // only after applying that signed direction.
-                int localX = size[0] < 0 ? -x : x;
-                int localY = size[1] < 0 ? -y : y;
-                int localZ = size[2] < 0 ? -z : z;
-                absolute.add(new AbsoluteBlock(rx + localX, ry + localY,
-                    rz + localZ, block, blockState));
+                // Packed entries are ordered x-fastest, then z, then y.
+                // Their local coordinates always advance from the effective
+                // minimum corner, independent of the sign stored in Size.
+                absolute.add(new AbsoluteBlock(regionMinX + x, regionMinY + y,
+                    regionMinZ + z, block, blockState));
             }
         }
         if(absolute.isEmpty()) return;
