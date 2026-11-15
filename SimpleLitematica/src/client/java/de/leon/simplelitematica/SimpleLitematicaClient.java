@@ -23,6 +23,7 @@ public final class SimpleLitematicaClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         SchematicManager.ensureDirectory();
+        MissingBlockRenderer.register();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.simplelitematica.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_M, CATEGORY));
         moveUpKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
