@@ -93,7 +93,7 @@ public final class SchematicManager {
 
     public static boolean delete(Path path) {
         try {
-            if (active != null && path.getFileName().toString().equalsIgnoreCase(active.name + ".slite")) unload();
+            if (active != null && path.getFileName().toString().replaceFirst("\\.[^.]+$", "").equalsIgnoreCase(active.name)) unload();
             return Files.deleteIfExists(path);
         } catch (IOException exception) {
             return false;
@@ -127,6 +127,19 @@ public final class SchematicManager {
             if (!current.equals(entry.block)) missing++;
         }
         return missing;
+    }
+    public static List<BlockPos> missingPositions(Level level, BlockPos origin, int limit) {
+        if (active == null || level == null || limit <= 0) return List.of();
+        List<BlockPos> result = new ArrayList<>(Math.min(limit, 512));
+        for (SchematicData.BlockEntry entry : active.blocks) {
+            if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
+            BlockPos target = worldPosition(entry, origin);
+            if (!BuiltInRegistries.BLOCK.getKey(level.getBlockState(target).getBlock()).toString().equals(entry.block)) {
+                result.add(target);
+                if (result.size() >= limit) break;
+            }
+        }
+        return result;
     }
     public static int totalVisibleBlocks() {
         if (active == null) return 0;
