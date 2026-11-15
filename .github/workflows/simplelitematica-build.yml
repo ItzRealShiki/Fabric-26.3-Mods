@@ -1,0 +1,50 @@
+name: SimpleLitematica Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "SimpleLitematica/**"
+      - ".github/workflows/simplelitematica-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.2.1"
+
+      - name: Build SimpleLitematica
+        working-directory: SimpleLitematica
+        run: gradle --no-daemon clean build
+
+      - name: Verify JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f SimpleLitematica/build/libs/simplelitematica-0.1.12.jar
+          jar tf SimpleLitematica/build/libs/simplelitematica-0.1.12.jar >/dev/null
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: SimpleLitematica-0.1.12
+          path: SimpleLitematica/build/libs/simplelitematica-0.1.12.jar
+          if-no-files-found: error
+          retention-days: 14
