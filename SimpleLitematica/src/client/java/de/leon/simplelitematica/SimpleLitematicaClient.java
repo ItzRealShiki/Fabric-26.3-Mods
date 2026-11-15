@@ -12,7 +12,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.client.gui.screens.Screen;
 
 public final class SimpleLitematicaClient implements ClientModInitializer {
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
@@ -33,11 +32,11 @@ public final class SimpleLitematicaClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenuKey.consumeClick()) {
-                if (!Screen.hasShiftDown()) continue;
-                if (client.screen instanceof SchematicScreen) client.setScreen(null);
-                else client.setScreen(new SchematicScreen());
+                if (!client.hasShiftDown()) continue;
+                if (client.gui.screen() instanceof SchematicScreen) client.gui.setScreen(null);
+                else client.gui.setScreen(new SchematicScreen());
             }
-            if (client.screen == null && client.player != null && SchematicManager.active() != null) {
+            if (client.gui.screen() == null && client.player != null && SchematicManager.active() != null) {
                 while (moveUpKey.consumeClick()) SchematicManager.move(0, 1, 0);
                 while (moveDownKey.consumeClick()) SchematicManager.move(0, -1, 0);
             } else {
@@ -49,7 +48,7 @@ public final class SimpleLitematicaClient implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommands.literal("slitematica").executes(context -> {
                 Minecraft.getInstance().execute(() ->
-                    Minecraft.getInstance().setScreen(new SchematicScreen()));
+                    Minecraft.getInstance().gui.setScreen(new SchematicScreen()));
                 return 1;
             }));
             dispatcher.register(ClientCommands.literal("litesave")
