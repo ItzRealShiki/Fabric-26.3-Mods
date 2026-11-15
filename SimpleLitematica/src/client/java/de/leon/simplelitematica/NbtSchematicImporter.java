@@ -61,7 +61,7 @@ final class NbtSchematicImporter {
         int maxX=Integer.MIN_VALUE, maxY=Integer.MIN_VALUE, maxZ=Integer.MIN_VALUE;
         for (Object regionValue : regions.values()) {
             Map<String, Object> region = map(regionValue);
-            int[] size = ints(get(region, "Size"));
+            int[] size = coordinates(get(region, "Size"));
             if (size.length < 3) continue;
             int sx=Math.abs(size[0]), sy=Math.abs(size[1]), sz=Math.abs(size[2]);
             if (sx==0 || sy==0 || sz==0) continue;
@@ -71,7 +71,7 @@ final class NbtSchematicImporter {
             int bits=Math.max(2,32-Integer.numberOfLeadingZeros(palette.size()-1));
             long mask=(1L<<bits)-1L;
             int rx=0,ry=0,rz=0;
-            int[] pos=ints(get(region,"Position"));
+            int[] pos=coordinates(get(region,"Position"));
             if(pos.length>=3){rx=pos[0];ry=pos[1];rz=pos[2];}
             int endX=rx+(size[0]<0 ? -(sx-1) : sx-1);
             int endY=ry+(size[1]<0 ? -(sy-1) : sy-1);
@@ -119,11 +119,11 @@ final class NbtSchematicImporter {
         List<?> paletteTags = list(get(root, "palette"));
         List<String> palette = new ArrayList<>();
         for (Object item : paletteTags) palette.add(blockName(map(item)));
-        int[] size = ints(get(root, "size"));
+        int[] size = coordinates(get(root, "size"));
         if (size.length >= 3) { out.sizeX=size[0]; out.sizeY=size[1]; out.sizeZ=size[2]; }
         for (Object item : list(get(root, "blocks"))) {
             Map<String, Object> blockTag = map(item);
-            int[] pos = ints(get(blockTag, "pos"));
+            int[] pos = coordinates(get(blockTag, "pos"));
             int state = number(get(blockTag, "state"));
             if (pos.length < 3 || state < 0 || state >= palette.size()) continue;
             String block = palette.get(state);
@@ -212,6 +212,16 @@ final class NbtSchematicImporter {
     private static String readUtf(DataInputStream in) throws IOException { return in.readUTF(); }
     @SuppressWarnings("unchecked") private static Map<String,Object> map(Object o) { return o instanceof Map<?,?> m ? (Map<String,Object>)m : Map.of(); }
     private static List<?> list(Object o) { return o instanceof List<?> l ? l : List.of(); }
+    private static int[] coordinates(Object value) {
+        if (value instanceof int[] array) return array;
+        if (value instanceof Map<?, ?> map) {
+            Object x = map.get("x"), y = map.get("y"), z = map.get("z");
+            if (x instanceof Number nx && y instanceof Number ny && z instanceof Number nz) {
+                return new int[]{nx.intValue(), ny.intValue(), nz.intValue()};
+            }
+        }
+        return new int[0];
+    }
     private static int[] ints(Object o) { return o instanceof int[] a ? a : new int[0]; }
     private static long[] longs(Object o) { return o instanceof long[] a ? a : new long[0]; }
     private static byte[] bytes(Object o) { return o instanceof byte[] a ? a : new byte[0]; }
