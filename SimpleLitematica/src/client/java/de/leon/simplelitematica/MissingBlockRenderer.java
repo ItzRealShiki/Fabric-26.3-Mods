@@ -19,7 +19,6 @@ import org.joml.Vector4f;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
-import net.fabricmc.fabric.api.client.renderer.v1.render.FabricOrderedSubmitNodeCollector;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -117,8 +116,8 @@ public final class MissingBlockRenderer {
         Minecraft client = Minecraft.getInstance();
         if (blocks.isEmpty() || client.level == null) return;
 
-        FabricOrderedSubmitNodeCollector collector =
-            (FabricOrderedSubmitNodeCollector) context.submitNodeCollector();
+        net.minecraft.client.renderer.OrderedSubmitNodeCollector collector =
+            (net.minecraft.client.renderer.OrderedSubmitNodeCollector) context.submitNodeCollector();
         PoseStack matrices = context.poseStack();
         Vec3 camera = context.levelState().cameraRenderState.pos;
 
@@ -131,9 +130,7 @@ public final class MissingBlockRenderer {
                 block.state(),
                 0xF000F0,
                 OverlayTexture.NO_OVERLAY,
-                0xFF62B8FF,
-                client.level,
-                pos
+                0xFF62B8FF
             );
             matrices.popPose();
         }
