@@ -52,42 +52,48 @@ final class NbtSchematicImporter {
         return data;
     }
 
+    private record AbsoluteBlock(int x, int y, int z, String block) {}
+
     private static void readLitematic(Map<String, Object> root, SchematicData out) throws IOException {
         Map<String, Object> regions = map(get(root, "Regions"));
-        int minX = 0, minY = 0, minZ = 0;
-        int maxX = 0, maxY = 0, maxZ = 0;
-        boolean first = true;
+        List<AbsoluteBlock> absolute = new ArrayList<>();
+        int minX=Integer.MAX_VALUE, minY=Integer.MAX_VALUE, minZ=Integer.MAX_VALUE;
+        int maxX=Integer.MIN_VALUE, maxY=Integer.MIN_VALUE, maxZ=Integer.MIN_VALUE;
         for (Object regionValue : regions.values()) {
             Map<String, Object> region = map(regionValue);
             int[] size = ints(get(region, "Size"));
             if (size.length < 3) continue;
-            int sx = Math.abs(size[0]), sy = Math.abs(size[1]), sz = Math.abs(size[2]);
-            if (sx == 0 || sy == 0 || sz == 0) continue;
-            List<?> palette = list(get(region, "BlockStatePalette"));
-            long[] states = longs(get(region, "BlockStates"));
-            if (palette.isEmpty() || states.length == 0) continue;
-            int bits = Math.max(2, 32 - Integer.numberOfLeadingZeros(palette.size() - 1));
-            long mask = (1L << bits) - 1L;
-            int rx = 0, ry = 0, rz = 0;
-            int[] pos = ints(get(region, "Position"));
-            if (pos.length >= 3) { rx = pos[0]; ry = pos[1]; rz = pos[2]; }
-            if (first) { minX=rx; minY=ry; minZ=rz; maxX=rx+sx; maxY=ry+sy; maxZ=rz+sz; first=false; }
-            else { minX=Math.min(minX,rx); minY=Math.min(minY,ry); minZ=Math.min(minZ,rz);
-                maxX=Math.max(maxX,rx+sx); maxY=Math.max(maxY,ry+sy); maxZ=Math.max(maxZ,rz+sz); }
-            long volume = (long)sx * sy * sz;
-            if (volume > 2_000_000L) throw new IOException("Schematic region is too large");
-            for (int index=0; index<volume; index++) {
-                int paletteIndex = packed(states, index, bits, mask);
-                if (paletteIndex < 0 || paletteIndex >= palette.size()) continue;
-                String block = blockName(map(palette.get(paletteIndex)));
-                if (block.equals("minecraft:air") || block.equals("minecraft:cave_air") || block.equals("minecraft:void_air")) continue;
-                int x = index % sx;
-                int z = (index / sx) % sz;
-                int y = index / (sx * sz);
-                out.blocks.add(new SchematicData.BlockEntry(rx-minX+x, ry-minY+y, rz-minZ+z, block));
+            int sx=Math.abs(size[0]), sy=Math.abs(size[1]), sz=Math.abs(size[2]);
+            if (sx==0 || sy==0 || sz==0) continue;
+            List<?> palette=list(get(region,"BlockStatePalette"));
+            long[] states=longs(get(region,"BlockStates"));
+            if(palette.isEmpty() || states.length==0) continue;
+            int bits=Math.max(2,32-Integer.numberOfLeadingZeros(palette.size()-1));
+            long mask=(1L<<bits)-1L;
+            int rx=0,ry=0,rz=0;
+            int[] pos=ints(get(region,"Position"));
+            if(pos.length>=3){rx=pos[0];ry=pos[1];rz=pos[2];}
+            int endX=rx+(size[0]<0 ? -(sx-1) : sx-1);
+            int endY=ry+(size[1]<0 ? -(sy-1) : sy-1);
+            int endZ=rz+(size[2]<0 ? -(sz-1) : sz-1);
+            minX=Math.min(minX,Math.min(rx,endX)); minY=Math.min(minY,Math.min(ry,endY)); minZ=Math.min(minZ,Math.min(rz,endZ));
+            maxX=Math.max(maxX,Math.max(rx,endX)+1); maxY=Math.max(maxY,Math.max(ry,endY)+1); maxZ=Math.max(maxZ,Math.max(rz,endZ)+1);
+            long volume=(long)sx*sy*sz;
+            if(volume>2_000_000L || absolute.size()+volume>2_000_000L) throw new IOException("Schematic is too large");
+            for(int index=0;index<volume;index++){
+                int paletteIndex=packed(states,index,bits,mask);
+                if(paletteIndex<0 || paletteIndex>=palette.size()) continue;
+                String block=blockName(map(palette.get(paletteIndex)));
+                if(isAir(block)) continue;
+                int x=index%sx, z=(index/sx)%sz, y=index/(sx*sz);
+                absolute.add(new AbsoluteBlock(rx+(size[0]<0?-x:x), ry+(size[1]<0?-y:y),
+                    rz+(size[2]<0?-z:z), block));
             }
         }
-        if (!first) { out.sizeX=maxX-minX; out.sizeY=maxY-minY; out.sizeZ=maxZ-minZ; }
+        if(absolute.isEmpty()) return;
+        out.sizeX=maxX-minX; out.sizeY=maxY-minY; out.sizeZ=maxZ-minZ;
+        for(AbsoluteBlock block:absolute) out.blocks.add(new SchematicData.BlockEntry(
+            block.x-minX,block.y-minY,block.z-minZ,block.block));
     }
 
     private static void readSponge(Map<String, Object> root, SchematicData out) throws IOException {
@@ -195,7 +201,7 @@ final class NbtSchematicImporter {
     private static byte[] bytes(Object o) { return o instanceof byte[] a ? a : new byte[0]; }
     private static int number(Object o) { return o instanceof Number n ? n.intValue() : 0; }
     private static String blockName(Map<String,Object> state) { return normalize(String.valueOf(state.getOrDefault("Name","minecraft:air"))); }
-    private static String normalize(String id) { return id.contains(":") ? id : "minecraft:"+id; }
+    private static String normalize(String id) { int properties=id.indexOf("["); if(properties>=0) id=id.substring(0,properties); return id.contains(":") ? id : "minecraft:"+id; }
     private static boolean isAir(String id) { return id.equals("minecraft:air") || id.equals("minecraft:cave_air") || id.equals("minecraft:void_air"); }
     private static String stripExtension(String name) { int i=name.lastIndexOf('.'); return i>0 ? name.substring(0,i) : name; }
 }
