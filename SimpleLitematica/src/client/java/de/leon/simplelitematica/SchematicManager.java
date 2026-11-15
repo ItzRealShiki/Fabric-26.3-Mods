@@ -158,6 +158,23 @@ public final class SchematicManager {
         return result;
     }
 
+    public record PreviewBlock(BlockPos position, BlockState state) {}
+
+    public static List<PreviewBlock> previewBlocks(BlockPos origin, int resultLimit, double radius) {
+        if (active == null || origin == null || resultLimit <= 0) return List.of();
+        List<PreviewBlock> result = new ArrayList<>(Math.min(resultLimit, 1024));
+        double radiusSquared = radius * radius;
+        for (SchematicData.BlockEntry entry : active.blocks) {
+            if (visibleLayer >= 0 && entry.y != visibleLayer) continue;
+            BlockPos target = worldPosition(entry, origin);
+            if (target.distSqr(origin) > radiusSquared) continue;
+            BlockState state = blockState(entry);
+            if (!state.isAir()) result.add(new PreviewBlock(target, state));
+            if (result.size() >= resultLimit) break;
+        }
+        return result;
+    }
+
     public static BlockState blockState(SchematicData.BlockEntry entry) {
         if (entry == null || entry.block == null) return Blocks.AIR.defaultBlockState();
         Block block = BuiltInRegistries.BLOCK.get(Identifier.parse(entry.block))
