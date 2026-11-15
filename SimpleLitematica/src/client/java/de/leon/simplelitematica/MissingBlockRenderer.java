@@ -19,8 +19,11 @@ import org.joml.Vector4f;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.fabricmc.fabric.api.client.renderer.v1.render.FabricOrderedSubmitNodeCollector;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
@@ -35,18 +38,13 @@ public final class MissingBlockRenderer {
             .withDepthStencilState(Optional.empty())
             .build()
     );
-    private static final RenderPipeline HOLOGRAM = RenderPipelines.register(
-        RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
-            .withLocation(Identifier.fromNamespaceAndPath("simplelitematica", "pipeline/schematic_hologram"))
-            .build()
-    );
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1f, 1f, 1f, 1f);
     private static final Vector3f MODEL_OFFSET = new Vector3f();
     private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
     private static final StagedVertexBuffer BUFFER =
         new StagedVertexBuffer(() -> "SimpleLitematica overlays", RenderType.SMALL_BUFFER_SIZE);
     private static volatile List<BlockPos> missing = List.of();
-    private static volatile List<BlockPos> preview = List.of();
+    private static volatile List<SchematicManager.PreviewBlock> preview = List.of();
     private static int ticks;
     private static int scanCursor;
     private static SchematicData scannedSchematic;
@@ -72,7 +70,7 @@ public final class MissingBlockRenderer {
                 scannedSchematic = active;
                 return;
             }
-            preview = SchematicManager.previewPositions(client.player.blockPosition(), 4096, 128.0);
+            preview = SchematicManager.previewBlocks(client.player.blockPosition(), 4096, 128.0);
             if (!SchematicManager.missingBlocksEnabled()) {
                 missing = List.of();
                 scanCursor = 0;
@@ -111,12 +109,41 @@ public final class MissingBlockRenderer {
                 scanResults.clear();
             }
         });
+        LevelRenderEvents.COLLECT_SUBMITS.register(MissingBlockRenderer::submitPreview);
         LevelRenderEvents.END_MAIN.register(MissingBlockRenderer::render);
     }
 
+    private static void submitPreview(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context) {
+        List<SchematicManager.PreviewBlock> blocks = preview;
+        Minecraft client = Minecraft.getInstance();
+        if (blocks.isEmpty() || client.level == null) return;
+
+        FabricOrderedSubmitNodeCollector collector =
+            (FabricOrderedSubmitNodeCollector) context.submitNodeCollector();
+        PoseStack matrices = context.poseStack();
+        Vec3 camera = context.levelState().cameraRenderState.pos;
+
+        for (SchematicManager.PreviewBlock block : blocks) {
+            BlockPos pos = block.position();
+            matrices.pushPose();
+            matrices.translate(pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z);
+            collector.submitBlockStateModel(
+                matrices,
+                layer -> RenderTypes.translucentMovingBlock(),
+                client.getBlockRenderer().getBlockModel(block.state()),
+                0.62f, 0.82f, 1.0f,
+                0xF000F0,
+                OverlayTexture.NO_OVERLAY,
+                0xFF62B8FF,
+                client.level,
+                pos,
+                block.state()
+            );
+            matrices.popPose();
+        }
+    }
+
     private static void render(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context) {
-        List<BlockPos> previewPositions = preview;
-        if (!previewPositions.isEmpty()) renderBoxes(context, previewPositions, HOLOGRAM, 0.20f, 0.62f, 1.0f, 0.22f);
         List<BlockPos> missingPositions = missing;
         if (!missingPositions.isEmpty()) renderBoxes(context, missingPositions, THROUGH_WALLS, 1.0f, 0.12f, 0.08f, 0.30f);
     }
