@@ -88,12 +88,14 @@ final class NbtSchematicImporter {
                 if(isAir(block)) continue;
                 int x=index%sx, z=(index/sx)%sz, y=index/(sx*sz);
 
-                // Litematica stores the packed array in folded local coordinates:
-                // index 0 is always the minimum corner of the region. A negative
-                // Size component changes the region anchor, not the packed index order.
-                int localX = size[0] < 0 ? x - (sx - 1) : x;
-                int localY = size[1] < 0 ? y - (sy - 1) : y;
-                int localZ = size[2] < 0 ? z - (sz - 1) : z;
+                // Litematica's signed Size points from the region anchor in the
+                // declared direction. Packed indices still use folded dimensions
+                // (x fastest, then z, then y), so a negative axis reverses its
+                // coordinate relative to Position. Normalize to the global minimum
+                // only after applying that signed direction.
+                int localX = size[0] < 0 ? -x : x;
+                int localY = size[1] < 0 ? -y : y;
+                int localZ = size[2] < 0 ? -z : z;
                 absolute.add(new AbsoluteBlock(rx + localX, ry + localY,
                     rz + localZ, block, blockState));
             }
