@@ -7,7 +7,7 @@ public final class CoreModHud {
  public static void register(){
   HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("coremod","custom_scoreboard"),(g,delta)->{
    if(!CoreModConfig.customScoreboardEnabled)return;
-   var mc=net.minecraft.client.Minecraft.getInstance();if(mc.player==null||mc.options.hideGui)return;
+   var mc=net.minecraft.client.Minecraft.getInstance();if(mc.player==null||mc.gui.hud.isHidden())return;
    int x=g.guiWidth()-160,y=12,h=22+CoreModConfig.scoreboardLines.length*11;
    g.fill(x-7,y-5,g.guiWidth()-7,y+h,0x990D0B18);
    g.centeredText(mc.font,Component.literal(CoreModText.smallCaps(CoreModConfig.scoreboardTitle)),x+73,y,0xFFBDA0FF);
