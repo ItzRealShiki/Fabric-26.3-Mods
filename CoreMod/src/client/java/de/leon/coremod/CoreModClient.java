@@ -22,8 +22,9 @@ public final class CoreModClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         CoreModConfig.load();
+        CoreModConfig.fullbrightEnabled = true;
+        CoreModConfig.save();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.coremod.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_M, CATEGORY));
-        CoreModHud.register();
 
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (!(screen instanceof InventoryScreen)) return;
