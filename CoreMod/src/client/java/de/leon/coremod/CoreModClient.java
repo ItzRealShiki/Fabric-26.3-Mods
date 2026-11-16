@@ -16,17 +16,19 @@ import net.minecraft.resources.Identifier;
 public final class CoreModClient implements ClientModInitializer {
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("coremod", "main"));
     private static KeyMapping openMenuKey;
+    private static double previousGamma = 1.0;
+    private static boolean gammaCaptured = false;
     @Override public void onInitializeClient() {
         CoreModConfig.load();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.coremod.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_M, CATEGORY));
         CoreModHud.register();
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             if (!(screen instanceof InventoryScreen)) return;
-            int center = scaledWidth / 2, y = scaledHeight / 2 + 78, start = center - 82;
+            int center = scaledWidth / 2, y = scaledHeight / 2 - 103, start = center - 82;
             for (int i = 0; i < 4; i++) {
                 final int slot = i;
                 String label = CoreModText.smallCaps(CoreModConfig.quickCommands[i].replace("/", ""));
-                Screens.getWidgets(screen).add(Button.builder(Component.literal(label), b -> runQuickCommand(slot)).bounds(start + i * 41, y, 39, 18).build());
+                Screens.getWidgets(screen).add(Button.builder(Component.literal(label), b -> runQuickCommand(slot)).bounds(start + i * 41, y, 40, 20).build());
             }
             int bx = CoreModConfig.quickButtonSide.equalsIgnoreCase("LEFT") ? center - 112 : center + 88;
             Screens.getWidgets(screen).add(Button.builder(Component.literal("CORE"), b -> client.gui.setScreen(new CoreModScreen())).bounds(bx, scaledHeight / 2 + 55, 32, 18).build());
