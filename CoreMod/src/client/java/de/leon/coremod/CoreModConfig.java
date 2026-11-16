@@ -10,7 +10,7 @@ import java.nio.file.Path;
 public final class CoreModConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("coremod.json");
-    public static String[] quickCommands = {"/home", "/sell", "/ah", "/shop"};
+    public static String[] quickCommands = {"/home", "/sell", "/shop", "/ah"};
     public static String quickButtonSide = "RIGHT";
     public static boolean fullbrightEnabled = false;
     public static String apiKey = "";
@@ -31,7 +31,11 @@ public final class CoreModConfig {
         try {
             Data d = GSON.fromJson(Files.readString(FILE), Data.class);
             if (d == null) return;
-            if (d.quickCommands != null && d.quickCommands.length == 4) quickCommands = d.quickCommands;
+            if (d.quickCommands != null && d.quickCommands.length == 4) {
+                quickCommands = d.quickCommands;
+                if ("/spawn".equalsIgnoreCase(quickCommands[2])) quickCommands[2] = "/shop";
+                if ("/ec".equalsIgnoreCase(quickCommands[3])) quickCommands[3] = "/ah";
+            }
             if (d.quickButtonSide != null) quickButtonSide = d.quickButtonSide;
             fullbrightEnabled = d.fullbrightEnabled;
             if (d.apiKey != null) apiKey = d.apiKey;
