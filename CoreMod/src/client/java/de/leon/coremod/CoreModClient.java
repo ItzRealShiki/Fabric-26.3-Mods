@@ -18,7 +18,7 @@ public final class CoreModClient implements ClientModInitializer {
     public void onInitializeClient() {
         CoreModConfig.load();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.coremod.open_menu", InputConstants.Type.KEYSYM, InputConstants.KEY_RIGHT_SHIFT, CATEGORY));
+            "key.coremod.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_M, CATEGORY));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenuKey.consumeClick()) {
