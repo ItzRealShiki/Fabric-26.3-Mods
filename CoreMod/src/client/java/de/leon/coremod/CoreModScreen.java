@@ -17,11 +17,11 @@ public final class CoreModScreen extends Screen {
 
     @Override protected void init() {
         clearWidgets(); fields.clear();
-        int x = width / 2 - 150, y = height / 2 - 92;
+        int x = width / 2 - 150, y = height / 2 - 112;
         if (page == Page.HOME) {
             add("DONUT SMP META",x,y,()->open(Page.META)); add("FARM FINDER",x,y+25,()->open(Page.FARM));
             add("SCHEMATIC CATALOG",x,y+50,()->open(Page.SCHEMATICS)); add("CUSTOM SCOREBOARD",x,y+75,()->open(Page.SCOREBOARD));
-            add("SETTINGS",x,y+100,()->open(Page.SETTINGS)); add("CLOSE",x,y+125,this::onClose);
+            add("SETTINGS",x,y+100,()->open(Page.SETTINGS)); add("FULLBRIGHT: "+(CoreModConfig.fullbrightEnabled?"ON":"OFF"),x,y+125,()->{CoreModConfig.fullbrightEnabled=!CoreModConfig.fullbrightEnabled;CoreModConfig.save();rebuildWidgets();}); add("CLOSE",x,y+150,this::onClose);
         } else if (page == Page.SETTINGS) {
             for(int i=0;i<4;i++){ final int slot=i; EditBox f=field(x,y+i*27,300,CoreModConfig.quickCommands[i],"COMMAND");
                 add("SAVE SLOT "+(i+1),x+306,y+i*27,()->{CoreModConfig.quickCommands[slot]=f.getValue().trim();CoreModConfig.save();status="COMMAND SAVED";});}
@@ -73,14 +73,14 @@ public final class CoreModScreen extends Screen {
         CoreModConfig.save();status="SCOREBOARD SAVED";rebuildWidgets();
     }
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float d){
-        super.extractRenderState(g,mx,my,d);g.fill(width/2-175,height/2-118,width/2+175,height/2+130,0xDD10101C);
-        g.centeredText(font,title,width/2,height/2-111,0xFFFFFFFF);
+        g.fill(width/2-210,height/2-155,width/2+210,height/2+155,0xF02B293B);\n        g.fill(width/2-205,height/2-150,width/2+205,height/2+150,0xE51B1A29);\n        super.extractRenderState(g,mx,my,d);
+        g.centeredText(font,title,width/2,height/2-145,0xFFFFFFFF);
         String sub=switch(page){case HOME->"CLIENT TOOLS";case SETTINGS->"QUICK COMMAND SETTINGS";case META->"AUCTION HOUSE DATA - API KEY REQUIRED";case FARM->"FARM COST / PROFIT CALCULATOR";case SCHEMATICS->"PERSONAL SCHEMATIC CATALOG";case SCOREBOARD->"CUSTOM HUD OVERLAY";};
-        g.centeredText(font,Component.literal(CoreModText.smallCaps(sub)),width/2,height/2-98,0xFFB9A0FF);
+        g.centeredText(font,Component.literal(CoreModText.smallCaps(sub)),width/2,height/2-130,0xFFD2B8FF);
         if(page==Page.META){int yy=height/2-35;g.text(font,Component.literal(CoreModText.smallCaps("LAST UPDATE: "+CoreModConfig.marketUpdated)),width/2-145,yy,0xFFAAAAAA);
             for(String line:CoreModConfig.marketSummary.split("\n")){yy+=12;if(yy>height/2+95)break;g.text(font,Component.literal(CoreModText.smallCaps(line)),width/2-145,yy,0xFFFFFFFF);}}
         if(page==Page.SCHEMATICS){int yy=height/2+15;for(String entry:CoreModConfig.schematicEntries){if(yy>height/2+110)break;g.text(font,Component.literal(CoreModText.smallCaps(entry)),width/2-145,yy,0xFFDDDDDD);yy+=11;}}
-        g.centeredText(font,Component.literal(CoreModText.smallCaps(status)),width/2,height/2+114,0xFFAAAAAA);
+        g.centeredText(font,Component.literal(CoreModText.smallCaps(status)),width/2,height/2+140,0xFFE0D9F2);
     }
     private static final class MinecraftClipboard { static void copy(String s){net.minecraft.client.Minecraft.getInstance().keyboardHandler.setClipboard(s);} }
 }
