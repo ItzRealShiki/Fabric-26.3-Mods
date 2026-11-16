@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "coremod",
+  "version": "${version}",
+  "name": "CoreMod",
+  "description": "A client-side DonutSMP companion with configurable UI tools.",
+  "authors": ["Leon"],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["de.leon.coremod.CoreModClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*",
+    "fabric-key-mapping-api-v1": "*"
+  }
+}
