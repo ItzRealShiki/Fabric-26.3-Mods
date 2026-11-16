@@ -18,3 +18,6 @@ Standalone Fabric client mod for Minecraft Java 26.3.
 - Full custom scoreboard editor and rendering.
 
 The first milestone is a UI/config foundation. Features marked in development are not yet implemented.
+
+
+Build source formatting fix applied.
