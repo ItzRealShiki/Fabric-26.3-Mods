@@ -40,7 +40,8 @@ public final class CoreModScreen extends Screen {
         } else if(page==Page.SCHEMATICS){
             field(x,y,300,"","SCHEMATIC NAME"); field(x,y+27,300,"","HTTPS DOWNLOAD / INFO LINK"); field(x,y+54,300,"","MATERIAL LIST");
             add("SAVE ENTRY",x,y+82,()->saveSchematic());
-            add("COPY SAVED ENTRIES",x+160,y+82,()->{MinecraftClipboard.copy(String.join("\n",CoreModConfig.schematicEntries));status="CATALOG COPIED";});
+            add("COPY SAVED ENTRIES",x+160,y+82,()->{MinecraftClipboard.copy(String.join("
+",CoreModConfig.schematicEntries));status="CATALOG COPIED";});
             add("BACK",x,y+150,()->open(Page.HOME));
         } else if(page==Page.SCOREBOARD){
             field(x,y,300,CoreModConfig.scoreboardTitle,"SCOREBOARD TITLE");
@@ -73,12 +74,15 @@ public final class CoreModScreen extends Screen {
         CoreModConfig.save();status="SCOREBOARD SAVED";rebuildWidgets();
     }
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float d){
-        g.fill(width/2-210,height/2-155,width/2+210,height/2+155,0xF0E7E2F2);\n        g.fill(width/2-205,height/2-150,width/2+205,height/2+150,0xF7F8F6FC);\n        super.extractRenderState(g,mx,my,d);
+        g.fill(width/2-210,height/2-155,width/2+210,height/2+155,0xF0E7E2F2);
+        g.fill(width/2-205,height/2-150,width/2+205,height/2+150,0xF7F8F6FC);
+        super.extractRenderState(g,mx,my,d);
         g.centeredText(font,title,width/2,height/2-145,0xFF282331);
         String sub=switch(page){case HOME->"CLIENT TOOLS";case SETTINGS->"QUICK COMMAND SETTINGS";case META->"AUCTION HOUSE DATA - API KEY REQUIRED";case FARM->"FARM COST / PROFIT CALCULATOR";case SCHEMATICS->"PERSONAL SCHEMATIC CATALOG";case SCOREBOARD->"CUSTOM HUD OVERLAY";};
         g.centeredText(font,Component.literal(CoreModText.smallCaps(sub)),width/2,height/2-130,0xFF7650B8);
         if(page==Page.META){int yy=height/2-35;g.text(font,Component.literal(CoreModText.smallCaps("LAST UPDATE: "+CoreModConfig.marketUpdated)),width/2-145,yy,0xFFAAAAAA);
-            for(String line:CoreModConfig.marketSummary.split("\n")){yy+=12;if(yy>height/2+95)break;g.text(font,Component.literal(CoreModText.smallCaps(line)),width/2-145,yy,0xFFFFFFFF);}}
+            for(String line:CoreModConfig.marketSummary.split("
+")){yy+=12;if(yy>height/2+95)break;g.text(font,Component.literal(CoreModText.smallCaps(line)),width/2-145,yy,0xFFFFFFFF);}}
         if(page==Page.SCHEMATICS){int yy=height/2+15;for(String entry:CoreModConfig.schematicEntries){if(yy>height/2+110)break;g.text(font,Component.literal(CoreModText.smallCaps(entry)),width/2-145,yy,0xFFDDDDDD);yy+=11;}}
         g.centeredText(font,Component.literal(CoreModText.smallCaps(status)),width/2,height/2+140,0xFF51465F);
     }
