@@ -10,8 +10,9 @@ import java.nio.file.Path;
 public final class CoreModConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("coremod.json");
-    public static String[] quickCommands = {"/home", "/sell", "/ec", "/spawn"};
+    public static String[] quickCommands = {"/home", "/sell", "/ah", "/shop"};
     public static String quickButtonSide = "RIGHT";
+    public static boolean fullbrightEnabled = false;
     public static String apiKey = "";
     public static String marketSummary = "NO MARKET DATA YET";
     public static String marketUpdated = "NEVER";
@@ -32,6 +33,7 @@ public final class CoreModConfig {
             if (d == null) return;
             if (d.quickCommands != null && d.quickCommands.length == 4) quickCommands = d.quickCommands;
             if (d.quickButtonSide != null) quickButtonSide = d.quickButtonSide;
+            fullbrightEnabled = d.fullbrightEnabled;
             if (d.apiKey != null) apiKey = d.apiKey;
             if (d.marketSummary != null) marketSummary = d.marketSummary;
             if (d.marketUpdated != null) marketUpdated = d.marketUpdated;
@@ -46,7 +48,7 @@ public final class CoreModConfig {
         try {
             Files.createDirectories(FILE.getParent());
             Data d = new Data();
-            d.quickCommands = quickCommands; d.quickButtonSide = quickButtonSide; d.apiKey = apiKey;
+            d.quickCommands = quickCommands; d.quickButtonSide = quickButtonSide; d.fullbrightEnabled = fullbrightEnabled; d.apiKey = apiKey;
             d.marketSummary = marketSummary; d.marketUpdated = marketUpdated;
             d.balance = balance; d.farmBudget = farmBudget; d.farmCost = farmCost; d.farmRevenue = farmRevenue;
             d.customScoreboardEnabled = customScoreboardEnabled; d.scoreboardTitle = scoreboardTitle;
@@ -55,7 +57,7 @@ public final class CoreModConfig {
         } catch (IOException ignored) { }
     }
     private static final class Data {
-        String[] quickCommands; String quickButtonSide; String apiKey; String marketSummary; String marketUpdated;
+        String[] quickCommands; String quickButtonSide; boolean fullbrightEnabled; String apiKey; String marketSummary; String marketUpdated;
         double balance; double farmBudget; double farmCost; double farmRevenue;
         boolean customScoreboardEnabled; String scoreboardTitle; String[] scoreboardLines; String[] schematicEntries;
     }
