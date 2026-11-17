@@ -21,17 +21,17 @@ public final class FrostyScreen extends Screen {
     private Pack deleteCandidate;
     private int panelX, panelY, panelW, panelH, contentX, contentW;
 
-    private static final int BG = 0xF20A111B;
-    private static final int SURFACE = 0xFF111E2B;
-    private static final int CARD = 0xFF172737;
-    private static final int CARD_HOVER = 0xFF20384A;
-    private static final int BORDER = 0xFF294356;
-    private static final int MUTED = 0xFF91A9BA;
+    private static final int BG = 0xE0101010;
+    private static final int SURFACE = 0xFF303030;
+    private static final int CARD = 0xFF555555;
+    private static final int CARD_HOVER = 0xFF777777;
+    private static final int BORDER = 0xFF202020;
+    private static final int MUTED = 0xFFCCCCCC;
     private static final int TEXT = 0xFFF1F7FB;
-    private static final int ACCENT = 0xFF68DDF7;
-    private static final int GREEN = 0xFF73DDB8;
-    private static final int RED = 0xFFFF788C;
-    private static final int AMBER = 0xFFFFD17D;
+    private static final int ACCENT = 0xFFFFFFFF;
+    private static final int GREEN = 0xFF55FF55;
+    private static final int RED = 0xFFFF5555;
+    private static final int AMBER = 0xFFFFFF55;
 
     public FrostyScreen() { super(Component.literal("Frosty")); }
     private Component c(String en, String de) { return Component.literal(FrostyText.tr(en, de)); }
@@ -241,52 +241,33 @@ public final class FrostyScreen extends Screen {
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-        g.fill(0, 0, width, height, 0xB800070D);
-        rounded(g, panelX + 7, panelY + 10, panelW, panelH, 22, 0x70000000);
-        rounded(g, panelX, panelY, panelW, panelH, 22, BG);
-        rounded(g, panelX + 1, panelY + 1, panelW - 2, 62, 20, SURFACE);
-        g.fill(panelX + 28, panelY + 63, panelX + panelW - 28, panelY + 64, BORDER);
-        g.fill(panelX + 28, panelY + 2, panelX + panelW - 28, panelY + 4, ACCENT);
-
-        g.text(font, Component.literal("FROSTY"), panelX + 28, panelY + 19, TEXT);
-        g.text(font, Component.literal(FrostyText.sc("CLIENT CONTROL CENTER")), panelX + 105, panelY + 22, MUTED);
-        g.text(font, Component.literal("0.1.4"), panelX + panelW - 64, panelY + 21, ACCENT);
-
+        g.fill(0, 0, width, height, 0x99000000);
+        g.text(font, Component.literal("FROSTY"), width / 2 - font.width("FROSTY") / 2, panelY + 17, 0xFFFFFFFF);
         String heading = switch (page) {
             case HOME -> FrostyText.tr("WELCOME BACK", "WILLKOMMEN ZURÜCK");
-            case MODULES -> FrostyText.tr("MODULE LIBRARY", "MODUL-BIBLIOTHEK");
-            case PACKS -> FrostyText.tr("TEXTURE PACK MANAGER", "TEXTUREPACK-MANAGER");
-            case SETTINGS -> FrostyText.tr("PERSONALIZATION", "ANPASSUNG");
-            case STATUS -> FrostyText.tr("SYSTEM DIAGNOSTICS", "SYSTEM-DIAGNOSE");
+            case MODULES -> FrostyText.tr("MODULES", "MODULE");
+            case PACKS -> FrostyText.tr("RESOURCE PACKS", "TEXTUREPACKS");
+            case SETTINGS -> FrostyText.tr("OPTIONS", "EINSTELLUNGEN");
+            case STATUS -> FrostyText.tr("STATUS", "STATUS");
         };
         String subtitle = switch (page) {
-            case HOME -> FrostyText.tr("Everything you need, in one clean place.", "Alles Wichtige an einem übersichtlichen Ort.");
-            case MODULES -> FrostyText.tr("Control your Frosty features.", "Steuere deine Frosty-Funktionen.");
-            case PACKS -> FrostyText.tr("Enable, reorder and remove your installed resource packs.", "Aktiviere, sortiere und entferne deine installierten Texturepacks.");
-            case SETTINGS -> FrostyText.tr("Fine-tune the look and feel.", "Passe Darstellung und Verhalten an.");
-            case STATUS -> FrostyText.tr("Recent events and diagnostic information.", "Aktuelle Ereignisse und Diagnoseinformationen.");
+            case HOME -> FrostyText.tr("Manage your Frosty client.", "Verwalte deinen Frosty-Client.");
+            case MODULES -> FrostyText.tr("Enable or disable features.", "Funktionen aktivieren oder deaktivieren.");
+            case PACKS -> FrostyText.tr("Manage installed resource packs.", "Installierte Texturepacks verwalten.");
+            case SETTINGS -> FrostyText.tr("Customize your settings.", "Passe deine Einstellungen an.");
+            case STATUS -> FrostyText.tr("Errors and diagnostic information.", "Fehler und Diagnoseinformationen.");
         };
-        g.text(font, Component.literal(FrostyText.sc(heading)), contentX, panelY + 116, TEXT);
-        g.text(font, Component.literal(subtitle), contentX, panelY + 134, MUTED);
-
+        g.centeredText(font, Component.literal(heading), width / 2, panelY + 94, 0xFFFFFFFF);
+        g.centeredText(font, Component.literal(subtitle), width / 2, panelY + 110, 0xFFBBBBBB);
         if (page == Page.HOME) drawHome(g);
         else if (page == Page.MODULES) drawModules(g);
         else if (page == Page.PACKS) drawPacks(g);
         else if (page == Page.SETTINGS) drawSettings(g);
         else drawStatus(g);
-
         super.extractRenderState(g, mouseX, mouseY, delta);
-        for (Button button : styledButtons) {
-            int x = button.getX(), y = button.getY(), w = button.getWidth(), h = button.getHeight();
-            rounded(g, x - 2, y - 2, w + 4, h + 4, 13, 0xFF0B151F);
-            int color = button.isHoveredOrFocused() ? CARD_HOVER : CARD;
-            rounded(g, x, y, w, h, 12, color);
-            if (button.isHoveredOrFocused()) rounded(g, x + 9, y + h - 3, w - 18, 3, 2, ACCENT);
-            g.centeredText(font, button.getMessage(), x + w / 2, y + (h - 9) / 2, button.isHoveredOrFocused() ? ACCENT : TEXT);
-        }
-        rounded(g, contentX, panelY + panelH - 37, contentW, 1, 1, BORDER);
-        g.text(font, Component.literal(FrostyText.sc("RIGHT SHIFT  ·  HUD EDITOR")), contentX, panelY + panelH - 24, MUTED);
-        g.text(font, Component.literal(FrostyText.sc(status)), panelX + panelW - 170, panelY + panelH - 24, ACCENT);
+        g.fill(contentX, panelY + panelH - 37, contentX + contentW, panelY + panelH - 36, 0xFF555555);
+        g.text(font, Component.literal("RIGHT SHIFT  -  HUD EDITOR"), contentX, panelY + panelH - 24, 0xFFBBBBBB);
+        g.text(font, Component.literal(FrostyText.sc(status)), panelX + panelW - 170, panelY + panelH - 24, 0xFFFFFFFF);
     }
 
     private void drawHome(GuiGraphicsExtractor g) {
@@ -406,18 +387,7 @@ public final class FrostyScreen extends Screen {
     }
 
     private void rounded(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
-        int r = Math.min(radius, Math.min(w / 2, h / 2));
-        for (int row = 0; row < h; row++) {
-            int inset = 0;
-            if (row < r) {
-                double dy = r - row - 0.5;
-                inset = r - (int)Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)));
-            } else if (row >= h - r) {
-                double dy = row - (h - r) + 0.5;
-                inset = r - (int)Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)));
-            }
-            g.fill(x + inset, y + row, x + w - inset, y + row + 1, color);
-        }
+        g.fill(x, y, x + w, y + h, color);
     }
 
     private static final class FrostySlider extends AbstractSliderButton {
