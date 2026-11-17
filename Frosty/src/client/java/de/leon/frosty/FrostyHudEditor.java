@@ -2,6 +2,7 @@ package de.leon.frosty;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -63,8 +64,9 @@ public final class FrostyHudEditor extends Screen {
         g.centeredText(font, Component.literal(text), x + w / 2, y + (h - 9) / 2, primary || hover ? TEXT : MUTED);
     }
 
-    @Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
+    @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x(), mouseY = event.y();
+        if (event.button() != 0) return super.mouseClicked(event, doubleClick);
         int px = FrostyConfig.shieldX, py = FrostyConfig.shieldY;
         int w = Math.round(previewW * (float) FrostyConfig.hudScale), h = Math.round(previewH * (float) FrostyConfig.hudScale);
         if (mouseX >= px - 5 && mouseX <= px + w + 5 && mouseY >= py - 5 && mouseY <= py + h + 5) {
@@ -87,16 +89,17 @@ public final class FrostyHudEditor extends Screen {
         return true;
     }
 
-    @Override public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (!dragging || button != 0) return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    @Override public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x(), mouseY = event.y();
+        if (!dragging || event.button() != 0) return super.mouseDragged(event, dragX, dragY);
         FrostyConfig.shieldX = Math.max(0, Math.min(width - 50, (int) mouseX - dragOffsetX));
         FrostyConfig.shieldY = Math.max(0, Math.min(height - 30, (int) mouseY - dragOffsetY));
         return true;
     }
 
-    @Override public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0 && dragging) { dragging = false; FrostyConfig.save(); return true; }
-        return super.mouseReleased(mouseX, mouseY, button);
+    @Override public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == 0 && dragging) { dragging = false; FrostyConfig.save(); return true; }
+        return super.mouseReleased(event);
     }
 
     @Override public boolean isPauseScreen() { return false; }
