@@ -33,15 +33,14 @@ jobs:
         with:
           gradle-version: '9.5.1'
 
-      - name: Build unchanged mod
+      - name: Build mod
         working-directory: 'LifestealCore-Mod 26.2'
         run: gradle --no-daemon clean build
 
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: LifestealCore-Fabric-26.2
-          path: |
-            LifestealCore-Mod 26.2/build/libs/*.jar
+          name: LifestealCore-Fabric-26.3
+          path: 'LifestealCore-Mod 26.2/build/libs/*.jar'
           if-no-files-found: error
           retention-days: 30
