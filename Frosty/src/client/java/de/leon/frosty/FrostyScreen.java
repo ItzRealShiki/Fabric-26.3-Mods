@@ -7,32 +7,30 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.packs.repository.Pack;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Frosty's in-game control center.
- * Layout borrows OneClient's spacious top navigation, quiet surfaces and clear hierarchy,
- * adapted to Minecraft's screen/widget system.
- */
 public final class FrostyScreen extends Screen {
-    private enum Page { HOME, MODULES, SETTINGS, STATUS }
+    private enum Page { HOME, MODULES, PACKS, SETTINGS, STATUS }
     private Page page = Page.HOME;
     private final List<EditBox> fields = new ArrayList<>();
+    private final List<Button> styledButtons = new ArrayList<>();
     private String status = "READY";
-    private int logScroll;
+    private int logScroll, packPage;
+    private Pack deleteCandidate;
     private int panelX, panelY, panelW, panelH, contentX, contentW;
 
-    private static final int BG = 0xF20B111B;
-    private static final int SURFACE = 0xFF121E2B;
-    private static final int CARD = 0xFF172635;
-    private static final int CARD_ALT = 0xFF1B2D3D;
-    private static final int BORDER = 0xFF2A4051;
-    private static final int MUTED = 0xFF8EA5B5;
-    private static final int TEXT = 0xFFF0F6FA;
-    private static final int ACCENT = 0xFF65D8F5;
-    private static final int GREEN = 0xFF75DDB8;
-    private static final int RED = 0xFFFF7488;
+    private static final int BG = 0xF20A111B;
+    private static final int SURFACE = 0xFF111E2B;
+    private static final int CARD = 0xFF172737;
+    private static final int CARD_HOVER = 0xFF20384A;
+    private static final int BORDER = 0xFF294356;
+    private static final int MUTED = 0xFF91A9BA;
+    private static final int TEXT = 0xFFF1F7FB;
+    private static final int ACCENT = 0xFF68DDF7;
+    private static final int GREEN = 0xFF73DDB8;
+    private static final int RED = 0xFFFF788C;
     private static final int AMBER = 0xFFFFD17D;
 
     public FrostyScreen() { super(Component.literal("Frosty")); }
@@ -40,67 +38,74 @@ public final class FrostyScreen extends Screen {
 
     @Override protected void init() {
         clearWidgets();
+        styledButtons.clear();
         fields.clear();
-        panelW = Math.min(790, width - 28);
-        panelH = Math.min(490, height - 24);
+        panelW = Math.min(900, width - 28);
+        panelH = Math.min(560, height - 24);
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
         contentX = panelX + 28;
         contentW = panelW - 56;
 
-        int navY = panelY + 58;
-        int navW = 116;
-        int gap = 7;
-        navButton("OVERVIEW", "ÜBERSICHT", Page.HOME, contentX, navY, navW);
-        navButton("MODULES", "MODULE", Page.MODULES, contentX + navW + gap, navY, navW);
-        navButton("SETTINGS", "EINSTELLUNGEN", Page.SETTINGS, contentX + (navW + gap) * 2, navY, navW);
-        navButton("STATUS", "STATUS", Page.STATUS, contentX + (navW + gap) * 3, navY, navW);
+        int navY = panelY + 66;
+        int gap = 8;
+        int navW = (contentW - gap * 4) / 5;
+        Page[] pages = Page.values();
+        String[][] labels = {{"HOME","START"}, {"MODULES","MODULE"}, {"TEXTURE PACKS","TEXTUREPACKS"}, {"SETTINGS","EINSTELLUNGEN"}, {"STATUS","STATUS"}};
+        for (int i = 0; i < pages.length; i++) {
+            final Page target = pages[i];
+            addStyled(c(labels[i][0], labels[i][1]), contentX + i * (navW + gap), navY, navW, 34,
+                () -> open(target), true);
+        }
 
         if (page == Page.HOME) buildHome();
         else if (page == Page.MODULES) buildModules();
+        else if (page == Page.PACKS) buildPacks();
         else if (page == Page.SETTINGS) buildSettings();
         else buildStatus();
     }
 
-    private void navButton(String en, String de, Page target, int x, int y, int w) {
-        String label = (page == target ? "•  " : "") + FrostyText.tr(en, de);
-        addRenderableWidget(Button.builder(Component.literal(label), b -> open(target))
-            .bounds(x, y, w, 25).build());
+    private void addStyled(Component label, int x, int y, int w, int h, Runnable action, boolean nav) {
+        Button button = Button.builder(label, b -> action.run()).bounds(x, y, w, h).build();
+        styledButtons.add(button);
+        addRenderableWidget(button);
     }
 
-    private void open(Page next) { page = next; logScroll = 0; status = "READY"; rebuildWidgets(); }
+    private void addStyled(String label, int x, int y, int w, int h, Runnable action) {
+        addStyled(Component.literal(FrostyText.sc(label)), x, y, w, h, action, false);
+    }
+
+    private void open(Page next) {
+        page = next;
+        deleteCandidate = null;
+        status = "READY";
+        rebuildWidgets();
+    }
+
+    private int top() { return panelY + 153; }
 
     private void buildHome() {
-        int y = panelY + 231;
-        addRenderableWidget(Button.builder(c("OPEN MODULES", "MODULE ÖFFNEN"), b -> open(Page.MODULES))
-            .bounds(contentX + contentW - 150, y + 8, 150, 28).build());
-        addRenderableWidget(Button.builder(c("CONFIGURE HUD", "HUD EINSTELLEN"), b -> open(Page.SETTINGS))
-            .bounds(contentX, y + 185, 176, 27).build());
-        addRenderableWidget(Button.builder(c("VIEW STATUS", "STATUS ANSEHEN"), b -> open(Page.STATUS))
-            .bounds(contentX + 184, y + 185, 150, 27).build());
+        int y = top() + 8;
+        addStyled(c("OPEN MODULES", "MODULE ÖFFNEN"), contentX + contentW - 184, y + 94, 168, 34,
+            () -> open(Page.MODULES), false);
+        addStyled(c("MANAGE TEXTURE PACKS", "TEXTUREPACKS VERWALTEN"), contentX + 18, y + 184, 244, 34,
+            () -> open(Page.PACKS), false);
+        addStyled(c("VIEW STATUS", "STATUS ANSEHEN"), contentX + 274, y + 184, 160, 34,
+            () -> open(Page.STATUS), false);
     }
 
     private void buildModules() {
-        int y = panelY + 151;
-        int gap = 12;
-        int cardW = (contentW - gap) / 2;
-        moduleToggle("SMALL TOTEM POPS", "KLEINE TOTEM-POPS",
-            "REDUCED TOTEM POPUP SIZE", "KLEINERE TOTEM-ANIMATION",
-            FrostyConfig.smallTotemPops, contentX, y, cardW, 90, 0);
-        moduleToggle("FIXED SHIELDS", "FIXIERTE SCHILDE",
-            "KEEP SHIELDS IN A CONSISTENT POSITION", "SCHILDE BLEIBEN AN FESTER POSITION",
-            FrostyConfig.fixedShields, contentX + cardW + gap, y, cardW, 90, 1);
-        moduleToggle("SHIELD STATUS", "SCHILD-STATUS",
-            "LIVE SHIELD STATE INDICATOR", "LIVE-SCHILDSTATUS-ANZEIGE",
-            FrostyConfig.shieldStatus, contentX, y + 102, cardW, 90, 2);
-        addRenderableWidget(Button.builder(c("CUSTOMIZE SHIELD STATUS", "SCHILD-STATUS ANPASSEN"),
-            b -> open(Page.SETTINGS)).bounds(contentX + cardW + gap, y + 132, cardW, 28).build());
+        int y = top() + 10, gap = 14, cw = (contentW - gap) / 2;
+        moduleToggle("SMALL TOTEM POPS", "KLEINE TOTEM-POPS", FrostyConfig.smallTotemPops, contentX, y, cw, 94, 0);
+        moduleToggle("FIXED SHIELDS", "FIXIERTE SCHILDE", FrostyConfig.fixedShields, contentX + cw + gap, y, cw, 94, 1);
+        moduleToggle("SHIELD STATUS", "SCHILD-STATUS", FrostyConfig.shieldStatus, contentX, y + 108, cw, 94, 2);
+        addStyled(c("CUSTOMIZE SHIELD STATUS", "SCHILD-STATUS ANPASSEN"),
+            contentX + cw + gap, y + 140, cw, 34, () -> open(Page.SETTINGS), false);
     }
 
-    private void moduleToggle(String en, String de, String descEn, String descDe,
-                              boolean enabled, int x, int y, int w, int h, int index) {
-        addRenderableWidget(Button.builder(c(enabled ? "ON  ✓" : "OFF  ○", enabled ? "AN  ✓" : "AUS  ○"),
-            b -> {
+    private void moduleToggle(String en, String de, boolean enabled, int x, int y, int w, int h, int index) {
+        addStyled(c(enabled ? "ENABLED  ✓" : "DISABLED  ○", enabled ? "AKTIV  ✓" : "INAKTIV  ○"),
+            x + w - 142, y + 48, 126, 30, () -> {
                 switch (index) {
                     case 0 -> FrostyConfig.smallTotemPops = !FrostyConfig.smallTotemPops;
                     case 1 -> FrostyConfig.fixedShields = !FrostyConfig.fixedShields;
@@ -108,69 +113,117 @@ public final class FrostyScreen extends Screen {
                 }
                 FrostyConfig.save();
                 rebuildWidgets();
-            }).bounds(x + w - 88, y + 48, 78, 25).build());
+            }, false);
+    }
+
+    private void buildPacks() {
+        List<Pack> packs = FrostyPackManager.packs();
+        int pageSize = 6;
+        int pages = Math.max(1, (packs.size() + pageSize - 1) / pageSize);
+        packPage = Math.min(packPage, pages - 1);
+        int start = packPage * pageSize;
+        int end = Math.min(packs.size(), start + pageSize);
+        int y = top() + 6;
+
+        addStyled(c("OPEN PACK FOLDER", "PACK-ORDNER ÖFFNEN"), contentX + contentW - 190, y - 2, 174, 30,
+            () -> {
+                try { com.mojang.blaze3d.Blaze3D.openPath(Minecraft.getInstance().getResourcePackDirectory()); }
+                catch (Exception ex) { status = "COULD NOT OPEN FOLDER"; }
+            }, false);
+
+        for (int i = start; i < end; i++) {
+            Pack pack = packs.get(i);
+            int rowY = y + 42 + (i - start) * 47;
+            int actionX = contentX + contentW - 350;
+            addStyled(c(FrostyPackManager.enabled(pack) ? "DISABLE" : "ENABLE",
+                    FrostyPackManager.enabled(pack) ? "DEAKTIVIEREN" : "AKTIVIEREN"),
+                actionX, rowY + 6, 102, 29, () -> { FrostyPackManager.toggle(pack); rebuildWidgets(); }, false);
+            addStyled(c("UP", "HOCH"), actionX + 110, rowY + 6, 54, 29,
+                () -> { FrostyPackManager.move(pack, 1); rebuildWidgets(); }, false);
+            addStyled(c("DOWN", "RUNTER"), actionX + 170, rowY + 6, 68, 29,
+                () -> { FrostyPackManager.move(pack, -1); rebuildWidgets(); }, false);
+            if (FrostyPackManager.canDelete(pack)) {
+                addStyled(c("DELETE", "LÖSCHEN"), actionX + 244, rowY + 6, 90, 29,
+                    () -> { deleteCandidate = pack; rebuildWidgets(); }, false);
+            }
+        }
+
+        addStyled(c("PREVIOUS", "ZURÜCK"), contentX, y + 42 + pageSize * 47, 112, 29,
+            () -> { packPage = Math.max(0, packPage - 1); rebuildWidgets(); }, false);
+        addStyled(c("NEXT", "WEITER"), contentX + 120, y + 42 + pageSize * 47, 112, 29,
+            () -> { packPage = Math.min(pages - 1, packPage + 1); rebuildWidgets(); }, false);
+
+        if (deleteCandidate != null) {
+            addStyled(c("CONFIRM DELETE", "LÖSCHEN BESTÄTIGEN"), contentX + contentW - 310,
+                y + 42 + pageSize * 47, 174, 29, () -> {
+                    Pack target = deleteCandidate;
+                    deleteCandidate = null;
+                    status = FrostyPackManager.delete(target) ? "PACK DELETED" : "DELETE FAILED";
+                    rebuildWidgets();
+                }, false);
+            addStyled(c("CANCEL", "ABBRECHEN"), contentX + contentW - 126,
+                y + 42 + pageSize * 47, 110, 29, () -> { deleteCandidate = null; rebuildWidgets(); }, false);
+        }
     }
 
     private void buildSettings() {
-        int y = panelY + 151;
-        addRenderableWidget(Button.builder(c("LANGUAGE  ·  " + (FrostyConfig.language.equals("de") ? "GERMAN" : "ENGLISH"),
+        int y = top() + 8;
+        addStyled(c("LANGUAGE  ·  " + (FrostyConfig.language.equals("de") ? "GERMAN" : "ENGLISH"),
                 "SPRACHE  ·  " + (FrostyConfig.language.equals("de") ? "DEUTSCH" : "ENGLISCH")),
-            b -> { FrostyConfig.language = FrostyConfig.language.equals("de") ? "en" : "de"; FrostyConfig.save(); rebuildWidgets(); })
-            .bounds(contentX, y, 190, 25).build());
-        addRenderableWidget(new FrostySlider(contentX, y + 42, contentW, 22,
+            contentX, y, 210, 30, () -> {
+                FrostyConfig.language = FrostyConfig.language.equals("de") ? "en" : "de";
+                FrostyConfig.save(); rebuildWidgets();
+            }, false);
+        addRenderableWidget(new FrostySlider(contentX, y + 47, contentW, 24,
             c("TOTEM POP SIZE", "TOTEM-GRÖSSE").getString(), FrostyConfig.totemScale, .25, 1.5,
             v -> { FrostyConfig.totemScale = v; FrostyConfig.save(); }));
-        addRenderableWidget(new FrostySlider(contentX, y + 74, contentW, 22,
+        addRenderableWidget(new FrostySlider(contentX, y + 83, contentW, 24,
             c("SHIELD HUD SCALE", "SCHILD-HUD-GRÖSSE").getString(), FrostyConfig.hudScale, .5, 1.5,
             v -> { FrostyConfig.hudScale = v; FrostyConfig.save(); }));
 
         String[] en = {"BLOCKED", "NOT BLOCKING", "BROKEN", "BLOCKING"};
         String[] de = {"BLOCKIERT", "BLOCKIERT NICHT", "ZERBROCHEN", "BLOCKT"};
-        String[] values = {FrostyConfig.blockedColor, FrostyConfig.notBlockingColor,
-            FrostyConfig.brokenColor, FrostyConfig.blockingColor};
+        String[] values = {FrostyConfig.blockedColor, FrostyConfig.notBlockingColor, FrostyConfig.brokenColor, FrostyConfig.blockingColor};
         for (int i = 0; i < 4; i++) {
             final int index = i;
-            int rowY = y + 177 + i * 19;
-            EditBox field = new EditBox(font, contentX, rowY, Math.max(90, contentW - 105), 21,
+            int rowY = y + 140 + i * 34;
+            EditBox field = new EditBox(font, contentX, rowY, Math.max(100, contentW - 128), 25,
                 c(en[i] + " COLOR", de[i] + " FARBE"));
             field.setMaxLength(7);
             field.setValue(values[i]);
             addRenderableWidget(field);
             fields.add(field);
-            addRenderableWidget(Button.builder(c("APPLY", "ANWENDEN"), b -> saveColor(index))
-                .bounds(contentX + contentW - 96, rowY, 96, 21).build());
+            addStyled(c("APPLY", "ANWENDEN"), contentX + contentW - 112, rowY - 1, 112, 27,
+                () -> saveColor(index), false);
         }
-        addRenderableWidget(Button.builder(c("RESET COLORS", "FARBEN ZURÜCKSETZEN"), b -> {
+        addStyled(c("RESET COLORS", "FARBEN ZURÜCKSETZEN"), contentX, y + 284, 170, 29, () -> {
             FrostyConfig.blockedColor = "#58D7FF";
             FrostyConfig.notBlockingColor = "#A8C7D8";
             FrostyConfig.brokenColor = "#FF667A";
             FrostyConfig.blockingColor = "#FFFFFF";
-            FrostyConfig.save();
-            rebuildWidgets();
-        }).bounds(contentX, y + 260, 160, 23).build());
+            FrostyConfig.save(); rebuildWidgets();
+        }, false);
     }
 
     private void buildStatus() {
-        int y = panelY + 123;
-        addRenderableWidget(Button.builder(c("CLEAR", "LEEREN"), b -> {
+        int y = top() + 6;
+        addStyled(c("CLEAR", "LEEREN"), contentX, y, 90, 29, () -> {
             FrostyLog.clear(); logScroll = 0; rebuildWidgets();
-        }).bounds(contentX, y, 82, 23).build());
-        addRenderableWidget(Button.builder(c("OPEN LOG FOLDER", "LOG-ORDNER ÖFFNEN"), b -> FrostyLog.openLogFolder())
-            .bounds(contentX + 88, y, 150, 23).build());
-        addRenderableWidget(Button.builder(c("REFRESH", "AKTUALISIEREN"), b -> rebuildWidgets())
-            .bounds(contentX + 244, y, 105, 23).build());
-        addRenderableWidget(Button.builder(c("OLDER", "ÄLTER"), b -> {
+        }, false);
+        addStyled(c("OPEN LOG FOLDER", "LOG-ORDNER ÖFFNEN"), contentX + 100, y, 170, 29,
+            FrostyLog::openLogFolder, false);
+        addStyled(c("REFRESH", "AKTUALISIEREN"), contentX + 280, y, 112, 29, this::rebuildWidgets, false);
+        addStyled(c("OLDER", "ÄLTER"), contentX, y + 38, 90, 27, () -> {
             logScroll = Math.min(Math.max(0, FrostyLog.recent(150).size() - 1), logScroll + 8); rebuildWidgets();
-        }).bounds(contentX, y + 30, 82, 22).build());
-        addRenderableWidget(Button.builder(c("NEWER", "NEUER"), b -> {
-            logScroll = Math.max(0, logScroll - 8); rebuildWidgets();
-        }).bounds(contentX + 88, y + 30, 82, 22).build());
-        addRenderableWidget(Button.builder(c("COPY ALL", "ALLE KOPIEREN"), b -> {
+        }, false);
+        addStyled(c("NEWER", "NEUER"), contentX + 100, y + 38, 90, 27,
+            () -> { logScroll = Math.max(0, logScroll - 8); rebuildWidgets(); }, false);
+        addStyled(c("COPY ALL", "ALLE KOPIEREN"), contentX + 200, y + 38, 130, 27, () -> {
             String all = FrostyLog.recent(150).stream().map(e -> e.time() + " [" + e.level() + "] " + e.message())
                 .reduce("", (a, v) -> a + v + "\n");
             Minecraft.getInstance().keyboardHandler.setClipboard(all);
             status = "LOG COPIED";
-        }).bounds(contentX + 176, y + 30, 110, 22).build());
+        }, false);
     }
 
     private void saveColor(int i) {
@@ -187,144 +240,183 @@ public final class FrostyScreen extends Screen {
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-        g.fill(0, 0, width, height, 0xB500080F);
-        int x = panelX, y = panelY, w = panelW, h = panelH;
-        g.fill(x + 5, y + 7, x + w + 5, y + h + 7, 0x65000000);
-        g.fill(x, y, x + w, y + h, BG);
-        g.fill(x, y, x + w, y + 2, ACCENT);
-        g.fill(x + 1, y + 1, x + w - 1, y + 53, SURFACE);
-        g.fill(x + 28, y + 52, x + w - 28, y + 53, BORDER);
+        g.fill(0, 0, width, height, 0xB800070D);
+        rounded(g, panelX + 5, panelY + 8, panelW, panelH, 16, 0x60000000);
+        rounded(g, panelX, panelY, panelW, panelH, 16, BG);
+        rounded(g, panelX + 1, panelY + 1, panelW - 2, 58, 15, SURFACE);
+        g.fill(panelX + 28, panelY + 59, panelX + panelW - 28, panelY + 60, BORDER);
+        g.fill(panelX + 28, panelY + 2, panelX + panelW - 28, panelY + 4, ACCENT);
 
-        // Header / brand block
-        g.text(font, Component.literal("FROSTY"), x + 28, y + 17, TEXT);
-        g.text(font, Component.literal(FrostyText.sc("MINECRAFT CLIENT")), x + 103, y + 20, MUTED);
-        g.text(font, Component.literal("0.1.2"), x + w - 62, y + 20, ACCENT);
-
-        int navX = contentX;
-        int navY = y + 58;
-        for (int i = 0; i < 4; i++) {
-            int bx = navX + i * 123;
-            g.fill(bx, navY, bx + 116, navY + 25, page.ordinal() == i ? 0xFF1C3B4C : SURFACE);
-            if (page.ordinal() == i) g.fill(bx, navY + 23, bx + 116, navY + 25, ACCENT);
-        }
+        g.text(font, Component.literal("FROSTY"), panelX + 28, panelY + 19, TEXT);
+        g.text(font, Component.literal(FrostyText.sc("CLIENT CONTROL CENTER")), panelX + 105, panelY + 22, MUTED);
+        g.text(font, Component.literal("0.1.3"), panelX + panelW - 64, panelY + 21, ACCENT);
 
         String heading = switch (page) {
             case HOME -> FrostyText.tr("WELCOME BACK", "WILLKOMMEN ZURÜCK");
-            case MODULES -> FrostyText.tr("YOUR MODULES", "DEINE MODULE");
-            case SETTINGS -> FrostyText.tr("PREFERENCES", "EINSTELLUNGEN");
-            case STATUS -> FrostyText.tr("SYSTEM STATUS", "SYSTEMSTATUS");
+            case MODULES -> FrostyText.tr("MODULE LIBRARY", "MODUL-BIBLIOTHEK");
+            case PACKS -> FrostyText.tr("TEXTURE PACK MANAGER", "TEXTUREPACK-MANAGER");
+            case SETTINGS -> FrostyText.tr("PERSONALIZATION", "ANPASSUNG");
+            case STATUS -> FrostyText.tr("SYSTEM DIAGNOSTICS", "SYSTEM-DIAGNOSE");
         };
         String subtitle = switch (page) {
-            case HOME -> FrostyText.tr("A clean control center for your Minecraft experience.", "Deine zentrale Steuerung für Minecraft.");
-            case MODULES -> FrostyText.tr("Enable the features you want to use.", "Aktiviere die Funktionen, die du nutzen möchtest.");
-            case SETTINGS -> FrostyText.tr("Personalize the Frosty experience.", "Passe Frosty an deine Wünsche an.");
-            case STATUS -> FrostyText.tr("Recent events captured by the Frosty monitor.", "Aktuelle Ereignisse des Frosty-Monitors.");
+            case HOME -> FrostyText.tr("Everything you need, in one clean place.", "Alles Wichtige an einem übersichtlichen Ort.");
+            case MODULES -> FrostyText.tr("Control your Frosty features.", "Steuere deine Frosty-Funktionen.");
+            case PACKS -> FrostyText.tr("Enable, reorder and remove your installed resource packs.", "Aktiviere, sortiere und entferne deine installierten Texturepacks.");
+            case SETTINGS -> FrostyText.tr("Fine-tune the look and feel.", "Passe Darstellung und Verhalten an.");
+            case STATUS -> FrostyText.tr("Recent events and diagnostic information.", "Aktuelle Ereignisse und Diagnoseinformationen.");
         };
-        int top = y + 108;
-        g.text(font, Component.literal(FrostyText.sc(heading)), contentX, top, TEXT);
-        g.text(font, Component.literal(subtitle), contentX, top + 17, MUTED);
+        g.text(font, Component.literal(FrostyText.sc(heading)), contentX, panelY + 116, TEXT);
+        g.text(font, Component.literal(subtitle), contentX, panelY + 134, MUTED);
 
-        if (page == Page.HOME) drawHome(g, contentX, top + 43, contentW);
-        else if (page == Page.MODULES) drawModules(g, contentX, top + 43, contentW);
-        else if (page == Page.SETTINGS) drawSettings(g, contentX, top + 43, contentW);
-        else drawStatus(g, contentX, top + 43, contentW);
+        if (page == Page.HOME) drawHome(g);
+        else if (page == Page.MODULES) drawModules(g);
+        else if (page == Page.PACKS) drawPacks(g);
+        else if (page == Page.SETTINGS) drawSettings(g);
+        else drawStatus(g);
 
-        g.fill(contentX, y + h - 34, x + w - 28, y + h - 33, BORDER);
-        g.text(font, Component.literal(FrostyText.sc("RIGHT SHIFT  ·  OPEN MENU")), contentX, y + h - 22, MUTED);
-        g.text(font, Component.literal(FrostyText.sc(status)), x + w - 180, y + h - 22, ACCENT);
         super.extractRenderState(g, mouseX, mouseY, delta);
+        for (Button button : styledButtons) {
+            int x = button.getX(), y = button.getY(), w = button.getWidth(), h = button.getHeight();
+            rounded(g, x - 1, y - 1, w + 2, h + 2, 9, 0xFF0B151F);
+            int color = button.isHoveredOrFocused() ? CARD_HOVER : CARD;
+            rounded(g, x, y, w, h, 8, color);
+            if (button.isHoveredOrFocused()) rounded(g, x, y + h - 3, w, 3, 2, ACCENT);
+            g.centeredText(font, button.getMessage(), x + w / 2, y + (h - 9) / 2, button.isHoveredOrFocused() ? ACCENT : TEXT);
+        }
+        rounded(g, contentX, panelY + panelH - 37, contentW, 1, 1, BORDER);
+        g.text(font, Component.literal(FrostyText.sc("RIGHT SHIFT  ·  OPEN MENU")), contentX, panelY + panelH - 24, MUTED);
+        g.text(font, Component.literal(FrostyText.sc(status)), panelX + panelW - 170, panelY + panelH - 24, ACCENT);
     }
 
-    private void drawHome(GuiGraphicsExtractor g, int x, int y, int w) {
-        int half = (w - 12) / 2;
-        card(g, x, y, w, 118);
-        g.text(font, Component.literal(FrostyText.sc("FROSTY CONTROL CENTER")), x + 18, y + 17, ACCENT);
-        g.text(font, Component.literal(FrostyText.tr("Manage modules, appearance and diagnostics.", "Verwalte Module, Design und Fehlerdiagnose.")), x + 18, y + 39, TEXT);
-        g.text(font, Component.literal(FrostyText.tr("Your settings are saved automatically.", "Deine Einstellungen werden automatisch gespeichert.")), x + 18, y + 58, MUTED);
-        int y2 = y + 132;
-        statCard(g, x, y2, half, 78, "ACTIVE MODULES", "AKTIVE MODULE", activeModules() + " / 3", GREEN);
-        statCard(g, x + half + 12, y2, half, 78, "LOG ENTRIES", "LOG-EINTRÄGE",
-            String.valueOf(FrostyLog.recent(150).size()), ACCENT);
+    private void drawHome(GuiGraphicsExtractor g) {
+        int y = top() + 8, half = (contentW - 14) / 2;
+        card(g, contentX, y, contentW, 142);
+        g.text(font, Component.literal(FrostyText.sc("YOUR MINECRAFT, YOUR STYLE")), contentX + 22, y + 22, ACCENT);
+        g.text(font, Component.literal(FrostyText.tr("A refreshed control center for your client.", "Eine neue Steuerzentrale für deinen Client.")), contentX + 22, y + 50, TEXT);
+        g.text(font, Component.literal(FrostyText.tr("Manage modules, resource packs and diagnostics.", "Verwalte Module, Texturepacks und Diagnosen.")), contentX + 22, y + 72, MUTED);
+        int y2 = y + 158;
+        statCard(g, contentX, y2, half, 86, "ACTIVE MODULES", "AKTIVE MODULE", activeModules() + " / 3", GREEN);
+        statCard(g, contentX + half + 14, y2, half, 86, "TEXTURE PACKS", "TEXTUREPACKS",
+            String.valueOf(FrostyPackManager.packs().size()), ACCENT);
     }
 
     private int activeModules() {
         return (FrostyConfig.smallTotemPops ? 1 : 0) + (FrostyConfig.fixedShields ? 1 : 0) + (FrostyConfig.shieldStatus ? 1 : 0);
     }
 
-    private void drawModules(GuiGraphicsExtractor g, int x, int y, int w) {
-        int gap = 12, cw = (w - gap) / 2;
-        moduleCard(g, x, y, cw, 90, "SMALL TOTEM POPS", "KLEINE TOTEM-POPS",
-            "REDUCED TOTEM POPUP SIZE", "KLEINERE TOTEM-ANIMATION", FrostyConfig.smallTotemPops);
-        moduleCard(g, x + cw + gap, y, cw, 90, "FIXED SHIELDS", "FIXIERTE SCHILDE",
-            "CONSISTENT SHIELD POSITION", "KONSTANTE SCHILD-POSITION", FrostyConfig.fixedShields);
-        moduleCard(g, x, y + 102, cw, 90, "SHIELD STATUS", "SCHILD-STATUS",
-            "LIVE SHIELD STATE INDICATOR", "LIVE-SCHILDSTATUS-ANZEIGE", FrostyConfig.shieldStatus);
-        card(g, x + cw + gap, y + 102, cw, 90);
-        g.text(font, Component.literal(FrostyText.sc("SHIELD APPEARANCE")), x + cw + gap + 14, y + 120, TEXT);
-        g.text(font, Component.literal(FrostyText.tr("Change colors and HUD scale", "Farben und HUD-Größe ändern")), x + cw + gap + 14, y + 141, MUTED);
+    private void drawModules(GuiGraphicsExtractor g) {
+        int y = top() + 8, gap = 14, cw = (contentW - gap) / 2;
+        moduleCard(g, contentX, y, cw, 94, "SMALL TOTEM POPS", "KLEINE TOTEM-POPS", FrostyConfig.smallTotemPops);
+        moduleCard(g, contentX + cw + gap, y, cw, 94, "FIXED SHIELDS", "FIXIERTE SCHILDE", FrostyConfig.fixedShields);
+        moduleCard(g, contentX, y + 108, cw, 94, "SHIELD STATUS", "SCHILD-STATUS", FrostyConfig.shieldStatus);
+        card(g, contentX + cw + gap, y + 108, cw, 94);
+        g.text(font, Component.literal(FrostyText.sc("SHIELD APPEARANCE")), contentX + cw + gap + 18, y + 128, ACCENT);
+        g.text(font, Component.literal(FrostyText.tr("Change colors and HUD scale.", "Farben und HUD-Größe ändern.")), contentX + cw + gap + 18, y + 153, MUTED);
     }
 
-    private void moduleCard(GuiGraphicsExtractor g, int x, int y, int w, int h,
-                            String en, String de, String descEn, String descDe, boolean enabled) {
+    private void moduleCard(GuiGraphicsExtractor g, int x, int y, int w, int h, String en, String de, boolean enabled) {
         card(g, x, y, w, h);
-        g.fill(x + 12, y + 15, x + 15, y + 39, enabled ? GREEN : MUTED);
-        g.text(font, Component.literal(FrostyText.tr(en, de)), x + 25, y + 15, TEXT);
-        g.text(font, Component.literal(FrostyText.tr(descEn, descDe)), x + 25, y + 35, MUTED);
-        g.text(font, Component.literal(enabled ? "●  ON" : "○  OFF"), x + w - 54, y + 62, enabled ? GREEN : MUTED);
+        rounded(g, x + 16, y + 20, 5, 48, 2, enabled ? GREEN : MUTED);
+        g.text(font, Component.literal(FrostyText.tr(en, de)), x + 34, y + 22, TEXT);
+        g.text(font, Component.literal(FrostyText.tr("Feature toggle", "Funktion umschalten")), x + 34, y + 46, MUTED);
+        g.text(font, Component.literal(enabled ? "●  ON" : "○  OFF"), x + w - 62, y + 68, enabled ? GREEN : MUTED);
     }
 
-    private void drawSettings(GuiGraphicsExtractor g, int x, int y, int w) {
-        card(g, x, y, w, 257);
-        g.text(font, Component.literal(FrostyText.sc("GENERAL & APPEARANCE")), x + 14, y + 13, ACCENT);
-        g.text(font, Component.literal(FrostyText.tr("Language", "Sprache")), x + 14, y + 45, TEXT);
-        g.text(font, Component.literal(FrostyText.tr("Totem size", "Totem-Größe")), x + 14, y + 88, TEXT);
-        g.text(font, Component.literal(FrostyText.tr("Shield HUD scale", "Schild-HUD-Größe")), x + 14, y + 120, TEXT);
-        g.text(font, Component.literal(FrostyText.sc("SHIELD STATUS COLORS  ·  HEX")), x + 14, y + 157, ACCENT);
+    private void drawPacks(GuiGraphicsExtractor g) {
+        List<Pack> packs = FrostyPackManager.packs();
+        int pageSize = 6, start = packPage * pageSize;
+        int end = Math.min(packs.size(), start + pageSize);
+        int y = top() + 8;
+        card(g, contentX, y + 34, contentW, 42 + pageSize * 47);
+        if (packs.isEmpty()) {
+            g.centeredText(font, c("NO RESOURCE PACKS FOUND", "KEINE TEXTUREPACKS GEFUNDEN"),
+                contentX + contentW / 2, y + 104, MUTED);
+        }
+        for (int i = start; i < end; i++) {
+            Pack pack = packs.get(i);
+            int rowY = y + 45 + (i - start) * 47;
+            boolean selected = FrostyPackManager.enabled(pack);
+            rounded(g, contentX + 12, rowY, contentW - 24, 39, 7, selected ? 0xFF1A3442 : 0xFF142331);
+            g.text(font, pack.getTitle(), contentX + 26, rowY + 8, TEXT);
+            String id = pack.getId();
+            if (id.length() > 45) id = id.substring(0, 42) + "...";
+            g.text(font, Component.literal(id), contentX + 26, rowY + 23, MUTED);
+            g.text(font, Component.literal(selected ? "ACTIVE" : "INACTIVE"), contentX + contentW - 430, rowY + 14,
+                selected ? GREEN : MUTED);
+        }
+        int pages = Math.max(1, (packs.size() + pageSize - 1) / pageSize);
+        g.text(font, Component.literal("PAGE " + (packPage + 1) + " / " + pages), contentX + 246, y + 42 + pageSize * 47 + 10, MUTED);
+        if (deleteCandidate != null) {
+            rounded(g, contentX + 130, y + 105, contentW - 260, 92, 10, 0xFF38212A);
+            g.centeredText(font, c("DELETE", "LÖSCHEN"), contentX + contentW / 2, y + 120, RED);
+            g.centeredText(font, deleteCandidate.getTitle(), contentX + contentW / 2, y + 142, TEXT);
+            g.centeredText(font, c("THIS CANNOT BE UNDONE", "DIES KANN NICHT RÜCKGÄNGIG GEMACHT WERDEN"),
+                contentX + contentW / 2, y + 164, MUTED);
+        }
+    }
+
+    private void drawSettings(GuiGraphicsExtractor g) {
+        int y = top() + 8;
+        card(g, contentX, y + 34, contentW, 326);
+        g.text(font, Component.literal(FrostyText.sc("GENERAL & APPEARANCE")), contentX + 18, y + 50, ACCENT);
+        g.text(font, Component.literal(FrostyText.tr("Language", "Sprache")), contentX + 18, y + 92, TEXT);
+        g.text(font, Component.literal(FrostyText.tr("Totem size", "Totem-Größe")), contentX + 18, y + 139, TEXT);
+        g.text(font, Component.literal(FrostyText.tr("Shield HUD scale", "Schild-HUD-Größe")), contentX + 18, y + 175, TEXT);
+        g.text(font, Component.literal(FrostyText.sc("SHIELD STATUS COLORS  ·  HEX")), contentX + 18, y + 223, ACCENT);
         String[] labels = {"BLOCKED", "NOT BLOCKING", "BROKEN", "BLOCKING"};
         String[] values = {FrostyConfig.blockedColor, FrostyConfig.notBlockingColor, FrostyConfig.brokenColor, FrostyConfig.blockingColor};
         for (int i = 0; i < 4; i++) {
-            int rowY = y + 177 + i * 19;
-            g.fill(x + 14, rowY + 3, x + 23, rowY + 12, FrostyConfig.color(values[i], ACCENT));
-            g.text(font, Component.literal(FrostyText.tr(labels[i], new String[]{"BLOCKIERT","BLOCKIERT NICHT","ZERBROCHEN","BLOCKT"}[i])), x + 31, rowY, TEXT);
-            g.text(font, Component.literal(values[i]), x + w - 68, rowY, MUTED);
+            int rowY = y + 245 + i * 34;
+            rounded(g, contentX + 18, rowY + 4, 12, 12, 4, FrostyConfig.color(values[i], ACCENT));
+            g.text(font, Component.literal(FrostyText.tr(labels[i], new String[]{"BLOCKIERT","BLOCKIERT NICHT","ZERBROCHEN","BLOCKT"}[i])), contentX + 40, rowY + 3, TEXT);
+            g.text(font, Component.literal(values[i]), contentX + contentW - 82, rowY + 3, MUTED);
         }
     }
 
-    private void drawStatus(GuiGraphicsExtractor g, int x, int y, int w) {
-        int errors = FrostyLog.count(FrostyLog.LevelType.ERROR);
-        int warnings = FrostyLog.count(FrostyLog.LevelType.WARNING);
-        int entriesCount = FrostyLog.recent(150).size();
-        int half = (w - 16) / 3;
-        statCard(g, x, y, half, 54, "ERRORS", "FEHLER", String.valueOf(errors), errors > 0 ? RED : GREEN);
-        statCard(g, x + half + 8, y, half, 54, "WARNINGS", "WARNUNGEN", String.valueOf(warnings), warnings > 0 ? AMBER : GREEN);
-        statCard(g, x + (half + 8) * 2, y, half, 54, "ENTRIES", "EINTRÄGE", String.valueOf(entriesCount), ACCENT);
-        card(g, x, y + 64, w, 178);
+    private void drawStatus(GuiGraphicsExtractor g) {
+        int y = top() + 8, errors = FrostyLog.count(FrostyLog.LevelType.ERROR);
+        int warnings = FrostyLog.count(FrostyLog.LevelType.WARNING), entriesCount = FrostyLog.recent(150).size();
+        int third = (contentW - 24) / 3;
+        statCard(g, contentX, y, third, 66, "ERRORS", "FEHLER", String.valueOf(errors), errors > 0 ? RED : GREEN);
+        statCard(g, contentX + third + 12, y, third, 66, "WARNINGS", "WARNUNGEN", String.valueOf(warnings), warnings > 0 ? AMBER : GREEN);
+        statCard(g, contentX + (third + 12) * 2, y, third, 66, "ENTRIES", "EINTRÄGE", String.valueOf(entriesCount), ACCENT);
+        card(g, contentX, y + 78, contentW, 250);
         List<FrostyLog.Entry> entries = FrostyLog.recent(150);
         int first = Math.min(logScroll, Math.max(0, entries.size() - 1));
-        for (int i = first; i < Math.min(entries.size(), first + 8); i++) {
+        for (int i = first; i < Math.min(entries.size(), first + 11); i++) {
             FrostyLog.Entry e = entries.get(i);
-            int color = e.level() == FrostyLog.LevelType.ERROR ? RED :
-                e.level() == FrostyLog.LevelType.WARNING ? AMBER : ACCENT;
+            int color = e.level() == FrostyLog.LevelType.ERROR ? RED : e.level() == FrostyLog.LevelType.WARNING ? AMBER : ACCENT;
             String line = e.time() + "  [" + e.level() + "]  " + e.message().replace('\n', ' ');
-            if (line.length() > 100) line = line.substring(0, 97) + "...";
-            g.text(font, Component.literal(FrostyText.sc(line)), x + 12, y + 76 + (i - first) * 18, color);
+            if (line.length() > 112) line = line.substring(0, 109) + "...";
+            g.text(font, Component.literal(FrostyText.sc(line)), contentX + 14, y + 91 + (i - first) * 19, color);
         }
-        if (entries.isEmpty()) g.text(font, c("NO LOG ENTRIES YET", "NOCH KEINE LOG-EINTRÄGE"), x + 12, y + 80, MUTED);
+        if (entries.isEmpty()) g.text(font, c("NO LOG ENTRIES YET", "NOCH KEINE LOG-EINTRÄGE"), contentX + 14, y + 96, MUTED);
     }
 
-    private void statCard(GuiGraphicsExtractor g, int x, int y, int w, int h,
-                          String en, String de, String value, int color) {
+    private void statCard(GuiGraphicsExtractor g, int x, int y, int w, int h, String en, String de, String value, int color) {
         card(g, x, y, w, h);
-        g.text(font, Component.literal(FrostyText.tr(en, de)), x + 12, y + 12, MUTED);
-        g.text(font, Component.literal(value), x + 12, y + 34, color);
+        g.text(font, Component.literal(FrostyText.tr(en, de)), x + 16, y + 14, MUTED);
+        g.text(font, Component.literal(value), x + 16, y + 39, color);
     }
 
     private void card(GuiGraphicsExtractor g, int x, int y, int w, int h) {
-        g.fill(x, y, x + w, y + h, CARD);
-        g.fill(x, y, x + w, y + 1, BORDER);
-        g.fill(x, y + h - 1, x + w, y + h, BORDER);
-        g.fill(x, y, x + 1, y + h, BORDER);
-        g.fill(x + w - 1, y, x + w, y + h, BORDER);
+        rounded(g, x, y, w, h, 11, BORDER);
+        rounded(g, x + 1, y + 1, w - 2, h - 2, 10, CARD);
+    }
+
+    private void rounded(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
+        int r = Math.min(radius, Math.min(w / 2, h / 2));
+        for (int row = 0; row < h; row++) {
+            int inset = 0;
+            if (row < r) {
+                double dy = r - row - 0.5;
+                inset = r - (int)Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)));
+            } else if (row >= h - r) {
+                double dy = row - (h - r) + 0.5;
+                inset = r - (int)Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)));
+            }
+            g.fill(x + inset, y + row, x + w - inset, y + row + 1, color);
+        }
     }
 
     private static final class FrostySlider extends AbstractSliderButton {

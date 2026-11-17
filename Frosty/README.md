@@ -1,15 +1,17 @@
 # Frosty
 
-Frosty is a separate client-side Fabric mod for Minecraft Java 26.3.
+Frosty is a client-side Fabric mod for Minecraft Java 26.3.
 
-## Included in this first test build
-- Frosty-themed module menu (open with **O**)
-- Module switches for Small Totem Pops, Fixed Shields and Shield Status
-- Persistent settings in `.minecraft/config/frosty.json`
-- Adjustable Totem/HUD scale controls
-- Shield Status HUD with separate HEX colors for Blocked, Not Blocking, Broken/No Shield and Blocking transition
+## Features
+- Redesigned Frosty control center with rounded cards, custom pill buttons and an ice-blue accent.
+- Module controls for Small Totem Pops, Fixed Shields and Shield Status.
+- Texture Pack Manager: browse installed packs, enable/disable, change selected-pack order, open the resource-pack folder and delete file-based packs with a confirmation step.
+- Persistent settings in `.minecraft/config/frosty.json`.
+- Adjustable Totem/HUD scale and individual shield-state HEX colors.
+- Status page with recent log entries.
+- Open the menu with **Right Shift**.
 
-The menu uses an original ice-blue visual theme inspired by the general layout approach of OneClient. No OneClient source code or assets are copied.
+The interface uses an original Frosty visual design. No OneClient source code or assets are copied.
 
 ## Build
 Run `gradle build` from this directory with JDK 25.
