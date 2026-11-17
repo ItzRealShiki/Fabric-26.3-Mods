@@ -5,8 +5,8 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
+import org.lwjgl.glfw.GLFW;
 
 public final class FrostyClient implements ClientModInitializer {
     private static final KeyMapping.Category CATEGORY =
@@ -18,10 +18,10 @@ public final class FrostyClient implements ClientModInitializer {
         FrostyLog.install();
         FrostyHud.register();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.frosty.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_O, CATEGORY));
+            "key.frosty.open_menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, CATEGORY));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenuKey.consumeClick()) {
-                if (client.player != null) client.gui.setScreen(new FrostyScreen());
+                if (client.player != null) client.setScreen(new FrostyScreen());
             }
         });
     }
