@@ -40,14 +40,14 @@ public final class FrostyScreen extends Screen {
         clearWidgets();
         styledButtons.clear();
         fields.clear();
-        panelW = Math.min(900, width - 28);
-        panelH = Math.min(560, height - 24);
+        panelW = Math.min(940, width - 28);
+        panelH = Math.min(590, height - 24);
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
         contentX = panelX + 28;
         contentW = panelW - 56;
 
-        int navY = panelY + 66;
+        int navY = panelY + 72;
         int gap = 8;
         int navW = (contentW - gap * 4) / 5;
         Page[] pages = Page.values();
@@ -179,7 +179,7 @@ public final class FrostyScreen extends Screen {
             c("TOTEM POP SIZE", "TOTEM-GRÖSSE").getString(), FrostyConfig.totemScale, .25, 1.5,
             v -> { FrostyConfig.totemScale = v; FrostyConfig.save(); }));
         addRenderableWidget(new FrostySlider(contentX, y + 83, contentW, 24,
-            c("SHIELD HUD SCALE", "SCHILD-HUD-GRÖSSE").getString(), FrostyConfig.hudScale, .5, 1.5,
+            c("SHIELD HUD SCALE", "SCHILD-HUD-GRÖSSE").getString(), FrostyConfig.hudScale, .5, 2.0,
             v -> { FrostyConfig.hudScale = v; FrostyConfig.save(); }));
 
         String[] en = {"BLOCKED", "NOT BLOCKING", "BROKEN", "BLOCKING"};
@@ -242,15 +242,15 @@ public final class FrostyScreen extends Screen {
 
     @Override public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
         g.fill(0, 0, width, height, 0xB800070D);
-        rounded(g, panelX + 5, panelY + 8, panelW, panelH, 16, 0x60000000);
-        rounded(g, panelX, panelY, panelW, panelH, 16, BG);
-        rounded(g, panelX + 1, panelY + 1, panelW - 2, 58, 15, SURFACE);
-        g.fill(panelX + 28, panelY + 59, panelX + panelW - 28, panelY + 60, BORDER);
+        rounded(g, panelX + 7, panelY + 10, panelW, panelH, 22, 0x70000000);
+        rounded(g, panelX, panelY, panelW, panelH, 22, BG);
+        rounded(g, panelX + 1, panelY + 1, panelW - 2, 62, 20, SURFACE);
+        g.fill(panelX + 28, panelY + 63, panelX + panelW - 28, panelY + 64, BORDER);
         g.fill(panelX + 28, panelY + 2, panelX + panelW - 28, panelY + 4, ACCENT);
 
         g.text(font, Component.literal("FROSTY"), panelX + 28, panelY + 19, TEXT);
         g.text(font, Component.literal(FrostyText.sc("CLIENT CONTROL CENTER")), panelX + 105, panelY + 22, MUTED);
-        g.text(font, Component.literal("0.1.3"), panelX + panelW - 64, panelY + 21, ACCENT);
+        g.text(font, Component.literal("0.1.4"), panelX + panelW - 64, panelY + 21, ACCENT);
 
         String heading = switch (page) {
             case HOME -> FrostyText.tr("WELCOME BACK", "WILLKOMMEN ZURÜCK");
@@ -278,14 +278,14 @@ public final class FrostyScreen extends Screen {
         super.extractRenderState(g, mouseX, mouseY, delta);
         for (Button button : styledButtons) {
             int x = button.getX(), y = button.getY(), w = button.getWidth(), h = button.getHeight();
-            rounded(g, x - 1, y - 1, w + 2, h + 2, 9, 0xFF0B151F);
+            rounded(g, x - 2, y - 2, w + 4, h + 4, 13, 0xFF0B151F);
             int color = button.isHoveredOrFocused() ? CARD_HOVER : CARD;
-            rounded(g, x, y, w, h, 8, color);
-            if (button.isHoveredOrFocused()) rounded(g, x, y + h - 3, w, 3, 2, ACCENT);
+            rounded(g, x, y, w, h, 12, color);
+            if (button.isHoveredOrFocused()) rounded(g, x + 9, y + h - 3, w - 18, 3, 2, ACCENT);
             g.centeredText(font, button.getMessage(), x + w / 2, y + (h - 9) / 2, button.isHoveredOrFocused() ? ACCENT : TEXT);
         }
         rounded(g, contentX, panelY + panelH - 37, contentW, 1, 1, BORDER);
-        g.text(font, Component.literal(FrostyText.sc("RIGHT SHIFT  ·  OPEN MENU")), contentX, panelY + panelH - 24, MUTED);
+        g.text(font, Component.literal(FrostyText.sc("RIGHT SHIFT  ·  HUD EDITOR")), contentX, panelY + panelH - 24, MUTED);
         g.text(font, Component.literal(FrostyText.sc(status)), panelX + panelW - 170, panelY + panelH - 24, ACCENT);
     }
 
@@ -337,7 +337,7 @@ public final class FrostyScreen extends Screen {
             Pack pack = packs.get(i);
             int rowY = y + 45 + (i - start) * 47;
             boolean selected = FrostyPackManager.enabled(pack);
-            rounded(g, contentX + 12, rowY, contentW - 24, 39, 7, selected ? 0xFF1A3442 : 0xFF142331);
+            rounded(g, contentX + 12, rowY, contentW - 24, 39, 12, selected ? 0xFF1A3442 : 0xFF142331);
             g.text(font, pack.getTitle(), contentX + 26, rowY + 8, TEXT);
             String id = pack.getId();
             if (id.length() > 45) id = id.substring(0, 42) + "...";
@@ -401,8 +401,8 @@ public final class FrostyScreen extends Screen {
     }
 
     private void card(GuiGraphicsExtractor g, int x, int y, int w, int h) {
-        rounded(g, x, y, w, h, 11, BORDER);
-        rounded(g, x + 1, y + 1, w - 2, h - 2, 10, CARD);
+        rounded(g, x, y, w, h, 15, BORDER);
+        rounded(g, x + 1, y + 1, w - 2, h - 2, 14, CARD);
     }
 
     private void rounded(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {

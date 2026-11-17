@@ -20,7 +20,7 @@ public final class FrostyClient implements ClientModInitializer {
             "key.frosty.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenuKey.consumeClick()) {
-                if (client.player != null) client.gui.setScreen(new FrostyScreen());
+                if (client.player != null) client.gui.setScreen(new FrostyHudEditor());
             }
         });
     }

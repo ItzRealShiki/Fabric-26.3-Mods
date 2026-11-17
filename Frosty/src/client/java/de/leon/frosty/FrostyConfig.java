@@ -22,7 +22,7 @@ public final class FrostyConfig {
             Data d = GSON.fromJson(Files.readString(FILE), Data.class);
             if (d == null) return;
             smallTotemPops=d.smallTotemPops; fixedShields=d.fixedShields; shieldStatus=d.shieldStatus;
-            totemScale=clamp(d.totemScale,.25,1.5); hudScale=clamp(d.hudScale,.5,1.5);
+            totemScale=clamp(d.totemScale,.25,1.5); hudScale=clamp(d.hudScale,.5,2.0);
             shieldX=d.shieldX; shieldY=d.shieldY;
             blockedColor=validColor(d.blockedColor,"#58D7FF"); notBlockingColor=validColor(d.notBlockingColor,"#A8C7D8");
             brokenColor=validColor(d.brokenColor,"#FF667A"); blockingColor=validColor(d.blockingColor,"#FFFFFF");
