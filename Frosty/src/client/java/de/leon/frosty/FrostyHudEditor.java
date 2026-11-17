@@ -7,8 +7,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 public final class FrostyHudEditor extends Screen {
-    private static final int PANEL = 0xF20B1420, CARD = 0xFF172838, BORDER = 0xFF2B485B;
-    private static final int TEXT = 0xFFF2F8FC, MUTED = 0xFF9AB1C1, ACCENT = 0xFF68DDF7;
+    private static final int PANEL = 0xE0101010, CARD = 0xFF555555, BORDER = 0xFF202020;
+    private static final int TEXT = 0xFFFFFFFF, MUTED = 0xFFCCCCCC, ACCENT = 0xFFFFFFFF;
     private boolean dragging;
     private int dragOffsetX, dragOffsetY, panelX, panelY, panelW, panelH, previewW, previewH;
 
@@ -59,7 +59,7 @@ public final class FrostyHudEditor extends Screen {
     }
     private void drawButton(GuiGraphicsExtractor g, int x, int y, int w, int h, String text, int mx, int my, boolean primary) {
         boolean hover = mx >= x && mx <= x + w && my >= y && my <= y + h;
-        rounded(g, x, y, w, h, 11, primary ? (hover ? 0xFF28718A : 0xFF1B5268) : (hover ? 0xFF29485B : CARD));
+        rounded(g, x, y, w, h, 11, primary ? (hover ? 0xFF777777 : 0xFF555555) : (hover ? 0xFF777777 : CARD));
         rounded(g, x, y, w, 2, 1, primary ? 0xFF9CEBFF : BORDER);
         g.centeredText(font, Component.literal(text), x + w / 2, y + (h - 9) / 2, primary || hover ? TEXT : MUTED);
     }
@@ -107,12 +107,6 @@ public final class FrostyHudEditor extends Screen {
         return mx >= x && mx <= x + w && my >= y && my <= y + h;
     }
     private void rounded(GuiGraphicsExtractor g, int x, int y, int w, int h, int radius, int color) {
-        int r = Math.min(radius, Math.min(w / 2, h / 2));
-        for (int row = 0; row < h; row++) {
-            int inset = 0;
-            if (row < r) { double dy = r - row - 0.5; inset = r - (int) Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy))); }
-            else if (row >= h - r) { double dy = row - (h - r) + 0.5; inset = r - (int) Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy))); }
-            g.fill(x + inset, y + row, x + w - inset, y + row + 1, color);
-        }
+        g.fill(x, y, x + w, y + h, color);
     }
 }
