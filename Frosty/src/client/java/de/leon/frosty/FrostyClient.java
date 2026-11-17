@@ -17,7 +17,7 @@ public final class FrostyClient implements ClientModInitializer {
         FrostyLog.install();
         FrostyHud.register();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.frosty.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_RIGHT_SHIFT, CATEGORY));
+            "key.frosty.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenuKey.consumeClick()) {
                 if (client.player != null) client.gui.setScreen(new FrostyScreen());
