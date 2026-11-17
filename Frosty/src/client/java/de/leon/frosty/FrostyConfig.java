@@ -10,65 +10,40 @@ import java.nio.file.Path;
 public final class FrostyConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("frosty.json");
-
-    public static boolean smallTotemPops = true;
-    public static boolean fixedShields = true;
-    public static boolean shieldStatus = true;
-    public static double totemScale = 0.50;
-    public static double hudScale = 1.00;
-    public static int shieldX = 12;
-    public static int shieldY = 12;
-    public static String blockedColor = "#58D7FF";
-    public static String notBlockingColor = "#A8C7D8";
-    public static String brokenColor = "#FF667A";
-    public static String blockingColor = "#FFFFFF";
-
+    public static boolean smallTotemPops = true, fixedShields = true, shieldStatus = true;
+    public static double totemScale = 0.50, hudScale = 1.00;
+    public static int shieldX = 12, shieldY = 12;
+    public static String blockedColor = "#58D7FF", notBlockingColor = "#A8C7D8", brokenColor = "#FF667A", blockingColor = "#FFFFFF";
+    public static String language = "en";
     private FrostyConfig() {}
-
     public static void load() {
         if (!Files.exists(FILE)) { save(); return; }
         try {
             Data d = GSON.fromJson(Files.readString(FILE), Data.class);
             if (d == null) return;
-            smallTotemPops = d.smallTotemPops;
-            fixedShields = d.fixedShields;
-            shieldStatus = d.shieldStatus;
-            totemScale = clamp(d.totemScale, 0.25, 1.50);
-            hudScale = clamp(d.hudScale, 0.50, 1.50);
-            shieldX = d.shieldX; shieldY = d.shieldY;
-            blockedColor = validColor(d.blockedColor, "#58D7FF");
-            notBlockingColor = validColor(d.notBlockingColor, "#A8C7D8");
-            brokenColor = validColor(d.brokenColor, "#FF667A");
-            blockingColor = validColor(d.blockingColor, "#FFFFFF");
-        } catch (Exception ignored) { }
+            smallTotemPops=d.smallTotemPops; fixedShields=d.fixedShields; shieldStatus=d.shieldStatus;
+            totemScale=clamp(d.totemScale,.25,1.5); hudScale=clamp(d.hudScale,.5,1.5);
+            shieldX=d.shieldX; shieldY=d.shieldY;
+            blockedColor=validColor(d.blockedColor,"#58D7FF"); notBlockingColor=validColor(d.notBlockingColor,"#A8C7D8");
+            brokenColor=validColor(d.brokenColor,"#FF667A"); blockingColor=validColor(d.blockingColor,"#FFFFFF");
+            language="de".equalsIgnoreCase(d.language) ? "de" : "en";
+        } catch (Exception ex) { FrostyLog.add(FrostyLog.LevelType.WARNING,"Could not read config: "+ex.getMessage()); }
     }
-
     public static void save() {
         try {
             Files.createDirectories(FILE.getParent());
-            Data d = new Data();
-            d.smallTotemPops = smallTotemPops; d.fixedShields = fixedShields; d.shieldStatus = shieldStatus;
-            d.totemScale = totemScale; d.hudScale = hudScale; d.shieldX = shieldX; d.shieldY = shieldY;
-            d.blockedColor = blockedColor; d.notBlockingColor = notBlockingColor;
-            d.brokenColor = brokenColor; d.blockingColor = blockingColor;
-            Files.writeString(FILE, GSON.toJson(d));
-        } catch (IOException ignored) { }
+            Data d=new Data(); d.smallTotemPops=smallTotemPops; d.fixedShields=fixedShields; d.shieldStatus=shieldStatus;
+            d.totemScale=totemScale; d.hudScale=hudScale; d.shieldX=shieldX; d.shieldY=shieldY;
+            d.blockedColor=blockedColor; d.notBlockingColor=notBlockingColor; d.brokenColor=brokenColor; d.blockingColor=blockingColor; d.language=language;
+            Files.writeString(FILE,GSON.toJson(d));
+        } catch(IOException ex) { FrostyLog.add(FrostyLog.LevelType.ERROR,"Could not save config: "+ex.getMessage()); }
     }
-
-    static double clamp(double v, double min, double max) { return Math.max(min, Math.min(max, v)); }
-    private static String validColor(String value, String fallback) {
-        return value != null && value.matches("#[0-9a-fA-F]{6}") ? value.toUpperCase() : fallback;
-    }
-    static int color(String hex, int fallback) {
-        try { return 0xFF000000 | Integer.parseInt(hex.substring(1), 16); }
-        catch (Exception ignored) { return fallback; }
-    }
-
+    static double clamp(double v,double min,double max){return Math.max(min,Math.min(max,v));}
+    private static String validColor(String v,String fallback){return v!=null&&v.matches("#[0-9a-fA-F]{6}")?v.toUpperCase():fallback;}
+    static int color(String hex,int fallback){try{return 0xFF000000|Integer.parseInt(hex.substring(1),16);}catch(Exception ex){return fallback;}}
     private static final class Data {
-        boolean smallTotemPops = true, fixedShields = true, shieldStatus = true;
-        double totemScale = 0.50, hudScale = 1.0;
-        int shieldX = 12, shieldY = 12;
-        String blockedColor = "#58D7FF", notBlockingColor = "#A8C7D8";
-        String brokenColor = "#FF667A", blockingColor = "#FFFFFF";
+        boolean smallTotemPops=true,fixedShields=true,shieldStatus=true;
+        double totemScale=.5,hudScale=1.0; int shieldX=12,shieldY=12;
+        String blockedColor="#58D7FF",notBlockingColor="#A8C7D8",brokenColor="#FF667A",blockingColor="#FFFFFF",language="en";
     }
 }

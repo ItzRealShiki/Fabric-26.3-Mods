@@ -8,39 +8,33 @@ import net.minecraft.world.item.Items;
 public final class FrostyHud {
     private static long lastBlockingChange;
     private static boolean wasBlocking;
-
     private FrostyHud() {}
-
     public static void register() {
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("frosty", "shield_status"), (g, delta) -> {
             if (!FrostyConfig.shieldStatus) return;
             var mc = net.minecraft.client.Minecraft.getInstance();
             if (mc.player == null || mc.gui.hud.isHidden()) return;
-
             var player = mc.player;
-            var main = player.getMainHandItem();
-            var off = player.getOffhandItem();
-            boolean hasShield = main.is(Items.SHIELD) || off.is(Items.SHIELD);
+            boolean hasShield = player.getMainHandItem().is(Items.SHIELD) || player.getOffhandItem().is(Items.SHIELD);
             boolean blocking = player.isBlocking();
             long now = System.currentTimeMillis();
             if (blocking != wasBlocking) { lastBlockingChange = now; wasBlocking = blocking; }
-
             String label;
             int color;
             if (!hasShield) {
-                label = "NO SHIELD";
+                label = FrostyText.tr("BROKEN / NO SHIELD", "KAPUTT / KEIN SCHILD");
                 color = FrostyConfig.color(FrostyConfig.brokenColor, 0xFFFF667A);
             } else if (blocking && now - lastBlockingChange < 180L) {
-                label = "BLOCKING";
+                label = FrostyText.tr("BLOCKING", "BLOCKT GERADE");
                 color = FrostyConfig.color(FrostyConfig.blockingColor, 0xFFFFFFFF);
             } else if (blocking) {
-                label = "BLOCKED";
+                label = FrostyText.tr("BLOCKED", "BLOCKIERT");
                 color = FrostyConfig.color(FrostyConfig.blockedColor, 0xFF58D7FF);
             } else {
-                label = "NOT BLOCKING";
+                label = FrostyText.tr("NOT BLOCKING", "BLOCKIERT NICHT");
                 color = FrostyConfig.color(FrostyConfig.notBlockingColor, 0xFFA8C7D8);
             }
-
+            label = FrostyText.sc(label);
             float scale = (float) FrostyConfig.hudScale;
             g.pose().pushMatrix();
             g.pose().translate(FrostyConfig.shieldX, FrostyConfig.shieldY);
