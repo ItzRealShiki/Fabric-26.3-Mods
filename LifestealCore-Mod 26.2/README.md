@@ -9,4 +9,4 @@ Client-side Fabric mod for supported LifestealCore servers.
 - The server only enables these settings for players with `Builder.Core` or `Admin.Core`.
 - Player preferences are stored by LifestealCore; the mod itself has no local toggle.
 
-Minecraft Java 26.2, Fabric Loader 0.19.3+, Fabric API 0.161.0+26.2, Java 25.
+Minecraft Java 26.3, Fabric Loader 0.20.1+, Fabric API 0.166.2+26.3, Java 25.
