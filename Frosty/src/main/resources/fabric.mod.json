@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "frosty",
+  "version": "${version}",
+  "name": "Frosty",
+  "description": "A frosty client-side Minecraft utility mod.",
+  "authors": ["Leon"],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["de.leon.frosty.FrostyClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*",
+    "fabric-key-mapping-api-v1": "*"
+  }
+}
