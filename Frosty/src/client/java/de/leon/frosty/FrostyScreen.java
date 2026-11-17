@@ -158,7 +158,8 @@ public final class FrostyScreen extends Screen {
                 y + 42 + pageSize * 47, 174, 29, () -> {
                     Pack target = deleteCandidate;
                     deleteCandidate = null;
-                    status = FrostyPackManager.delete(target) ? "PACK DELETED" : "DELETE FAILED";
+                    status = "DELETING PACK...";
+                    FrostyPackManager.delete(target, deleted -> { status = deleted ? "PACK DELETED" : "DELETE FAILED"; rebuildWidgets(); });
                     rebuildWidgets();
                 }, false);
             addStyled(c("CANCEL", "ABBRECHEN"), contentX + contentW - 126,

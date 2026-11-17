@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 
 public final class FrostyPackManager {
     private FrostyPackManager() {}
@@ -56,8 +57,29 @@ public final class FrostyPackManager {
         Minecraft.getInstance().reloadResourcePacks();
     }
 
-    public static boolean delete(Pack pack) {
-        if (!canDelete(pack) || enabled(pack)) return false;
+    public static void delete(Pack pack, Consumer<Boolean> completion) {
+        if (!canDelete(pack)) { completion.accept(false); return; }
+        Minecraft minecraft = Minecraft.getInstance();
+        PackRepository repository = minecraft.getResourcePackRepository();
+        if (enabled(pack)) {
+            List<String> selected = new ArrayList<>(repository.getSelectedIds());
+            selected.remove(pack.getId());
+            repository.setSelected(selected);
+            minecraft.options.save();
+            minecraft.reloadResourcePacks().whenComplete((unused, error) -> minecraft.execute(() -> {
+                if (error != null) { completion.accept(false); return; }
+                boolean deleted = deleteFile(pack);
+                repository.reload();
+                completion.accept(deleted);
+            }));
+        } else {
+            boolean deleted = deleteFile(pack);
+            repository.reload();
+            completion.accept(deleted);
+        }
+    }
+
+    private static boolean deleteFile(Pack pack) {
         Path root = Minecraft.getInstance().getResourcePackDirectory().toAbsolutePath().normalize();
         Path target = root.resolve(pack.getId().substring("file/".length())).normalize();
         if (!target.startsWith(root) || target.equals(root)) return false;
@@ -69,7 +91,6 @@ public final class FrostyPackManager {
             } else {
                 Files.deleteIfExists(target);
             }
-            Minecraft.getInstance().getResourcePackRepository().reload();
             return true;
         } catch (IOException exception) {
             FrostyLog.add(FrostyLog.LevelType.ERROR, "Could not delete resource pack " + pack.getId() + ": " + exception.getMessage());
