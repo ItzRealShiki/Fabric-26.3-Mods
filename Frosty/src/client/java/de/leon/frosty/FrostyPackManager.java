@@ -18,7 +18,6 @@ public final class FrostyPackManager {
     public static List<Pack> packs() {
         PackRepository repository = Minecraft.getInstance().getResourcePackRepository();
         return repository.getAvailablePacks().stream()
-            .filter(pack -> !pack.isHidden())
             .sorted(Comparator.comparing(pack -> pack.getTitle().getString(), String.CASE_INSENSITIVE_ORDER))
             .toList();
     }
