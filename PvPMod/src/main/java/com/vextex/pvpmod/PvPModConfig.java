@@ -19,13 +19,8 @@ public final class PvPModConfig {
 
         private final String label;
 
-        HandMode(String label) {
-            this.label = label;
-        }
-
-        public String label() {
-            return label;
-        }
+        HandMode(String label) { this.label = label; }
+        public String label() { return label; }
 
         public HandMode next() {
             HandMode[] values = values();
@@ -39,13 +34,12 @@ public final class PvPModConfig {
 
     static {
         for (PvPFeature feature : PvPFeature.values()) {
-            FEATURES.put(feature, false);
+            FEATURES.put(feature, feature == PvPFeature.PARTICLES);
         }
         load();
     }
 
-    private PvPModConfig() {
-    }
+    private PvPModConfig() {}
 
     public static boolean isEnabled(PvPFeature feature) {
         return FEATURES.getOrDefault(feature, false);
@@ -56,9 +50,7 @@ public final class PvPModConfig {
         save();
     }
 
-    public static HandMode handMode() {
-        return handMode;
-    }
+    public static HandMode handMode() { return handMode; }
 
     public static void cycleHandMode() {
         handMode = handMode.next();
@@ -66,16 +58,15 @@ public final class PvPModConfig {
     }
 
     private static void load() {
-        if (!Files.isRegularFile(FILE)) {
-            return;
-        }
+        if (!Files.isRegularFile(FILE)) return;
 
         Properties properties = new Properties();
         try (InputStream input = Files.newInputStream(FILE)) {
             properties.load(input);
             for (PvPFeature feature : PvPFeature.values()) {
+                String defaultValue = feature == PvPFeature.PARTICLES ? "true" : "false";
                 FEATURES.put(feature, Boolean.parseBoolean(
-                        properties.getProperty("feature." + feature.configKey(), "false")));
+                        properties.getProperty("feature." + feature.configKey(), defaultValue)));
             }
             try {
                 handMode = HandMode.valueOf(properties.getProperty("hand_mode", "BOTH"));
