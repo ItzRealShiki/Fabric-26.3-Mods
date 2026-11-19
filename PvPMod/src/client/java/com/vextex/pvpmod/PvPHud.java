@@ -80,8 +80,8 @@ public final class PvPHud {
             g.fill(px - 2, y - 2, px + 18, y + 20, 0x88000000);
             if (!stack.isEmpty()) {
                 g.item(stack, px, y);
-                int remaining = stack.isDamageableItem()
-                        ? Math.max(0, stack.getMaxDamage() - stack.getDamageValue()) : -1;
+                int remaining = stack.isDamageableItem() && stack.getMaxDamage() > 0
+                        ? Math.max(0, 100 - (stack.getDamageValue() * 100 / stack.getMaxDamage())) : -1;
                 if (remaining >= 0) {
                     int color = remaining < 20 ? 0xFFFF5555 : remaining < 50 ? 0xFFFFAA33 : 0xFF55FF55;
                     String text = remaining + "%";
