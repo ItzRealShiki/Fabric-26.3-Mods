@@ -1,0 +1,8 @@
+{
+  "key.packmanager.open": "Open PackManager",
+  "screen.packmanager.title": "PackManager",
+  "screen.packmanager.subtitle": "Resource pack management",
+  "screen.packmanager.update_info": "Updates are checked using information provided by pack creators.",
+  "screen.packmanager.update_unknown": "Update status unknown",
+  "screen.packmanager.update_help": "Minecraft version compatibility is not used to determine update availability."
+}
