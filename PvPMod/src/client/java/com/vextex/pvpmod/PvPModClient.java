@@ -51,7 +51,14 @@ public final class PvPModClient implements ClientModInitializer {
         }
 
         boolean fullbrightEnabled = PvPModConfig.isEnabled(PvPFeature.FULLBRIGHT);
-        if (lastFullbrightState == null || lastFullbrightState != fullbrightEnabled) {
+        if (lastFullbrightState == null) {
+            lastFullbrightState = fullbrightEnabled;
+            if (fullbrightEnabled) {
+                originalGamma = client.options.gamma().get();
+                client.options.gamma().set(16.0);
+                client.options.save();
+            }
+        } else if (lastFullbrightState != fullbrightEnabled) {
             if (fullbrightEnabled) {
                 originalGamma = client.options.gamma().get();
                 client.options.gamma().set(16.0);
