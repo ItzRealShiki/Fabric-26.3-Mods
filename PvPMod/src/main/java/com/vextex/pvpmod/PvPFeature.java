@@ -1,8 +1,6 @@
 package com.vextex.pvpmod;
 
 public enum PvPFeature {
-    FIXED_SHIELDS("Fixed Shields", "Shield behavior and feedback fixes"),
-    SHIELD_STATUS("Shield Status", "Shows whether a shield is ready"),
     TOTEM_SIZE("Totem Size", "Adjusts held totem size"),
     PARTICLES("Particles", "Enables or disables selected particles"),
     SMALL_HELD_ITEMS("Small Held Items", "Reduces held item model size"),
