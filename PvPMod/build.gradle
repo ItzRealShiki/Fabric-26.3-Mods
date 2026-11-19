@@ -1,10 +1,9 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id "net.fabricmc.fabric-loom" version "${loom_version}"
 }
 
 version = project.mod_version
 group = project.maven_group
-
 base {
     archivesName = project.archives_base_name
 }
@@ -17,10 +16,19 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        "pvpmod" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.release = 25
 }
-
 java {
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
@@ -31,11 +39,5 @@ processResources {
     inputs.property "version", project.version
     filesMatching("fabric.mod.json") {
         expand "version": project.version
-    }
-}
-
-jar {
-    from("LICENSE") {
-        rename { "${it}_${project.archives_base_name}" }
     }
 }
