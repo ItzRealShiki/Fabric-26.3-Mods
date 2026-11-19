@@ -2,7 +2,7 @@
 
 A client-side Fabric mod for Minecraft Java 26.3.
 
-PackManager is designed to extend resource-pack management while retaining the familiar vanilla Minecraft visual style.
+PackManager extends Minecraft's existing **Options → Resource Packs** screen and keeps the familiar vanilla interface. It does not add a separate key binding or standalone screen.
 
 ## Update information
 
@@ -15,5 +15,3 @@ Use Java 25 and run:
 ```bash
 ./gradlew build
 ```
-
-The mod is client-side only. Press **P** to open PackManager.
