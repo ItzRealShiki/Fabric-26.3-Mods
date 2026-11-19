@@ -16,15 +16,7 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
-loom {
-    splitEnvironmentSourceSets()
-    mods {
-        "pvpmod" {
-            sourceSet sourceSets.main
-            sourceSet sourceSets.client
-        }
-    }
-}
+sourceSets.main.java.srcDir("src/client/java")
 
 tasks.withType(JavaCompile).configureEach {
     options.release = 25
