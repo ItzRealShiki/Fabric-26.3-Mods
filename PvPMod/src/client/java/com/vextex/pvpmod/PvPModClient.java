@@ -7,8 +7,8 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.particles.ParticleStatus;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ParticleStatus;
 
 public final class PvPModClient implements ClientModInitializer {
     private static KeyMapping menuKey;
