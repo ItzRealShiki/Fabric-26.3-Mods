@@ -1,5 +1,12 @@
 {
+  "screen.packmanager.info": "Pack Info",
+  "screen.packmanager.info_empty": "No creator metadata",
+  "screen.packmanager.check_updates": "Check Updates",
+  "screen.packmanager.checking": "Checking...",
+  "screen.packmanager.no_metadata": "No update metadata",
+  "screen.packmanager.update_unknown": "Unknown: %s",
+  "screen.packmanager.updates_found": "Updates: %s",
+  "screen.packmanager.up_to_date": "Up to date",
   "screen.packmanager.update_info": "Updates are checked using information provided by pack creators.",
-  "screen.packmanager.update_unknown": "Update status unknown",
-  "screen.packmanager.update_help": "Minecraft version compatibility is not used to determine update availability."
+  "screen.packmanager.update_help": "Minecraft version compatibility and pack format are never used to infer update availability."
 }
