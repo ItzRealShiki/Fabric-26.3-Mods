@@ -2,6 +2,7 @@ package de.leon.packmanager;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.packs.PackSelectionScreen;
 import net.minecraft.network.chat.Component;
@@ -33,8 +34,8 @@ public final class PackManagerClient implements ClientModInitializer {
                         result -> button.setMessage(Component.translatable(result.translationKey(), result.count())));
             }).bounds(Math.max(4, scaledWidth - 112), Math.max(4, scaledHeight - 58), 108, 20).build();
 
-            screen.addRenderableWidget(infoButton);
-            screen.addRenderableWidget(updateButton);
+            Screens.getWidgets(screen).add(infoButton);
+            Screens.getWidgets(screen).add(updateButton);
         });
     }
 }
