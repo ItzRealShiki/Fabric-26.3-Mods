@@ -2,6 +2,10 @@
 
 A client-side Fabric mod for Minecraft Java 26.3 (Java 25). Privacy Mod provides a privacy information dashboard and a small API that other client mods can use to register additional privacy entries.
 
+## ReGlass scope
+
+ReGlass effects are limited to this mod's own interface; vanilla Minecraft screens retain their original appearance.
+
 ## Usage
 
 - Press **H** to open or close the Privacy Library.
