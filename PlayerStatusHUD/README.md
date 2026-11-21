@@ -2,6 +2,10 @@
 
 A client-side Fabric mod for Minecraft Java 26.3 (Java 25). It displays compact status cards for nearby players.
 
+## ReGlass scope
+
+Liquid-glass effects are used only by this mod's own player-status overlay. Vanilla Minecraft screens and standard HUD elements retain their original appearance.
+
 ## Features
 
 - Player status cards for other players within 100 blocks
