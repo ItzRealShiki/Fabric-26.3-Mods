@@ -3,13 +3,13 @@ package de.itzrealshiki.provisuals;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Locale;
 
 public final class ProVisualsUi {
-    private static final ResourceLocation UI_FONT =
-            ResourceLocation.fromNamespaceAndPath("provisuals", "ui");
+    private static final Identifier UI_FONT =
+            Identifier.fromNamespaceAndPath("provisuals", "ui");
 
     private ProVisualsUi() {}
 
