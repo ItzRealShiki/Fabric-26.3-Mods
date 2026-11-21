@@ -7,10 +7,6 @@ import restudio.reglass.client.api.ReGlassApi;
 import restudio.reglass.client.api.WidgetStyle;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -44,11 +40,8 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
     private static final int HEALTH_BACKGROUND = 0xFF3B2024;
     private static final int HEALTH_COLOR = 0xFFE34B55;
     private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath("playerstatushud", "player_status");
-    private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
-        Identifier.fromNamespaceAndPath("playerstatushud", "main")
-    );
-    private static KeyMapping toggleHudKey;
-    private static boolean hudEnabled = true;
+    private static volatile boolean hudEnabled = true;
+    private static volatile int sizePercent = 50;
 
     @Override
     public void onInitializeClient() {
@@ -62,15 +55,12 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
             )
         ));
 
-        toggleHudKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.playerstatushud.toggle_hud",
-            InputConstants.Type.KEYBOARD,
-            InputConstants.KEY_H,
-            KEY_CATEGORY
-        ));
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            while (toggleHudKey.consumeClick()) {
-                hudEnabled = !hudEnabled;
+        PrivacyManager.registerHudController(new PrivacyManager.HudController() {
+            @Override public boolean isEnabled() { return hudEnabled; }
+            @Override public void setEnabled(boolean enabled) { hudEnabled = enabled; }
+            @Override public int getSizePercent() { return sizePercent; }
+            @Override public void setSizePercent(int percent) {
+                sizePercent = Mth.clamp(percent, 25, 100);
             }
         });
         HudElementRegistry.addLast(HUD_ID, (graphics, deltaTracker) -> renderPlayers(graphics));
@@ -93,12 +83,15 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
             float screenX = (float) ((projected.x * 0.5 + 0.5) * graphics.guiWidth());
             float screenY = (float) ((0.5 - projected.y * 0.5) * graphics.guiHeight());
 
-            int x = Math.round(screenX - BOX_WIDTH / 2.0f);
-            int y = Math.round(screenY - BOX_HEIGHT);
+            float scale = sizePercent / 100.0f;
+            int scaledWidth = Math.round(BOX_WIDTH * scale);
+            int scaledHeight = Math.round(BOX_HEIGHT * scale);
+            int x = Math.round(screenX - scaledWidth / 2.0f);
+            int y = Math.round(screenY - scaledHeight);
 
-            // Draw only complete panels that fit inside the visible GUI area.
-            if (x < 0 || y < 0 || x + BOX_WIDTH > graphics.guiWidth()
-                || y + BOX_HEIGHT > graphics.guiHeight()) continue;
+            // Keep a fixed screen-space size; distance only changes the projected anchor.
+            if (x < 0 || y < 0 || x + scaledWidth > graphics.guiWidth()
+                || y + scaledHeight > graphics.guiHeight()) continue;
 
             if (target instanceof AbstractClientPlayer clientPlayer) {
                 drawPlayerBox(graphics, client, clientPlayer, x, y);
@@ -115,6 +108,12 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
     }
 
     private static void drawPlayerBox(GuiGraphicsExtractor graphics, Minecraft client, AbstractClientPlayer player, int x, int y) {
+        float scale = sizePercent / 100.0f;
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x, y);
+        graphics.pose().scale(scale, scale);
+        x = 0;
+        y = 0;
         float maxHealth = Math.max(1.0f, player.getMaxHealth());
         float health = Mth.clamp(player.getHealth(), 0.0f, maxHealth);
         float healthFraction = health / maxHealth;
@@ -149,6 +148,7 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
         if (filled > 0) graphics.fill(barX, barY, barX + filled, barY + 5, HEALTH_COLOR);
 
         drawArmor(graphics, player, x + 7, y + 42);
+        graphics.pose().popMatrix();
     }
 
     private static String formatHearts(float value) {
