@@ -15,7 +15,6 @@
     "minecraft": "~26.3",
     "java": ">=25",
     "fabric-api": "*",
-    "reglass": ">=2.1.0",
     "reglass": ">=2.1.0"
   }
 }
