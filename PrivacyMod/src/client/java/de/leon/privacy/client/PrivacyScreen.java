@@ -12,8 +12,8 @@ import restudio.reglass.client.api.WidgetStyle;
 import java.util.List;
 
 /**
- * Lightweight privacy dashboard. Uses Minecraft's batched GUI fills and text renderer;
- * no per-frame blur, framebuffer copies, or custom shader passes are required.
+ * Privacy dashboard rendered with the actual ReGlass Liquid Glass API.
+ * Uses one shared glass surface and a low blur radius for better performance.
  */
 public final class PrivacyScreen extends Screen {
     private static final int PANEL_WIDTH = 390;
@@ -21,6 +21,7 @@ public final class PrivacyScreen extends Screen {
     private static final int ROW_HEIGHT = 43;
     private static final WidgetStyle GLASS_STYLE = WidgetStyle.create()
         .tint(0x080808, 0.58f)
+        .blurRadius(2)
         .smoothing(0.05f)
         .shadow(22.0f, 0.24f, 0.0f, 4.0f)
         .shadowColor(0x000000, 0.82f);
