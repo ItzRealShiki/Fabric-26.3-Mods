@@ -76,9 +76,15 @@ public final class ProVisualsScreen extends Screen {
             featureRows.add(row);
             addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> {
                 ProVisualsConfig.toggle(feature.key());
-                status = feature.rendererConnected()
-                        ? feature.title() + " " + onOff(ProVisualsConfig.isEnabled(feature.key()))
-                        : "Preference saved — visual renderer not connected yet";
+                boolean enabled = ProVisualsConfig.isEnabled(feature.key());
+                if ("custom_sky".equals(feature.key())) {
+                    boolean applied = CustomSkyBridge.setEnabled(enabled);
+                    status = applied ? "Custom Sky " + onOff(enabled) : "Custom Sky renderer unavailable";
+                } else {
+                    status = feature.rendererConnected()
+                            ? feature.title() + " " + onOff(enabled)
+                            : "Preference saved — visual renderer not connected yet";
+                }
                 rebuildWidgets();
             }).bounds(x, y, contentWidth, rowHeight).build());
             y += rowHeight + rowGap;
@@ -100,20 +106,7 @@ public final class ProVisualsScreen extends Screen {
                             rebuildWidgets();
                         });
             }
-            case "Lyrics" -> {
-                addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> {
-                    boolean enabled = MusicLyricsBridge.toggleLyrics();
-                    status = "Lyrics " + onOff(enabled);
-                    rebuildWidgets();
-                }).bounds(x, py + 100, contentWidth, 30).build());
-                drawActionRows.add(new ActionRow("Lyrics", onOff(MusicLyricsBridge.isLyricsEnabled()),
-                        "Synced lyrics overlay", x, py + 100, contentWidth, 30, false));
-
-                addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> MusicLyricsBridge.openSettings())
-                        .bounds(x, py + 136, contentWidth, 30).build());
-                drawActionRows.add(new ActionRow("Lyrics settings", "›",
-                        "Typography and placement", x, py + 136, contentWidth, 30, true));
-            }
+            case "Lyrics" -> buildSkyLyricsPage(x, py, contentWidth);
             default -> {
                 sectionHeaders.add(new SectionHeader("Music player",
                         "Playback information and media controls", py + 76));
@@ -127,6 +120,125 @@ public final class ProVisualsScreen extends Screen {
                         });
             }
         }
+    }
+
+    private void buildSkyLyricsPage(int x, int py, int contentWidth) {
+        sectionHeaders.add(new SectionHeader("SkyLyrics",
+                "Lyrics in the Sky  /  all settings in ProVisuals", py + 72));
+        if (!MusicLyricsBridge.isPresent()) {
+            addLyricsOption("SkyLyrics module", "Unavailable",
+                    "The bundled lyrics module could not be found", x, py + 112, contentWidth,
+                    () -> status = "SkyLyrics module is not loaded");
+            return;
+        }
+
+        int gap = 10;
+        int half = (contentWidth - gap) / 2;
+        int y = py + 104;
+        int row = 34;
+
+        addLyricsOption("Lyrics overlay", onOff(MusicLyricsBridge.isLyricsEnabled()),
+                "Show or hide synced lyrics", x, y, contentWidth,
+                () -> status = "Lyrics " + onOff(MusicLyricsBridge.toggleLyrics()));
+        y += row;
+
+        addLyricsOption("Placement", lyricsLabel(MusicLyricsBridge.stringSetting("mode", "sky")),
+                "Sky or around the player", x, y, half,
+                () -> cycleLyricsChoice("mode", "sky", "around"));
+        addLyricsOption("Style", lyricsLabel(MusicLyricsBridge.stringSetting("style", "elegant")),
+                "Animation and line layout", x + half + gap, y, half,
+                () -> cycleLyricsChoice("style", "elegant", "natural", "flow", "classic"));
+        y += row;
+
+        addLyricsOption("Font", lyricsLabel(MusicLyricsBridge.stringSetting("font", "sans")),
+                "SkyLyrics text font", x, y, half,
+                () -> cycleLyricsChoice("font", "sans", "script", "minecraft"));
+        addLyricsOption("Palette", lyricsLabel(MusicLyricsBridge.stringSetting("palette", "standard")),
+                "Text and glow colors", x + half + gap, y, half,
+                () -> cycleLyricsChoice("palette", "standard", "rose", "lavender", "auto",
+                        "aurora", "sunset", "gold", "sakura", "ocean", "white"));
+        y += row;
+
+        addLyricsOption("Text size", String.format(java.util.Locale.ROOT, "%.1fx",
+                        MusicLyricsBridge.numberSetting("scale", 1.0f)),
+                "Cycle lyric text scale", x, y, half,
+                () -> cycleLyricsNumber("scale", 0.7f, 0.85f, 1.0f, 1.15f, 1.3f, 1.5f));
+        addLyricsOption("Opacity", Math.round(MusicLyricsBridge.numberSetting("opacity", 0.82f) * 100) + "%",
+                "Cycle lyric opacity", x + half + gap, y, half,
+                () -> cycleLyricsNumber("opacity", 0.4f, 0.55f, 0.7f, 0.82f, 0.9f, 1.0f));
+        y += row;
+
+        addLyricsOption("Behind terrain", onOff(MusicLyricsBridge.booleanSetting("skyBehindTerrain", true)),
+                "Mountains and blocks hide sky lyrics", x, y, half,
+                () -> toggleLyricsBoolean("skyBehindTerrain", true));
+        addLyricsOption("Follow view", onOff(MusicLyricsBridge.booleanSetting("followView", true)),
+                "Place new lines along your view", x + half + gap, y, half,
+                () -> toggleLyricsBoolean("followView", true));
+        y += row;
+
+        addLyricsOption("Beat bounce", onOff(MusicLyricsBridge.booleanSetting("beatBounce", false)),
+                "Lyrics react to the beat", x, y, half,
+                () -> toggleLyricsBoolean("beatBounce", false));
+        addLyricsOption("Title card", onOff(MusicLyricsBridge.booleanSetting("showTitleCard", true)),
+                "Show title and artist for new tracks", x + half + gap, y, half,
+                () -> toggleLyricsBoolean("showTitleCard", true));
+        y += row;
+
+        addLyricsOption("Now-playing bar", onOff(MusicLyricsBridge.booleanSetting("showHud", true)),
+                "Show the compact current-track bar", x, y, half,
+                () -> toggleLyricsBoolean("showHud", true));
+        addLyricsOption("Follow along", onOff(MusicLyricsBridge.booleanSetting("followAlong", false)),
+                "Lyrics move with your camera", x + half + gap, y, half,
+                () -> toggleLyricsBoolean("followAlong", false));
+    }
+
+    private void addLyricsOption(String title, String value, String description,
+                                 int x, int y, int width, Runnable action) {
+        addRenderableWidget(Button.builder(ProVisualsUi.component(""), button -> {
+            action.run();
+            rebuildWidgets();
+        }).bounds(x, y, width, 31).build());
+        drawActionRows.add(new ActionRow(title, value, description, x, y, width, 31, false));
+    }
+
+    private void cycleLyricsChoice(String field, String... values) {
+        String next = MusicLyricsBridge.cycleStringSetting(field, values);
+        status = "SkyLyrics " + field + ": " + lyricsLabel(next);
+    }
+
+    private void cycleLyricsNumber(String field, float... values) {
+        float next = MusicLyricsBridge.cycleNumberSetting(field, values);
+        status = "SkyLyrics " + field + ": " + String.format(java.util.Locale.ROOT, "%.2f", next);
+    }
+
+    private void toggleLyricsBoolean(String field, boolean fallback) {
+        boolean enabled = MusicLyricsBridge.toggleBooleanSetting(field, fallback);
+        status = "SkyLyrics " + field + " " + onOff(enabled);
+    }
+
+    private static String lyricsLabel(String value) {
+        return switch (value) {
+            case "sky" -> "Sky";
+            case "around" -> "Around";
+            case "elegant" -> "Elegant";
+            case "natural" -> "Natural";
+            case "flow" -> "Flow";
+            case "classic" -> "Classic";
+            case "sans" -> "Poppins";
+            case "script" -> "Kalam";
+            case "minecraft" -> "Minecraft";
+            case "standard" -> "Standard";
+            case "rose" -> "Rose";
+            case "lavender" -> "Lavender";
+            case "auto" -> "Auto";
+            case "aurora" -> "Aurora";
+            case "sunset" -> "Sunset";
+            case "gold" -> "Gold";
+            case "sakura" -> "Sakura";
+            case "ocean" -> "Ocean";
+            case "white" -> "White";
+            default -> value;
+        };
     }
 
     private void buildToolsPage(int x, int py, int contentWidth) {
@@ -278,7 +390,7 @@ public final class ProVisualsScreen extends Screen {
             for (var child : children()) {
                 if (child instanceof Button button) {
                     ProVisualsUi.roundWidgetCorners(graphics, button.getX(), button.getY(),
-                            button.getWidth(), button.getHeight(), 6, 0xF0151520);
+                            button.getWidth(), button.getHeight(), 9, 0xF0151520);
                 }
             }
         }
@@ -303,7 +415,7 @@ public final class ProVisualsScreen extends Screen {
         renderSectionHeaders(graphics);
         ProVisualsUi.text(graphics, font, "ProVisuals", panelX() + 28,
                 panelY() + 126, 0xFFF1EDFA, true);
-        ProVisualsUi.text(graphics, font, "Select a category on the right.",
+        ProVisualsUi.text(graphics, font, "Select a category from the Music Island.",
                 panelX() + 28, panelY() + 145, 0xFFAAA4BA, false);
     }
 
