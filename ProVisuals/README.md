@@ -7,7 +7,7 @@ Client-side visual customization mod for Minecraft Java 26.3 / Fabric.
 - Violet accent
 - English in-game UI
 - Rounded corners enabled by default across ProVisuals custom surfaces
-- A global UI Corners setting switches between Rounded and Square; the choice is saved locally
+- Open ProVisuals with M, go to Settings, and click UI CORNERS to switch between Rounded and Square. The choice is saved locally in config/provisuals.properties and applies immediately
 - Dedicated Error Center
 
 ## Modules
