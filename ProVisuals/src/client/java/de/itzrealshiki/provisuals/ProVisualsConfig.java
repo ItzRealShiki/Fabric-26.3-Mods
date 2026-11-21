@@ -19,7 +19,7 @@ public final class ProVisualsConfig {
     public static String reflectionQuality = "MEDIUM";
     public static String reflectiveSurfaces = "ALL";
     public static boolean oreInteriorGlow = true;
-    public static boolean oreOutlineGlow = false;
+    public static boolean oreOutlineGlow = true;
     public static boolean musicIslandEnabled = true;
     public static boolean genreRecognitionEnabled = true;
     public static boolean roundedCorners = true;
@@ -57,7 +57,7 @@ public final class ProVisualsConfig {
             reflectionQuality = allowed(properties.getProperty("reflection.quality"), "LOW", "MEDIUM", "HIGH", "MEDIUM");
             reflectiveSurfaces = allowed(properties.getProperty("reflection.surfaces"), "ALL", "SELECTED", "WATER_ONLY", "ALL");
             oreInteriorGlow = Boolean.parseBoolean(properties.getProperty("ores.interior", "true"));
-            oreOutlineGlow = Boolean.parseBoolean(properties.getProperty("ores.outline", "false"));
+            oreOutlineGlow = Boolean.parseBoolean(properties.getProperty("ores.outline", "true"));
             musicIslandEnabled = Boolean.parseBoolean(properties.getProperty("music.island.enabled", "true"));
             genreRecognitionEnabled = Boolean.parseBoolean(properties.getProperty("music.genre_recognition.enabled", "true"));
             roundedCorners = Boolean.parseBoolean(properties.getProperty("ui.rounded_corners", "true"));

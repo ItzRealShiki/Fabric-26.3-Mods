@@ -1,24 +1,37 @@
 package de.itzrealshiki.provisuals;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
- * Optional integration with Nuit's public runtime API.
+ * Optional integration with Nuit's runtime API.
  *
- * ProVisuals deliberately does not bundle a second sky renderer: Nuit owns
- * resource-pack discovery, skybox conditions, texture loading and rendering.
+ * One loaded resource-pack skybox is treated as a universal skybox: dimension
+ * and vanilla-skybox restrictions are removed, while biome, effects, weather,
+ * coordinate ranges, fade and texture settings remain untouched.
  */
 public final class CustomSkyBridge {
     private static final String NUIT_API_CLASS = "me.flashyreese.mods.nuit.api.NuitApi";
+    private static final String ABSTRACT_SKYBOX_CLASS = "me.flashyreese.mods.nuit.skybox.AbstractSkybox";
+    private static final String CONDITIONS_CLASS = "me.flashyreese.mods.nuit.components.Conditions";
+    private static final String CONDITION_CLASS = "me.flashyreese.mods.nuit.components.Condition";
+
+    private static final Set<Object> UNIVERSAL_SKYBOXES =
+            Collections.newSetFromMap(new WeakHashMap<>());
+    private static long lastCoverageCheck;
 
     private CustomSkyBridge() {
     }
 
     private static Object manager() throws ReflectiveOperationException {
         Class<?> api = Class.forName(NUIT_API_CLASS);
-        Method getInstance = api.getMethod("getInstance");
-        return getInstance.invoke(null);
+        return api.getMethod("getInstance").invoke(null);
     }
 
     private static Object invoke(Object target, String method, Class<?>... parameterTypes)
@@ -26,21 +39,16 @@ public final class CustomSkyBridge {
         return target.getClass().getMethod(method, parameterTypes).invoke(target);
     }
 
-    /**
-     * Enables or disables Nuit's skybox renderer without making Nuit a hard
-     * dependency of ProVisuals.
-     */
     public static boolean setEnabled(boolean enabled) {
         try {
             Object nuit = manager();
-            Method setter = nuit.getClass().getMethod("setEnabled", boolean.class);
-            setter.invoke(nuit, enabled);
+            nuit.getClass().getMethod("setEnabled", boolean.class).invoke(nuit, enabled);
             Object actual = invoke(nuit, "isEnabled");
-            return actual instanceof Boolean value && value == enabled;
+            boolean applied = actual instanceof Boolean value && value == enabled;
+            if (applied && enabled) ensureAllWorldCoverage();
+            return applied;
         } catch (ClassNotFoundException exception) {
-            if (enabled) {
-                Diagnostics.warn("Custom Sky needs the optional Nuit mod.");
-            }
+            if (enabled) Diagnostics.warn("Custom Sky needs the optional Nuit mod.");
             return !enabled;
         } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
             Diagnostics.warn("Could not control Nuit's skybox engine: " + exception.getMessage());
@@ -48,14 +56,53 @@ public final class CustomSkyBridge {
         }
     }
 
-    /**
-     * Returns a useful UI status and makes clear when a pack has no matching
-     * skybox for the current dimension/conditions.
-     */
-    public static String statusText(boolean enabled) {
-        if (!enabled) {
-            return "Custom Sky OFF — vanilla sky restored";
+    /** If exactly one skybox is loaded, remove only its dimension and vanilla-skybox filters. */
+    public static void ensureAllWorldCoverage() {
+        long now = System.currentTimeMillis();
+        if (now - lastCoverageCheck < 1500L) return;
+        lastCoverageCheck = now;
+
+        try {
+            Object nuit = manager();
+            Object raw = invoke(nuit, "getSkyboxes");
+            if (!(raw instanceof Map<?, ?> skyboxes) || skyboxes.size() != 1) return;
+
+            Object skybox = skyboxes.values().iterator().next();
+            if (UNIVERSAL_SKYBOXES.contains(skybox)) return;
+
+            Class<?> abstractSkybox = Class.forName(ABSTRACT_SKYBOX_CLASS);
+            if (!abstractSkybox.isInstance(skybox)) return;
+
+            Field conditionsField = abstractSkybox.getDeclaredField("conditions");
+            conditionsField.setAccessible(true);
+            Object oldConditions = conditionsField.get(skybox);
+            Class<?> condition = Class.forName(CONDITION_CLASS);
+            Class<?> conditions = Class.forName(CONDITIONS_CLASS);
+            Object empty = condition.getMethod("of").invoke(null);
+
+            String[] methods = {"getBiomes", "getEffects", "getWeathers",
+                    "getXRanges", "getYRanges", "getZRanges"};
+            Object[] preserved = new Object[methods.length];
+            for (int i = 0; i < methods.length; i++) {
+                preserved[i] = oldConditions.getClass().getMethod(methods[i]).invoke(oldConditions);
+            }
+
+            Constructor<?> constructor = conditions.getConstructor(
+                    condition, condition, condition, condition, condition, condition, condition, condition);
+            Object universal = constructor.newInstance(
+                    preserved[0], empty, empty, preserved[1], preserved[2], preserved[3], preserved[4], preserved[5]);
+            conditionsField.set(skybox, universal);
+            UNIVERSAL_SKYBOXES.add(skybox);
+            Diagnostics.info("Single Nuit resource-pack skybox now covers every dimension.");
+        } catch (ClassNotFoundException exception) {
+            // Nuit is optional; without it there is no skybox engine to control.
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            Diagnostics.warn("Could not enable all-dimension sky coverage: " + exception.getMessage());
         }
+    }
+
+    public static String statusText(boolean enabled) {
+        if (!enabled) return "Custom Sky OFF — vanilla sky restored";
 
         try {
             Object nuit = manager();
@@ -64,15 +111,21 @@ public final class CustomSkyBridge {
                 return "Nuit is installed, but its skybox engine is disabled";
             }
 
-            Object hasRenderableSkybox = invoke(nuit, "hasActiveRenderableSkyboxes");
-            if (!(hasRenderableSkybox instanceof Boolean hasSkybox) || !hasSkybox) {
-                return "Nuit ON — no matching resource-pack skybox in this dimension";
-            }
+            Object raw = invoke(nuit, "getSkyboxes");
+            int loaded = raw instanceof Map<?, ?> map ? map.size() : 0;
+            Object active = invoke(nuit, "getActiveSkyboxes");
+            int count = active instanceof List<?> list ? list.size() : 0;
 
-            Object activeSkyboxes = invoke(nuit, "getActiveSkyboxes");
-            int count = activeSkyboxes instanceof List<?> list ? list.size() : 1;
-            return "Nuit ON — " + count
-                    + " active skybox(es); source texture resolution preserved (GPU limit applies)";
+            if (loaded == 1 && raw instanceof Map<?, ?> map
+                    && UNIVERSAL_SKYBOXES.contains(map.values().iterator().next())) {
+                return "Nuit ON — universal skybox for all dimensions; " + count + " active";
+            }
+            if (count == 0) {
+                return loaded == 0
+                        ? "Nuit ON — no skybox loaded from resource packs"
+                        : "Nuit ON — no matching skybox active in this dimension";
+            }
+            return "Nuit ON — " + count + " active skybox(es); pack dimension rules preserved";
         } catch (ClassNotFoundException exception) {
             return "Nuit not found — install/enable Nuit for resource-pack skies";
         } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {

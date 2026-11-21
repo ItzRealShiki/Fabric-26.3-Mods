@@ -160,6 +160,27 @@ public final class MusicLyricsBridge {
         }
     }
 
+    /** Hides the nested SkyLyrics Now Playing HUD so Music Island is the only player overlay. */
+    public static boolean disableSeparateNowPlayingHud() {
+        try {
+            Object config = lyricsConfig();
+            Field field = config.getClass().getField("showHud");
+            if (field.getBoolean(config)) {
+                field.setBoolean(config, false);
+                config.getClass().getMethod("save").invoke(config);
+            }
+            return true;
+        } catch (ClassNotFoundException exception) {
+            return true;
+        } catch (IllegalStateException exception) {
+            // SkyLyrics may initialize a few ticks after ProVisuals.
+            return false;
+        } catch (ReflectiveOperationException | RuntimeException exception) {
+            Diagnostics.warn("Could not hide SkyLyrics' separate Now Playing HUD: " + exception.getMessage());
+            return true;
+        }
+    }
+
     public static void openSettings() {
         ProVisualsScreen.openFromMusicIsland("Music", "Lyrics");
     }

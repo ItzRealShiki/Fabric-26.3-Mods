@@ -10,6 +10,7 @@ import java.util.List;
 
 public final class ProVisualsScreen extends Screen {
     private record FeatureRow(FeatureRegistry.Feature feature, int x, int y, int width, int height) {}
+    private record NavigationRow(String label, String category, String subcategory, int x, int y, int width, int height) {}
     private record SectionHeader(String title, String subtitle, int y) {}
     private record SubcategoryTab(String title, int x, int y, int width, int height) {}
     private record ActionRow(String title, String value, String description,
@@ -20,6 +21,7 @@ public final class ProVisualsScreen extends Screen {
     private String status = "All systems ready";
 
     private final List<FeatureRow> featureRows = new ArrayList<>();
+    private final List<NavigationRow> navigationRows = new ArrayList<>();
     private final List<SectionHeader> sectionHeaders = new ArrayList<>();
     private final List<ActionRow> drawActionRows = new ArrayList<>();
 
@@ -31,12 +33,14 @@ public final class ProVisualsScreen extends Screen {
     protected void init() {
         clearWidgets();
         featureRows.clear();
+        navigationRows.clear();
         sectionHeaders.clear();
         drawActionRows.clear();
 
-        int contentX = panelX() + 28;
-        int contentWidth = Math.max(180, Math.min(660, width - contentX - 28));
+        int contentX = panelX() + 164;
+        int contentWidth = Math.max(220, Math.min(520, width - contentX - 28));
         int py = panelY();
+        buildNavigation(py);
 
         switch (page) {
             case "Overview" -> buildOverview(contentX, py, contentWidth);
@@ -47,9 +51,66 @@ public final class ProVisualsScreen extends Screen {
         }
     }
 
+    private void buildNavigation(int py) {
+        int x = panelX() + 18;
+        int y = py + 68;
+        int width = 122;
+
+        for (String category : FeatureRegistry.CATEGORIES) {
+            addNavigationRow(navigationLabel(category), category, null, x, y, width, 21);
+            y += 23;
+            if (category.equals(page)) {
+                for (String subcategory : categorySubcategories(category)) {
+                    addNavigationRow("  " + subcategoryLabel(subcategory), category,
+                            subcategory, x + 5, y, width - 5, 18);
+                    y += 19;
+                }
+                y += 3;
+            }
+        }
+    }
+
+    private void addNavigationRow(String label, String category, String subcategory,
+                                  int x, int y, int width, int height) {
+        navigationRows.add(new NavigationRow(label, category, subcategory, x, y, width, height));
+        addRenderableWidget(Button.builder(ProVisualsUi.component(""), button -> {
+            page = category;
+            if (subcategory == null) {
+                List<String> subcategories = categorySubcategories(category);
+                if (!subcategories.isEmpty()) selectedSubcategory = subcategories.get(0);
+                status = "Page: " + navigationLabel(category);
+            } else {
+                selectedSubcategory = subcategory;
+                status = subcategoryLabel(subcategory);
+            }
+            rebuildWidgets();
+        }).bounds(x, y, width, height).build());
+    }
+
+    private static String navigationLabel(String category) {
+        return "Overview".equals(category) ? "Home" : category;
+    }
+
+    private void renderNavigation(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        for (NavigationRow row : navigationRows) {
+            boolean selected = row.subcategory() == null
+                    ? row.category().equals(page)
+                    : row.category().equals(page) && row.subcategory().equals(selectedSubcategory);
+            boolean hovered = inside(row.x(), row.y(), row.width(), row.height(), mouseX, mouseY);
+            int background = selected ? 0xFF392A56 : hovered ? 0xFF262334 : 0x001D1B29;
+            if ((background >>> 24) != 0) {
+                ProVisualsUi.fill(graphics, row.x(), row.y(), row.width(), row.height(), 7, background);
+            }
+            int color = selected ? 0xFFF1E9FF
+                    : row.subcategory() != null ? 0xFFAAA4BA : 0xFFD1CADF;
+            ProVisualsUi.text(graphics, font, row.label(), row.x() + 8, row.y() + 6,
+                    color, selected);
+        }
+    }
+
     private void buildOverview(int x, int py, int contentWidth) {
         sectionHeaders.add(new SectionHeader("Welcome",
-                "Open a category from the Music Island", py + 76));
+                "Choose a category from the main navigation", py + 76));
     }
 
     private void buildFeaturePage(int x, int py, int contentWidth) {
@@ -186,9 +247,6 @@ public final class ProVisualsScreen extends Screen {
                 () -> toggleLyricsBoolean("showTitleCard", true));
         y += row;
 
-        addLyricsOption("Now-playing bar", onOff(MusicLyricsBridge.booleanSetting("showHud", true)),
-                "Show the compact current-track bar", x, y, half,
-                () -> toggleLyricsBoolean("showHud", true));
         addLyricsOption("Follow along", onOff(MusicLyricsBridge.booleanSetting("followAlong", false)),
                 "Lyrics move with your camera", x + half + gap, y, half,
                 () -> toggleLyricsBoolean("followAlong", false));
@@ -381,6 +439,7 @@ public final class ProVisualsScreen extends Screen {
         ProVisualsUi.fill(graphics, px, py, Math.min(732, width - 24), 392, 18, 0xF0151520);
         ProVisualsUi.fill(graphics, px, py, 3, 392, 2, 0xFF9A6BFF);
         ProVisualsUi.fill(graphics, px + 16, py + 54, Math.min(700, width - 56), 1, 1, 0x555E536F);
+        ProVisualsUi.fill(graphics, px + 148, py + 64, 1, 308, 1, 0x554E455D);
 
 
     }
@@ -401,6 +460,7 @@ public final class ProVisualsScreen extends Screen {
         int y = panelY() + 17;
         ProVisualsUi.text(graphics, font, "ProVisuals", x, y, 0xFFFFFFFF, true);
         ProVisualsUi.text(graphics, font, "Visuals + SkyLyrics  /  Right Shift", x, y + 16, 0xFFBCA4FF, true);
+        renderNavigation(graphics, mouseX, mouseY);
 
         switch (page) {
             case "Overview" -> renderOverview(graphics, mouseX, mouseY);
@@ -415,10 +475,10 @@ public final class ProVisualsScreen extends Screen {
 
     private void renderOverview(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         renderSectionHeaders(graphics);
-        ProVisualsUi.text(graphics, font, "ProVisuals", panelX() + 28,
+        ProVisualsUi.text(graphics, font, "ProVisuals", panelX() + 164,
                 panelY() + 126, 0xFFF1EDFA, true);
-        ProVisualsUi.text(graphics, font, "Select a category from the Music Island.",
-                panelX() + 28, panelY() + 145, 0xFFAAA4BA, false);
+        ProVisualsUi.text(graphics, font, "Select a category from the left navigation panel.",
+                panelX() + 164, panelY() + 145, 0xFFAAA4BA, false);
     }
 
     private void renderFeaturePage(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -445,7 +505,7 @@ public final class ProVisualsScreen extends Screen {
         if (featureRows.stream().anyMatch(row -> !row.feature().rendererConnected())) {
             ProVisualsUi.text(graphics, font,
                     "Some modules only save preferences until their visual renderer is connected.",
-                    panelX() + 28, panelY() + 347, 0xFFE8C987, false);
+                    panelX() + 164, panelY() + 347, 0xFFE8C987, false);
         }
     }
 
@@ -463,9 +523,9 @@ public final class ProVisualsScreen extends Screen {
         renderSectionHeaders(graphics);
         for (ActionRow row : drawActionRows) renderActionRow(graphics, row, mouseX, mouseY);
 
-        int listX = panelX() + 28;
+        int listX = panelX() + 164;
         int listY = panelY() + 164;
-        int listWidth = Math.min(660, width - listX - 28);
+        int listWidth = Math.min(520, width - listX - 28);
         ProVisualsUi.fill(graphics, listX, listY, listWidth, 150, 13, 0xFF1D1B29);
         ProVisualsUi.text(graphics, font, "Recent events", listX + 14, listY + 13, 0xFFD6C8F5, true);
         List<String> entries = Diagnostics.recentEntries();
@@ -486,9 +546,9 @@ public final class ProVisualsScreen extends Screen {
 
     private void renderSectionHeaders(GuiGraphicsExtractor graphics) {
         for (SectionHeader header : sectionHeaders) {
-            ProVisualsUi.text(graphics, font, header.title(), panelX() + 28, header.y(),
+            ProVisualsUi.text(graphics, font, header.title(), panelX() + 164, header.y(),
                     0xFFEDE7FA, true);
-            ProVisualsUi.text(graphics, font, header.subtitle(), panelX() + 28, header.y() + 15,
+            ProVisualsUi.text(graphics, font, header.subtitle(), panelX() + 164, header.y() + 15,
                     0xFF9F96B0, false);
         }
     }

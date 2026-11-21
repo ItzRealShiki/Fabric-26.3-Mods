@@ -20,11 +20,13 @@ public final class ProVisualsClient implements ClientModInitializer {
     private static double previousGamma = 1.0;
     private static boolean gammaCaptured;
     private static boolean skyLyricsSettingsKeyUnbound;
+    private static boolean skyLyricsHudDisabled;
 
     @Override
     public void onInitializeClient() {
         Diagnostics.loadPreviousEntries();
         ProVisualsConfig.load();
+        GlowOutlineRenderer.register();
         skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.provisuals.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY));
@@ -32,6 +34,8 @@ public final class ProVisualsClient implements ClientModInitializer {
         // Run after every client mod initializer so Nuit cannot overwrite this preference during its own startup.
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
+            skyLyricsHudDisabled = MusicLyricsBridge.disableSeparateNowPlayingHud();
+            CustomSkyBridge.ensureAllWorldCoverage();
             boolean customSkyEnabled = ProVisualsConfig.isEnabled("custom_sky");
             if (CustomSkyBridge.setEnabled(customSkyEnabled)) {
                 Diagnostics.info(CustomSkyBridge.statusText(customSkyEnabled));
@@ -53,6 +57,11 @@ public final class ProVisualsClient implements ClientModInitializer {
             if (!skyLyricsSettingsKeyUnbound) {
                 skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
             }
+            if (!skyLyricsHudDisabled) {
+                skyLyricsHudDisabled = MusicLyricsBridge.disableSeparateNowPlayingHud();
+            }
+            CustomSkyBridge.ensureAllWorldCoverage();
+            GlowOutlineRenderer.tick(client);
             while (openMenuKey.consumeClick()) {
                 if (client.player != null) client.gui.setScreen(new ProVisualsScreen());
             }
