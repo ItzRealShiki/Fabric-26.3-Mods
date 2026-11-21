@@ -4,8 +4,8 @@
   "version": "${version}",
   "name": "Privacy Mod",
   "description": "A privacy dashboard and shared privacy API with an embedded Liquid Glass library.",
-  "authors": ["Leon"],
-  "license": "MIT",
+  "authors": ["ItzRealShiki"],
+  "license": "ItzRealShiki-Attribution-Server-Credit-1.0",
   "environment": "client",
   "entrypoints": {
     "client": ["de.leon.privacy.client.PrivacyModClient"]
