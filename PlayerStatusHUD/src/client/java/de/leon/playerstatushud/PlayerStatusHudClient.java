@@ -76,8 +76,10 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
 
             int x = Math.round(screenX - BOX_WIDTH / 2.0f);
             int y = Math.round(screenY - BOX_HEIGHT);
-            if (x + BOX_WIDTH < 0 || x > graphics.guiWidth()
-                || y + BOX_HEIGHT < 0 || y > graphics.guiHeight()) continue;
+
+            // Draw only complete panels that fit inside the visible GUI area.
+            if (x < 0 || y < 0 || x + BOX_WIDTH > graphics.guiWidth()
+                || y + BOX_HEIGHT > graphics.guiHeight()) continue;
 
             if (target instanceof AbstractClientPlayer clientPlayer) {
                 drawPlayerBox(graphics, client, clientPlayer, x, y);
