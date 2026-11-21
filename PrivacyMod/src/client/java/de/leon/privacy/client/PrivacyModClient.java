@@ -5,6 +5,7 @@ import de.leon.privacy.api.PrivacyManager;
 import de.leon.privacy.api.PrivacyVisibility;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public final class PrivacyModClient implements ClientModInitializer {
         ));
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
-            dispatcher.register(literal("privacy").executes(context -> {
+            dispatcher.register(literal<FabricClientCommandSource>("privacy").executes(context -> {
                 Minecraft.getInstance().setScreen(new PrivacyScreen());
                 return 1;
             }))
