@@ -1,15 +1,17 @@
 # CoreMod
 
-Standalone Fabric client mod for Minecraft Java 26.3.
+A Fabric client mod for Minecraft Java 26.3.
 
-## Current first milestone
+## Implemented
+
 - Right Shift opens the CoreMod menu.
 - Main menu sections for Meta GUI, Farm Finder, Schematic Catalog, Custom Scoreboard and Settings.
 - Four configurable quick-command slots, stored in `.minecraft/config/coremod.json`.
 - UI labels are rendered in Unicode small caps and English.
 - No printer, auto-place, auto-farm, auto-sell, macros or automated clicking.
 
-## Planned milestones
+## Planned
+
 - Inventory entry button with left/right placement setting.
 - Four Creative-tab-style quick buttons above the inventory.
 - Live market data with timestamp and stale-cache fallback.
@@ -17,7 +19,8 @@ Standalone Fabric client mod for Minecraft Java 26.3.
 - Schematic catalog with previews, material lists and external links; Litematica remains independent.
 - Full custom scoreboard editor and rendering.
 
-The first milestone is a UI/config foundation. Features marked in development are not yet implemented.
+This project is an early UI/configuration foundation. Planned features are not yet implemented.
 
+## Build
 
-Build source formatting fix applied.
+Use Java 25 and run `gradle build` in this project directory.
