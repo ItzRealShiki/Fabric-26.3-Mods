@@ -2,7 +2,7 @@ diff --git a/src/main/java/main/walksy/lib/core/mixin/core/render/liquidglass/cl
 index e6d6dad..0000000 100644
 --- a/src/main/java/main/walksy/lib/core/mixin/core/render/liquidglass/client/ScreenRenderMixin.java
 +++ b/src/main/java/main/walksy/lib/core/mixin/core/render/liquidglass/client/ScreenRenderMixin.java
-@@ -15,7 +15,13 @@ public class ScreenRenderMixin {
+@@ -15,5 +15,11 @@ public class ScreenRenderMixin {
      @Inject(method = "extractBlurredBackground(Lnet/minecraft/client/gui/GuiGraphicsExtractor;)V", at = @At("HEAD"), cancellable = true)
      private void walksylib$takeOverBlur(final GuiGraphicsExtractor context, final CallbackInfo ci) {
 -        WLRenderSystem.glassUniforms().requestScreenBlur(GuiContext.graphics(context));
