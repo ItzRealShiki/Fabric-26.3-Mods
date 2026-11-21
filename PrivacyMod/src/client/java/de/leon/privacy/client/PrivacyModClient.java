@@ -36,7 +36,9 @@ public final class PrivacyModClient implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
             dispatcher.register(literal("privacy").executes(context -> {
                 var player = context.getSource().getPlayer();
-                player.sendSystemMessage(Component.literal("§8§m----------§r §bPrivacy Overview §8§m----------"));
+                Minecraft.getInstance().setScreen(new PrivacyScreen());
+                return 1;
+                /*
                 for (PrivacyEntry entry : PrivacyManager.getEntries()) {
                     String color = switch (entry.visibility()) {
                         case PRIVATE -> "§a";
@@ -48,6 +50,7 @@ public final class PrivacyModClient implements ClientModInitializer {
                 }
                 player.sendSystemMessage(Component.literal("§8Status is informational; no client mod can guarantee anonymity."));
                 return 1;
+                */
             }))
         );
     }
