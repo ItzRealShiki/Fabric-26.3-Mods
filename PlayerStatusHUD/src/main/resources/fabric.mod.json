@@ -16,7 +16,6 @@
     "java": ">=25",
     "fabric-api": "*",
     "privacymod": ">=0.1.0",
-    "reglass": ">=2.1.0",
     "reglass": ">=2.1.0"
   }
 }
