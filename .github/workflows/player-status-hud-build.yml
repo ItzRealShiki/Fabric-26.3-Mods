@@ -1,4 +1,5 @@
 # Build workflow for the Player Status HUD mod.
+# Triggered build refresh: 2026-11-21.
 name: Build Player Status HUD
 
 on:
