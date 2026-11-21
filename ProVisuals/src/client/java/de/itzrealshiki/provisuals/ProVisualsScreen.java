@@ -6,11 +6,18 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class ProVisualsScreen extends Screen {
+    private static final int NAV_BAR_HEIGHT = 54;
+    private static final int NAV_BAR_GAP = 5;
+
     private String page = "Overview";
     private String status = "ALL SYSTEMS READY";
+    private final List<Button> navigationButtons = new ArrayList<>();
+    private float navigationProgress;
+    private long lastNavigationFrameTime;
 
     public ProVisualsScreen() {
         super(Component.literal("ProVisuals"));
@@ -21,20 +28,8 @@ public final class ProVisualsScreen extends Screen {
         clearWidgets();
         int panelX = Math.max(14, width / 2 - 360);
         int panelY = Math.max(18, height / 2 - 190);
-        int sideX = panelX + 10;
-        int contentX = panelX + 174;
-        int contentWidth = Math.min(520, width - contentX - 20);
-
-        int navY = panelY + 42;
-        for (String category : FeatureRegistry.CATEGORIES) {
-            final String selected = category;
-            addRenderableWidget(Button.builder(Component.literal(navLabel(category)), button -> {
-                page = selected;
-                status = "PAGE: " + selected.toUpperCase();
-                rebuildWidgets();
-            }).bounds(sideX, navY, 150, 22).build());
-            navY += 26;
-        }
+        int contentX = panelX + 28;
+        int contentWidth = Math.max(180, Math.min(660, width - contentX - 28));
 
         if (page.equals("Overview")) {
             addTextButton("WORLD VISUALS", contentX, panelY + 68, contentWidth, "World Visuals");
@@ -96,6 +91,56 @@ public final class ProVisualsScreen extends Screen {
                 y += 29;
             }
         }
+        addNavigationBar();
+    }
+
+    private void addNavigationBar() {
+        navigationButtons.clear();
+
+        int barWidth = Math.max(180, Math.min(720, width - 16));
+        int gap = width < 540 ? 2 : NAV_BAR_GAP;
+        int buttonWidth = Math.max(1, (barWidth - gap * (FeatureRegistry.CATEGORIES.size() - 1))
+                / FeatureRegistry.CATEGORIES.size());
+        int totalWidth = buttonWidth * FeatureRegistry.CATEGORIES.size()
+                + gap * (FeatureRegistry.CATEGORIES.size() - 1);
+        int startX = (width - totalWidth) / 2;
+
+        for (int i = 0; i < FeatureRegistry.CATEGORIES.size(); i++) {
+            String category = FeatureRegistry.CATEGORIES.get(i);
+            Button button = Button.builder(Component.literal(navBarLabel(category)), b -> {
+                page = category;
+                status = "PAGE: " + category.toUpperCase();
+                rebuildWidgets();
+            }).bounds(startX + i * (buttonWidth + gap), height + 24, buttonWidth, 22).build();
+
+            addRenderableWidget(button);
+            navigationButtons.add(button);
+        }
+    }
+
+    private void updateNavigationBar(int mouseY) {
+        long now = System.nanoTime();
+        if (lastNavigationFrameTime == 0L) {
+            lastNavigationFrameTime = now;
+        }
+        float elapsedSeconds = Math.min(0.05f,
+                Math.max(0.0f, (now - lastNavigationFrameTime) / 1_000_000_000.0f));
+        lastNavigationFrameTime = now;
+
+        boolean hoveringDock = navigationProgress > 0.001f
+                ? mouseY >= height - NAV_BAR_HEIGHT - 12 && mouseY <= height
+                : mouseY >= height - 8 && mouseY <= height;
+
+        float animationStep = elapsedSeconds / 0.22f;
+        navigationProgress = hoveringDock
+                ? Math.min(1.0f, navigationProgress + animationStep)
+                : Math.max(0.0f, navigationProgress - animationStep);
+
+        int barTop = height - NAV_BAR_HEIGHT
+                + Math.round((1.0f - navigationProgress) * (NAV_BAR_HEIGHT + 22));
+        for (Button button : navigationButtons) {
+            button.setY(barTop + 16);
+        }
     }
 
     private void addTextButton(String label, int x, int y, int w, String destination) {
@@ -106,8 +151,18 @@ public final class ProVisualsScreen extends Screen {
         }).bounds(x, y, w, 22).build());
     }
 
-    private static String navLabel(String category) {
-        return category.equals("Errors") ? "!  ERROR CENTER" : category.toUpperCase();
+    private static String navBarLabel(String category) {
+        return switch (category) {
+            case "Overview" -> "HOME";
+            case "World Visuals" -> "WORLD";
+            case "Player Visuals" -> "PLAYER";
+            case "Combat Visuals" -> "COMBAT";
+            case "HUD & Interface" -> "HUD";
+            case "Music" -> "MUSIC";
+            case "Settings" -> "SETTINGS";
+            case "Errors" -> "ERRORS";
+            default -> category.toUpperCase();
+        };
     }
     private static String onOff(boolean value) { return value ? "ON" : "OFF"; }
     private static String percent(float value) { return Math.round(value * 100) + "%"; }
@@ -128,6 +183,21 @@ public final class ProVisualsScreen extends Screen {
         ProVisualsUi.fill(graphics, width / 2 - 366, height / 2 - 196, 732, 392, 14, 0xF0151520);
         ProVisualsUi.fill(graphics, width / 2 - 366, height / 2 - 196, 4, 392, 2, 0xFF9A6BFF);
         ProVisualsUi.fill(graphics, width / 2 - 350, height / 2 - 144, 160, 1, 1, 0xFF7650D8);
+
+        updateNavigationBar(mouseY);
+        int barWidth = Math.max(180, Math.min(720, width - 16));
+        int barX = (width - barWidth) / 2;
+        int barTop = height - NAV_BAR_HEIGHT
+                + Math.round((1.0f - navigationProgress) * (NAV_BAR_HEIGHT + 22));
+        ProVisualsUi.fill(graphics, barX - 8, barTop, barWidth + 16,
+                Math.max(0, height - barTop), 10, 0xF0181726);
+        ProVisualsUi.fill(graphics, barX - 8, barTop, barWidth + 16, 2, 1, 0xFF9A6BFF);
+
+        int handleAlpha = Math.round(220 * (1.0f - navigationProgress));
+        if (handleAlpha > 0) {
+            ProVisualsUi.fill(graphics, width / 2 - 34, height - 5, 68, 3, 2,
+                    (handleAlpha << 24) | 0x009A6BFF);
+        }
     }
 
     @Override
