@@ -12,5 +12,6 @@ public final class PlayerHotbarDisplayClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(HotbarPayload.TYPE, (payload, context) ->
                 HotbarCache.update(payload.entityId(), payload.items())
         );
+        PlayerHotbarRenderRegistration.register();
     }
 }
