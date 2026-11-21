@@ -1,15 +1,12 @@
 # Privacy Mod
 
-Standalone Fabric client mod for Minecraft 26.3 (Java 25).
+A client-side Fabric mod for Minecraft Java 26.3 (Java 25). Privacy Mod provides a privacy information dashboard and a small API that other client mods can use to register additional privacy entries.
 
-## Current implementation
+## Usage
 
-- Registers the client command `/privacy`.
-- Reports a small set of built-in privacy observations.
-- Exposes a public Java API so other client mods can register privacy entries.
-- Uses `UNKNOWN` as a distinct state; an unverified item is never presented as private.
-- Opens a graphical `/privacy` dashboard using the original ReGlass liquid-glass API.
-- Requires ReGlass 2.1.0 or newer for the glass UI.
+- Press **H** to open or close the Privacy Library.
+- The dashboard reports observable information and distinguishes private, exposed and partially exposed items.
+- Other client mods can register entries through the public API.
 
 ## Integration API
 
@@ -28,10 +25,21 @@ PrivacyManager.registerProvider(() -> List.of(
 ));
 ```
 
-Use stable, namespaced entry IDs (for example, `yourmod.setting-name`). Providers should return factual descriptions and must not label data private unless the integration can verify that claim.
+Use stable, namespaced entry IDs (for example, `yourmod.setting-name`). Descriptions should be factual; only mark data private when that can be verified.
 
-## Important technical limits
+## Dependencies
 
-A client mod cannot hide the network source IP from the server endpoint, guarantee anonymity, or make protocol/version details disappear. It also cannot control what a server-side plugin chooses to show other players. This project reports observable facts and offers opt-in integration points; it does not spoof client identity, suppress anti-cheat checks, or claim to defeat server inspection.
+- Minecraft Java 26.3
+- Fabric Loader 0.20.1 or newer
+- Fabric API
+- Java 25 or newer
 
-The `/privacy` command opens the ReGlass-powered dashboard. ReGlass is a separate required client mod; the dashboard uses its original shader-based liquid-glass renderer, not a CSS-like imitation.
+The ReGlass rendering library is bundled inside the Privacy Mod JAR as a nested Fabric mod. Users should install Privacy Mod; they do not need to install ReGlass separately.
+
+## Important limitations
+
+A client mod cannot hide the network source IP from the server endpoint, guarantee anonymity, or make protocol/version details disappear. It also cannot control what a server-side plugin chooses to show other players. Privacy Mod reports observable facts and offers integration points; it does not spoof client identity or bypass server inspection.
+
+## Build
+
+Build the ReGlass 26.3 library first, then run `gradle build` in this project directory. The repository's GitHub Actions workflow performs these steps automatically.
