@@ -4,7 +4,6 @@ on:
   push:
     paths:
       - "PrivacyMod/**"
-      - "scripts/**"
       - ".github/workflows/privacy-mod-build.yml"
   pull_request:
     paths:
@@ -23,20 +22,6 @@ jobs:
         with:
           java-version: "25"
           distribution: "microsoft"
-      - name: Checkout ReGlass rendering library
-        uses: actions/checkout@v4
-        with:
-          repository: RedxAx/ReGlass
-          ref: master
-          path: ReGlass
-      - name: Restrict ReGlass to custom mod UI only
-        working-directory: ReGlass
-        run: python3 ../scripts/patch-reglass-mod-only.py
-      - name: Build ReGlass 26.3
-        working-directory: ReGlass
-        run: |
-          chmod +x ./gradlew
-          ./gradlew :26.3:build
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
         with:
