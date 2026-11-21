@@ -12,9 +12,17 @@ public final class ProVisualsScreen extends Screen {
     private static final int NAV_BAR_HEIGHT = 54;
     private static final int NAV_BAR_GAP = 5;
 
+    private record DashboardCard(String category, String description, String meta,
+                                 String index, int x, int y, int width, int height) {}
+    private record FeatureRow(FeatureRegistry.Feature feature, int x, int y, int width, int height) {}
+    private record SectionHeader(String title, String subtitle, int y) {}
+
     private String page = "Overview";
     private String status = "ALL SYSTEMS READY";
     private final List<Button> navigationButtons = new ArrayList<>();
+    private final List<DashboardCard> dashboardCards = new ArrayList<>();
+    private final List<FeatureRow> featureRows = new ArrayList<>();
+    private final List<SectionHeader> sectionHeaders = new ArrayList<>();
     private float navigationProgress;
     private long lastNavigationFrameTime;
 
@@ -25,77 +33,199 @@ public final class ProVisualsScreen extends Screen {
     @Override
     protected void init() {
         clearWidgets();
-        int panelX = Math.max(14, width / 2 - 360);
-        int panelY = Math.max(18, height / 2 - 190);
+        dashboardCards.clear();
+        featureRows.clear();
+        sectionHeaders.clear();
+
+        int panelX = panelX();
+        int panelY = panelY();
         int contentX = panelX + 28;
         int contentWidth = Math.max(180, Math.min(660, width - contentX - 28));
 
-        if (page.equals("Overview")) {
-            addTextButton("WORLD VISUALS", contentX, panelY + 68, contentWidth, "World Visuals");
-            addTextButton("PLAYER VISUALS", contentX, panelY + 96, contentWidth, "Player Visuals");
-            addTextButton("COMBAT VISUALS", contentX, panelY + 124, contentWidth, "Combat Visuals");
-            addTextButton("HUD & INTERFACE", contentX, panelY + 152, contentWidth, "HUD & Interface");
-            addTextButton("MUSIC & LYRICS", contentX, panelY + 180, contentWidth, "Music");
-            addTextButton("ERROR CENTER", contentX, panelY + 208, contentWidth, "Errors");
-        } else if (page.equals("Music")) {
-            addRenderableWidget(Button.builder(ProVisualsUi.component("LYRICS IN THE SKY: " + onOff(MusicLyricsBridge.isLyricsEnabled())),
-                    b -> { boolean state = MusicLyricsBridge.toggleLyrics(); status = "LYRICS " + onOff(state); rebuildWidgets(); })
-                    .bounds(contentX, panelY + 66, contentWidth, 22).build());
-            addRenderableWidget(Button.builder(ProVisualsUi.component("MUSIC ISLAND: " + onOff(ProVisualsConfig.musicIslandEnabled)),
-                    b -> { ProVisualsConfig.musicIslandEnabled = !ProVisualsConfig.musicIslandEnabled; ProVisualsConfig.save(); status = "MUSIC ISLAND " + onOff(ProVisualsConfig.musicIslandEnabled); rebuildWidgets(); })
-                    .bounds(contentX, panelY + 94, contentWidth, 22).build());
-            addRenderableWidget(Button.builder(ProVisualsUi.component("OPEN LYRICS SETTINGS"),
-                    b -> MusicLyricsBridge.openSettings()).bounds(contentX, panelY + 122, contentWidth, 22).build());
-        } else if (page.equals("Errors")) {
-            addRenderableWidget(Button.builder(ProVisualsUi.component("REFRESH DIAGNOSTICS"), b -> {
-                Diagnostics.info("Diagnostics refreshed by user");
-                status = "DIAGNOSTICS REFRESHED";
-                rebuildWidgets();
-            }).bounds(contentX, panelY + 64, contentWidth, 22).build());
-            addRenderableWidget(Button.builder(ProVisualsUi.component("COPY DIAGNOSTICS"), b -> {
-                Minecraft.getInstance().keyboardHandler.setClipboard(String.join("\n", Diagnostics.recentEntries()));
-                status = "DIAGNOSTICS COPIED";
-            }).bounds(contentX, panelY + 91, contentWidth, 22).build());
-        } else if (page.equals("Settings")) {
-            addRenderableWidget(Button.builder(ProVisualsUi.component("REFLECTION INTENSITY: " + percent(ProVisualsConfig.reflectionIntensity)),
-                    b -> { ProVisualsConfig.reflectionIntensity = cycle(ProVisualsConfig.reflectionIntensity); ProVisualsConfig.save(); rebuildWidgets(); })
-                    .bounds(contentX, panelY + 66, contentWidth, 22).build());
-            addRenderableWidget(Button.builder(ProVisualsUi.component("REFLECTION QUALITY: " + ProVisualsConfig.reflectionQuality),
-                    b -> { ProVisualsConfig.reflectionQuality = nextQuality(ProVisualsConfig.reflectionQuality); ProVisualsConfig.save(); rebuildWidgets(); })
-                    .bounds(contentX, panelY + 94, contentWidth, 22).build());
-            addRenderableWidget(Button.builder(ProVisualsUi.component("REFLECTIVE SURFACES: " + surfaceLabel(ProVisualsConfig.reflectiveSurfaces)),
-                    b -> { ProVisualsConfig.reflectiveSurfaces = nextSurface(ProVisualsConfig.reflectiveSurfaces); ProVisualsConfig.save(); rebuildWidgets(); })
-                    .bounds(contentX, panelY + 122, contentWidth, 22).build());
-            addRenderableWidget(Button.builder(ProVisualsUi.component("ORE INTERIOR GLOW: " + onOff(ProVisualsConfig.oreInteriorGlow)),
-                    b -> { ProVisualsConfig.oreInteriorGlow = !ProVisualsConfig.oreInteriorGlow; ProVisualsConfig.save(); rebuildWidgets(); })
-                    .bounds(contentX, panelY + 150, contentWidth, 22).build());
-            addRenderableWidget(Button.builder(ProVisualsUi.component("ORE OUTLINE GLOW: " + onOff(ProVisualsConfig.oreOutlineGlow)),
-                    b -> { ProVisualsConfig.oreOutlineGlow = !ProVisualsConfig.oreOutlineGlow; ProVisualsConfig.save(); rebuildWidgets(); })
-                    .bounds(contentX, panelY + 178, contentWidth, 22).build());
-            addRenderableWidget(Button.builder(ProVisualsUi.component("UI CORNERS: " + (ProVisualsConfig.roundedCorners ? "ROUNDED" : "SQUARE")),
-                    b -> { ProVisualsConfig.roundedCorners = !ProVisualsConfig.roundedCorners; ProVisualsConfig.save(); rebuildWidgets(); })
-                    .bounds(contentX, panelY + 206, contentWidth, 22).build());
-        } else {
-            List<FeatureRegistry.Feature> features = FeatureRegistry.inCategory(page);
-            int y = panelY + 64;
-            for (FeatureRegistry.Feature feature : features) {
-                String label = (ProVisualsConfig.isEnabled(feature.key()) ? "[ON] " : "[OFF] ") + feature.title();
-                addRenderableWidget(Button.builder(ProVisualsUi.component(label), b -> {
-                    ProVisualsConfig.toggle(feature.key());
-                    status = feature.rendererConnected()
-                            ? feature.title().toUpperCase() + " " + onOff(ProVisualsConfig.isEnabled(feature.key()))
-                            : "PREFERENCE SAVED — RENDERER NOT YET CONNECTED";
-                    rebuildWidgets();
-                }).bounds(contentX, y, contentWidth, 22).build());
-                y += 29;
-            }
+        switch (page) {
+            case "Overview" -> buildOverview(contentX, panelY, contentWidth);
+            case "Music" -> buildMusicPage(contentX, panelY, contentWidth);
+            case "Errors" -> buildErrorsPage(contentX, panelY, contentWidth);
+            case "Settings" -> buildSettingsPage(contentX, panelY, contentWidth);
+            default -> buildFeaturePage(contentX, panelY, contentWidth);
         }
         addNavigationBar();
     }
 
+    private void buildOverview(int x, int panelY, int contentWidth) {
+        DashboardCard[] cards = {
+                new DashboardCard("World Visuals", "Lighting, ores and world reflections", "3 MODULES", "01", 0, 0, 0, 0),
+                new DashboardCard("Player Visuals", "Armor effects, trims and visual friends", "3 MODULES", "02", 0, 0, 0, 0),
+                new DashboardCard("Combat Visuals", "Hit effects and item highlights", "2 MODULES", "03", 0, 0, 0, 0),
+                new DashboardCard("HUD & Interface", "Armor, target, inventory and effects", "4 MODULES", "04", 0, 0, 0, 0),
+                new DashboardCard("Music", "Music Island and synced lyrics", "2 FEATURES", "05", 0, 0, 0, 0),
+                new DashboardCard("Settings", "Visual quality and interface preferences", "6 OPTIONS", "06", 0, 0, 0, 0)
+        };
+
+        int gap = 10;
+        int cardWidth = (contentWidth - gap) / 2;
+        int cardHeight = 54;
+        int startY = panelY + 91;
+        int rowGap = 9;
+        for (int i = 0; i < cards.length; i++) {
+            DashboardCard card = cards[i];
+            int column = i % 2;
+            int row = i / 2;
+            int cardX = x + column * (cardWidth + gap);
+            int cardY = startY + row * (cardHeight + rowGap);
+            DashboardCard positioned = new DashboardCard(card.category(), card.description(),
+                    card.meta(), card.index(), cardX, cardY, cardWidth, cardHeight);
+            dashboardCards.add(positioned);
+            addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> openPage(card.category()))
+                    .bounds(cardX, cardY, cardWidth, cardHeight).build());
+        }
+
+        int errorY = startY + 3 * (cardHeight + rowGap);
+        DashboardCard error = new DashboardCard("Error Center",
+                "View diagnostics and copy the latest log", "DIAGNOSTICS", "07",
+                x, errorY, contentWidth, 42);
+        dashboardCards.add(error);
+        addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> openPage("Errors"))
+                .bounds(error.x(), error.y(), error.width(), error.height()).build());
+    }
+
+    private void buildFeaturePage(int x, int panelY, int contentWidth) {
+        String subtitle = switch (page) {
+            case "World Visuals" -> "Lighting, block appearance and environment effects";
+            case "Player Visuals" -> "Personal visual details for players and equipment";
+            case "Combat Visuals" -> "Lightweight visual feedback for combat";
+            case "HUD & Interface" -> "Compact information panels on your screen";
+            default -> "Visual modules and their options";
+        };
+
+        List<FeatureRegistry.Feature> features = FeatureRegistry.inCategory(page);
+        sectionHeaders.add(new SectionHeader(page.toUpperCase(),
+                subtitle + "  /  " + features.size() + " MODULES", panelY + 72));
+
+        int y = panelY + 122;
+        int rowHeight = 35;
+        int rowGap = 8;
+        for (FeatureRegistry.Feature feature : features) {
+            FeatureRow row = new FeatureRow(feature, x, y, contentWidth, rowHeight);
+            featureRows.add(row);
+            addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> {
+                ProVisualsConfig.toggle(feature.key());
+                status = feature.rendererConnected()
+                        ? feature.title().toUpperCase() + " " + onOff(ProVisualsConfig.isEnabled(feature.key()))
+                        : "PREFERENCE SAVED — VISUAL RENDERER NOT CONNECTED YET";
+                rebuildWidgets();
+            }).bounds(x, y, contentWidth, rowHeight).build());
+            y += rowHeight + rowGap;
+        }
+    }
+
+    private void buildMusicPage(int x, int panelY, int contentWidth) {
+        sectionHeaders.add(new SectionHeader("MUSIC PLAYER",
+                "On-screen playback information and media controls", panelY + 72));
+        addSettingRow("MUSIC ISLAND", onOff(ProVisualsConfig.musicIslandEnabled),
+                "Compact player overlay with progress and playback controls",
+                x, panelY + 112, contentWidth,
+                b -> {
+                    ProVisualsConfig.musicIslandEnabled = !ProVisualsConfig.musicIslandEnabled;
+                    ProVisualsConfig.save();
+                    status = "MUSIC ISLAND " + onOff(ProVisualsConfig.musicIslandEnabled);
+                    rebuildWidgets();
+                });
+
+        sectionHeaders.add(new SectionHeader("LYRICS IN THE SKY",
+                "Synced lyrics, typography and placement settings", panelY + 184));
+        addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> {
+            boolean enabled = MusicLyricsBridge.toggleLyrics();
+            status = "LYRICS " + onOff(enabled);
+            rebuildWidgets();
+        }).bounds(x, panelY + 224, contentWidth, 35).build());
+        drawActionRows.add(new ActionRow("LYRICS DISPLAY",
+                onOff(MusicLyricsBridge.isLyricsEnabled()), "Toggle the lyrics overlay",
+                x, panelY + 224, contentWidth, 35, false));
+        addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> MusicLyricsBridge.openSettings())
+                .bounds(x, panelY + 267, contentWidth, 35).build());
+        drawActionRows.add(new ActionRow("OPEN LYRICS SETTINGS", "›",
+                "Fonts, colours and lyric placement", x, panelY + 267, contentWidth, 35, true));
+    }
+
+    private void buildErrorsPage(int x, int panelY, int contentWidth) {
+        sectionHeaders.add(new SectionHeader("DIAGNOSTIC CENTER",
+                "Recent events and troubleshooting information", panelY + 72));
+        int gap = 10;
+        int half = (contentWidth - gap) / 2;
+        addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> {
+            Diagnostics.info("Diagnostics refreshed by user");
+            status = "DIAGNOSTICS REFRESHED";
+        }).bounds(x, panelY + 116, half, 35).build());
+        drawActionRows.add(new ActionRow("REFRESH LOG", "↻",
+                "Update recent diagnostic events", x, panelY + 116, half, 35, false));
+        addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> {
+            Minecraft.getInstance().keyboardHandler.setClipboard(String.join("\n", Diagnostics.recentEntries()));
+            status = "DIAGNOSTICS COPIED";
+        }).bounds(x + half + gap, panelY + 116, half, 35).build());
+        drawActionRows.add(new ActionRow("COPY LOG", "↗",
+                "Copy all available entries", x + half + gap, panelY + 116, half, 35, true));
+    }
+
+    private record ActionRow(String title, String value, String description,
+                             int x, int y, int width, int height, boolean secondary) {}
+    private final List<ActionRow> drawActionRows = new ArrayList<>();
+
+    private void addSettingRow(String title, String value, String description,
+                               int x, int y, int w, java.util.function.Consumer<Button> action) {
+        addRenderableWidget(Button.builder(ProVisualsUi.component(""), action)
+                .bounds(x, y, w, 35).build());
+        drawActionRows.add(new ActionRow(title, value, description, x, y, w, 35, false));
+    }
+
+    private void buildSettingsPage(int x, int panelY, int contentWidth) {
+        int gap = 10;
+        int half = (contentWidth - gap) / 2;
+
+        sectionHeaders.add(new SectionHeader("REFLECTIONS",
+                "Quality and coverage of reflective surfaces", panelY + 72));
+        addSettingRow("INTENSITY", percent(ProVisualsConfig.reflectionIntensity),
+                "Cycle reflection strength", x, panelY + 112, half,
+                b -> { ProVisualsConfig.reflectionIntensity = cycle(ProVisualsConfig.reflectionIntensity); ProVisualsConfig.save(); rebuildWidgets(); });
+        addSettingRow("QUALITY", ProVisualsConfig.reflectionQuality,
+                "Cycle rendering quality", x + half + gap, panelY + 112, half,
+                b -> { ProVisualsConfig.reflectionQuality = nextQuality(ProVisualsConfig.reflectionQuality); ProVisualsConfig.save(); rebuildWidgets(); });
+        addSettingRow("SURFACES", surfaceLabel(ProVisualsConfig.reflectiveSurfaces),
+                "Choose which surfaces reflect", x, panelY + 155, contentWidth,
+                b -> { ProVisualsConfig.reflectiveSurfaces = nextSurface(ProVisualsConfig.reflectiveSurfaces); ProVisualsConfig.save(); rebuildWidgets(); });
+
+        sectionHeaders.add(new SectionHeader("ORE GLOW",
+                "Choose how selected ores are highlighted", panelY + 207));
+        addSettingRow("INTERIOR GLOW", onOff(ProVisualsConfig.oreInteriorGlow),
+                "Glow inside ore blocks", x, panelY + 247, half,
+                b -> { ProVisualsConfig.oreInteriorGlow = !ProVisualsConfig.oreInteriorGlow; ProVisualsConfig.save(); rebuildWidgets(); });
+        addSettingRow("OUTLINE GLOW", onOff(ProVisualsConfig.oreOutlineGlow),
+                "Glow around ore outlines", x + half + gap, panelY + 247, half,
+                b -> { ProVisualsConfig.oreOutlineGlow = !ProVisualsConfig.oreOutlineGlow; ProVisualsConfig.save(); rebuildWidgets(); });
+
+        sectionHeaders.add(new SectionHeader("INTERFACE",
+                "Appearance of the ProVisuals menu", panelY + 299));
+        addSettingRow("CORNER STYLE", ProVisualsConfig.roundedCorners ? "ROUNDED" : "SQUARE",
+                "Switch between rounded and square corners", x, panelY + 339, contentWidth,
+                b -> { ProVisualsConfig.roundedCorners = !ProVisualsConfig.roundedCorners; ProVisualsConfig.save(); rebuildWidgets(); });
+    }
+
+    private void openPage(String destination) {
+        page = destination;
+        status = "PAGE: " + destination.toUpperCase();
+        rebuildWidgets();
+    }
+
+    private int panelX() {
+        return Math.max(12, width / 2 - 366);
+    }
+
+    private int panelY() {
+        return Math.max(8, height / 2 - 196);
+    }
+
     private void addNavigationBar() {
         navigationButtons.clear();
-
         int barWidth = Math.max(180, Math.min(720, width - 16));
         int gap = width < 540 ? 2 : NAV_BAR_GAP;
         int buttonWidth = Math.max(1, (barWidth - gap * (FeatureRegistry.CATEGORIES.size() - 1))
@@ -106,12 +236,8 @@ public final class ProVisualsScreen extends Screen {
 
         for (int i = 0; i < FeatureRegistry.CATEGORIES.size(); i++) {
             String category = FeatureRegistry.CATEGORIES.get(i);
-            Button button = Button.builder(ProVisualsUi.component(navBarLabel(category)), b -> {
-                page = category;
-                status = "PAGE: " + category.toUpperCase();
-                rebuildWidgets();
-            }).bounds(startX + i * (buttonWidth + gap), height + 24, buttonWidth, 22).build();
-
+            Button button = Button.builder(ProVisualsUi.component(navBarLabel(category)), b -> openPage(category))
+                    .bounds(startX + i * (buttonWidth + gap), height + 24, buttonWidth, 22).build();
             addRenderableWidget(button);
             navigationButtons.add(button);
         }
@@ -119,9 +245,7 @@ public final class ProVisualsScreen extends Screen {
 
     private void updateNavigationBar(int mouseY) {
         long now = System.nanoTime();
-        if (lastNavigationFrameTime == 0L) {
-            lastNavigationFrameTime = now;
-        }
+        if (lastNavigationFrameTime == 0L) lastNavigationFrameTime = now;
         float elapsedSeconds = Math.min(0.05f,
                 Math.max(0.0f, (now - lastNavigationFrameTime) / 1_000_000_000.0f));
         lastNavigationFrameTime = now;
@@ -129,7 +253,6 @@ public final class ProVisualsScreen extends Screen {
         boolean hoveringDock = navigationProgress > 0.001f
                 ? mouseY >= height - NAV_BAR_HEIGHT - 12 && mouseY <= height
                 : mouseY >= height - 8 && mouseY <= height;
-
         float animationStep = elapsedSeconds / 0.22f;
         navigationProgress = hoveringDock
                 ? Math.min(1.0f, navigationProgress + animationStep)
@@ -137,17 +260,7 @@ public final class ProVisualsScreen extends Screen {
 
         int barTop = height - NAV_BAR_HEIGHT
                 + Math.round((1.0f - navigationProgress) * (NAV_BAR_HEIGHT + 22));
-        for (Button button : navigationButtons) {
-            button.setY(barTop + 16);
-        }
-    }
-
-    private void addTextButton(String label, int x, int y, int w, String destination) {
-        addRenderableWidget(Button.builder(ProVisualsUi.component(label), b -> {
-            page = destination;
-            status = "PAGE: " + destination.toUpperCase();
-            rebuildWidgets();
-        }).bounds(x, y, w, 22).build());
+        for (Button button : navigationButtons) button.setY(barTop + 16);
     }
 
     private static String navBarLabel(String category) {
@@ -163,6 +276,7 @@ public final class ProVisualsScreen extends Screen {
             default -> category.toUpperCase();
         };
     }
+
     private static String onOff(boolean value) { return value ? "ON" : "OFF"; }
     private static String percent(float value) { return Math.round(value * 100) + "%"; }
     private static float cycle(float value) { return value >= 0.95f ? 0.25f : Math.min(1.0f, value + 0.25f); }
@@ -179,9 +293,11 @@ public final class ProVisualsScreen extends Screen {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         graphics.fillGradient(0, 0, width, height, 0xF2090911, 0xF2171027);
-        ProVisualsUi.fill(graphics, width / 2 - 366, height / 2 - 196, 732, 392, 14, 0xF0151520);
-        ProVisualsUi.fill(graphics, width / 2 - 366, height / 2 - 196, 4, 392, 2, 0xFF9A6BFF);
-        ProVisualsUi.fill(graphics, width / 2 - 350, height / 2 - 144, 160, 1, 1, 0xFF7650D8);
+        int px = panelX();
+        int py = panelY();
+        ProVisualsUi.fill(graphics, px, py, Math.min(732, width - 24), 392, 14, 0xF0151520);
+        ProVisualsUi.fill(graphics, px, py, 4, 392, 2, 0xFF9A6BFF);
+        ProVisualsUi.fill(graphics, px + 16, py + 54, Math.min(700, width - 56), 1, 1, 0x555E536F);
 
         updateNavigationBar(mouseY);
         int barWidth = Math.max(180, Math.min(720, width - 16));
@@ -210,47 +326,129 @@ public final class ProVisualsScreen extends Screen {
                 }
             }
         }
-        int x = Math.max(14, width / 2 - 350);
-        int y = Math.max(18, height / 2 - 180);
-        ProVisualsUi.text(graphics, font, "ProVisuals", x, y, 0xFFFFFFFF, true);
-        ProVisualsUi.text(graphics, font, "VISUAL CLIENT  /  MODERN VIOLET", x, y + 14, 0xFFBCA4FF, true);
-        ProVisualsUi.text(graphics, font, page.toUpperCase(), width / 2 - 172, y + 4, 0xFFE8DEFF, true);
 
-        if (page.equals("Overview")) {
-            ProVisualsUi.text(graphics, font, "WELCOME BACK", width / 2 - 172, y + 36, 0xFFFFFFFF, true);
-            ProVisualsUi.text(graphics, font, "A clean control center for every visual module.", width / 2 - 172, y + 50, 0xFFC4C0D0, true);
-            ProVisualsUi.text(graphics, font, "12 visual modules registered", width / 2 - 172, y + 72, 0xFFBCA4FF, true);
-            ProVisualsUi.text(graphics, font, "M  /  Open ProVisuals", width / 2 - 172, y + 92, 0xFF9F92B8, true);
-        } else if (page.equals("Music")) {
-            ProVisualsUi.text(graphics, font, "LYRICS IN THE SKY + MUSIC ISLAND", width / 2 - 172, y + 36, 0xFFFFFFFF, true);
-            ProVisualsUi.text(graphics, font, "Compact Music Island with track info, progress and media controls.", width / 2 - 172, y + 56, 0xFFC4C0D0, true);
-            ProVisualsUi.text(graphics, font, "Windows / Linux media controls are clickable while chat is open.", width / 2 - 172, y + 74, 0xFFC4C0D0, true);
-            ProVisualsUi.text(graphics, font, "Open Lyrics Settings for fonts, colours and lyric placement.", width / 2 - 172, y + 92, 0xFFBCA4FF, true);
-        } else if (page.equals("Errors")) {
-            ProVisualsUi.text(graphics, font, "DIAGNOSTIC EVENTS", width / 2 - 172, y + 35, 0xFFFFC6D2, true);
-            List<String> entries = Diagnostics.recentEntries();
-            int lineY = y + 112;
-            if (entries.isEmpty()) {
-                ProVisualsUi.text(graphics, font, "No ProVisuals errors recorded this session.", width / 2 - 172, y + 64, 0xFFC4C0D0, true);
-            } else {
-                for (String entry : entries.stream().limit(6).toList()) {
-                    String compact = entry.length() > 76 ? entry.substring(0, 73) + "..." : entry;
-                    ProVisualsUi.text(graphics, font, compact, width / 2 - 172, lineY, 0xFFD6D2E0, true);
-                    lineY += 13;
-                }
-            }
-            ProVisualsUi.text(graphics, font, "Saved to config/provisuals-diagnostics.log", width / 2 - 172, y + 207, 0xFF9F92B8, true);
-        } else if (page.equals("Settings")) {
-            ProVisualsUi.text(graphics, font, "RENDER QUALITY & GENERAL OPTIONS", width / 2 - 172, y + 36, 0xFFFFFFFF, true);
-            ProVisualsUi.text(graphics, font, "Rounded is the default. Use UI CORNERS above to switch to square.", width / 2 - 172, y + 224, 0xFFFFD78B, true);
+        int x = panelX() + 20;
+        int y = panelY() + 17;
+        ProVisualsUi.text(graphics, font, "PROVISUALS", x, y, 0xFFFFFFFF, true);
+        ProVisualsUi.text(graphics, font, "VISUAL CLIENT  /  MODERN VIOLET", x, y + 16, 0xFFBCA4FF, true);
+
+        switch (page) {
+            case "Overview" -> renderOverview(graphics, mouseX, mouseY);
+            case "Music" -> renderMusic(graphics, mouseX, mouseY);
+            case "Errors" -> renderErrors(graphics, mouseX, mouseY);
+            case "Settings" -> renderSettings(graphics, mouseX, mouseY);
+            default -> renderFeaturePage(graphics, mouseX, mouseY);
+        }
+
+        ProVisualsUi.text(graphics, font, status, panelX() + 20, height / 2 + 174, 0xFFBCA4FF, true);
+    }
+
+    private void renderOverview(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        int x = panelX() + 28;
+        int y = panelY() + 65;
+        ProVisualsUi.text(graphics, font, "YOUR VISUAL WORKSPACE", x, y, 0xFFFFFFFF, true);
+        ProVisualsUi.text(graphics, font, "Choose a category to find related features and settings.", x, y + 15, 0xFFAAA4BA, false);
+
+        for (DashboardCard card : dashboardCards) {
+            boolean hovered = inside(card.x(), card.y(), card.width(), card.height(), mouseX, mouseY);
+            int base = hovered ? 0xFF282338 : 0xFF1D1B29;
+            ProVisualsUi.fill(graphics, card.x(), card.y(), card.width(), card.height(), 9, base);
+            ProVisualsUi.fill(graphics, card.x() + 1, card.y() + 8, 2, card.height() - 16, 1,
+                    hovered ? 0xFFBCA4FF : 0xFF7653B8);
+            ProVisualsUi.text(graphics, font, card.index(), card.x() + 12, card.y() + 9, 0xFF9A6BFF, false);
+            ProVisualsUi.text(graphics, font, card.category().toUpperCase(), card.x() + 39,
+                    card.y() + 8, 0xFFF1EDFA, true);
+            ProVisualsUi.text(graphics, font, card.description(), card.x() + 39,
+                    card.y() + 22, 0xFFAAA4BA, false);
+            ProVisualsUi.text(graphics, font, card.meta(), card.x() + card.width() - font.width(ProVisualsUi.smallCaps(card.meta())) - 10,
+                    card.y() + card.height() - 13, 0xFF9A86C3, false);
+        }
+    }
+
+    private void renderFeaturePage(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        renderSectionHeaders(graphics);
+        for (FeatureRow row : featureRows) {
+            FeatureRegistry.Feature feature = row.feature();
+            boolean hovered = inside(row.x(), row.y(), row.width(), row.height(), mouseX, mouseY);
+            ProVisualsUi.fill(graphics, row.x(), row.y(), row.width(), row.height(), 8,
+                    hovered ? 0xFF282338 : 0xFF1D1B29);
+            ProVisualsUi.text(graphics, font, feature.title().toUpperCase(),
+                    row.x() + 13, row.y() + 6, 0xFFF1EDFA, true);
+            ProVisualsUi.text(graphics, font, feature.description(),
+                    row.x() + 13, row.y() + 20, 0xFFAAA4BA, false);
+            String state = ProVisualsConfig.isEnabled(feature.key()) ? "ON" : "OFF";
+            int pillWidth = 44;
+            int pillX = row.x() + row.width() - pillWidth - 10;
+            ProVisualsUi.fill(graphics, pillX, row.y() + 9, pillWidth, 17, 6,
+                    feature.rendererConnected() ? 0xFF342A4C : 0xFF302B37);
+            graphics.centeredText(font, ProVisualsUi.component(state), pillX + pillWidth / 2,
+                    row.y() + 13, feature.rendererConnected() ? 0xFFD0BFFF : 0xFFB8AFC2);
+        }
+        if (featureRows.stream().anyMatch(row -> !row.feature().rendererConnected())) {
+            ProVisualsUi.text(graphics, font, "Some modules only save their preferences until their visual renderer is connected.",
+                    panelX() + 28, panelY() + 341, 0xFFE8C987, false);
+        }
+    }
+
+    private void renderMusic(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        renderSectionHeaders(graphics);
+        for (ActionRow row : drawActionRows) renderActionRow(graphics, row, mouseX, mouseY);
+    }
+
+    private void renderSettings(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        renderSectionHeaders(graphics);
+        for (ActionRow row : drawActionRows) renderActionRow(graphics, row, mouseX, mouseY);
+    }
+
+    private void renderErrors(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        renderSectionHeaders(graphics);
+        for (ActionRow row : drawActionRows) renderActionRow(graphics, row, mouseX, mouseY);
+
+        int listX = panelX() + 28;
+        int listY = panelY() + 164;
+        int listWidth = Math.min(660, width - listX - 28);
+        ProVisualsUi.fill(graphics, listX, listY, listWidth, 150, 9, 0xFF1D1B29);
+        ProVisualsUi.text(graphics, font, "RECENT EVENTS", listX + 13, listY + 12, 0xFFD6C8F5, true);
+        List<String> entries = Diagnostics.recentEntries();
+        if (entries.isEmpty()) {
+            ProVisualsUi.text(graphics, font, "No ProVisuals errors recorded this session.",
+                    listX + 13, listY + 38, 0xFFAAA4BA, false);
         } else {
-            List<FeatureRegistry.Feature> features = FeatureRegistry.inCategory(page);
-            ProVisualsUi.text(graphics, font, features.size() + " MODULES  /  CLICK TO CHANGE SAVED STATE", width / 2 - 172, y + 36, 0xFFC4C0D0, true);
-            if (features.stream().anyMatch(feature -> !feature.rendererConnected())) {
-                ProVisualsUi.text(graphics, font, "Preferences save locally; this visual renderer is not connected yet.", width / 2 - 172,
-                        y + 211, 0xFFFFD78B, true);
+            int lineY = listY + 36;
+            for (String entry : entries.stream().limit(7).toList()) {
+                String compact = entry.length() > 84 ? entry.substring(0, 81) + "..." : entry;
+                ProVisualsUi.text(graphics, font, compact, listX + 13, lineY, 0xFFD6D2E0, false);
+                lineY += 15;
             }
         }
-        ProVisualsUi.text(graphics, font, status, x, height / 2 + 174, 0xFFBCA4FF, true);
+        ProVisualsUi.text(graphics, font, "LOG FILE  /  config/provisuals-diagnostics.log",
+                listX + 13, listY + 130, 0xFF8F86A3, false);
+    }
+
+    private void renderSectionHeaders(GuiGraphicsExtractor graphics) {
+        for (SectionHeader header : sectionHeaders) {
+            ProVisualsUi.text(graphics, font, header.title(), panelX() + 28, header.y(),
+                    0xFFEDE7FA, true);
+            ProVisualsUi.text(graphics, font, header.subtitle(), panelX() + 28, header.y() + 15,
+                    0xFF9F96B0, false);
+        }
+    }
+
+    private void renderActionRow(GuiGraphicsExtractor graphics, ActionRow row, int mouseX, int mouseY) {
+        boolean hovered = inside(row.x(), row.y(), row.width(), row.height(), mouseX, mouseY);
+        ProVisualsUi.fill(graphics, row.x(), row.y(), row.width(), row.height(), 8,
+                hovered ? 0xFF282338 : 0xFF1D1B29);
+        ProVisualsUi.text(graphics, font, row.title(), row.x() + 13, row.y() + 6,
+                0xFFF1EDFA, true);
+        ProVisualsUi.text(graphics, font, row.description(), row.x() + 13, row.y() + 20,
+                0xFFAAA4BA, false);
+        String value = row.value();
+        int valueWidth = font.width(ProVisualsUi.smallCaps(value));
+        ProVisualsUi.text(graphics, font, value, row.x() + row.width() - valueWidth - 14,
+                row.y() + 12, row.secondary() ? 0xFFBCA4FF : 0xFFD0BFFF, true);
+    }
+
+    private static boolean inside(int x, int y, int w, int h, int mouseX, int mouseY) {
+        return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
     }
 }
