@@ -79,7 +79,9 @@ public final class ProVisualsScreen extends Screen {
                 boolean enabled = ProVisualsConfig.isEnabled(feature.key());
                 if ("custom_sky".equals(feature.key())) {
                     boolean applied = CustomSkyBridge.setEnabled(enabled);
-                    status = applied ? "Custom Sky " + onOff(enabled) : "Custom Sky renderer unavailable";
+                    status = applied
+                            ? CustomSkyBridge.statusText(enabled)
+                            : "Nuit is missing or could not be controlled — check the mod installation";
                 } else {
                     status = feature.rendererConnected()
                             ? feature.title() + " " + onOff(enabled)
@@ -398,7 +400,7 @@ public final class ProVisualsScreen extends Screen {
         int x = panelX() + 20;
         int y = panelY() + 17;
         ProVisualsUi.text(graphics, font, "ProVisuals", x, y, 0xFFFFFFFF, true);
-        ProVisualsUi.text(graphics, font, "Visual client  /  Modern violet", x, y + 16, 0xFFBCA4FF, true);
+        ProVisualsUi.text(graphics, font, "Visuals + SkyLyrics  /  Right Shift", x, y + 16, 0xFFBCA4FF, true);
 
         switch (page) {
             case "Overview" -> renderOverview(graphics, mouseX, mouseY);

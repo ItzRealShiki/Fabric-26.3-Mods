@@ -2,6 +2,7 @@ package de.itzrealshiki.provisuals;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -24,10 +25,20 @@ public final class ProVisualsClient implements ClientModInitializer {
     public void onInitializeClient() {
         Diagnostics.loadPreviousEntries();
         ProVisualsConfig.load();
-        CustomSkyBridge.setEnabled(ProVisualsConfig.isEnabled("custom_sky"));
         skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.provisuals.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY));
+
+        // Run after every client mod initializer so Nuit cannot overwrite this preference during its own startup.
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
+            boolean customSkyEnabled = ProVisualsConfig.isEnabled("custom_sky");
+            if (CustomSkyBridge.setEnabled(customSkyEnabled)) {
+                Diagnostics.info(CustomSkyBridge.statusText(customSkyEnabled));
+            } else {
+                Diagnostics.warn(CustomSkyBridge.statusText(customSkyEnabled));
+            }
+        });
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.CHAT,
                 Identifier.fromNamespaceAndPath("provisuals", "music_island"), new MusicIslandHud());

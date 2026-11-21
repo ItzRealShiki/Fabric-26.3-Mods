@@ -17,7 +17,7 @@ public final class FeatureRegistry {
             new Feature("glowing_armor_trims", "Glowing Armor Trims", "Glow focused on armor trim details.", "Armor Glow", false),
             new Feature("item_outline_glow", "Item Outline Glow", "Outline held items in first person.", "Item Glow", false),
             new Feature("ground_reflections", "Ground Reflections", "Configurable reflections for selected block surfaces.", "World Visuals", false),
-            new Feature("custom_sky", "Custom Sky", "Load Custom Sky layers from compatible resource packs.", "World Visuals", true),
+            new Feature("custom_sky", "Custom Sky", "Nuit skyboxes from resource packs; preserves the source texture resolution (GPU limit applies).", "World Visuals", true),
             new Feature("fullbright", "Fullbright", "Client-side brightness control.", "World Visuals", true),
             new Feature("armor_hud", "Armor HUD", "Armor icons with durability bars and low-durability warnings.", "HUD & Interface", false),
             new Feature("target_hud", "Target HUD", "Compact target name, ping, health and armor display.", "HUD & Interface", false),
