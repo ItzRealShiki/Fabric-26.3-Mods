@@ -36,6 +36,7 @@ public final class ProVisualsScreen extends Screen {
         dashboardCards.clear();
         featureRows.clear();
         sectionHeaders.clear();
+        drawActionRows.clear();
 
         int panelX = panelX();
         int panelY = panelY();
@@ -204,9 +205,9 @@ public final class ProVisualsScreen extends Screen {
                 b -> { ProVisualsConfig.oreOutlineGlow = !ProVisualsConfig.oreOutlineGlow; ProVisualsConfig.save(); rebuildWidgets(); });
 
         sectionHeaders.add(new SectionHeader("INTERFACE",
-                "Appearance of the ProVisuals menu", panelY + 299));
+                "Appearance of the ProVisuals menu", panelY + 285));
         addSettingRow("CORNER STYLE", ProVisualsConfig.roundedCorners ? "ROUNDED" : "SQUARE",
-                "Switch between rounded and square corners", x, panelY + 339, contentWidth,
+                "Switch between rounded and square corners", x, panelY + 325, contentWidth,
                 b -> { ProVisualsConfig.roundedCorners = !ProVisualsConfig.roundedCorners; ProVisualsConfig.save(); rebuildWidgets(); });
     }
 
