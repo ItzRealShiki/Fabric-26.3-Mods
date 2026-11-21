@@ -1,5 +1,8 @@
 package de.leon.playerstatushud;
 
+import de.leon.privacy.api.PrivacyEntry;
+import de.leon.privacy.api.PrivacyManager;
+import de.leon.privacy.api.PrivacyVisibility;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -43,6 +46,16 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        // Register this mod with the shared PrivacyMod dashboard.
+        PrivacyManager.registerProvider(() -> List.of(
+            new PrivacyEntry(
+                "playerstatushud.local-overlay",
+                "Player Status HUD rendering",
+                "The overlay is rendered locally. PlayerStatusHUD adds no custom network packets, telemetry, or data upload.",
+                PrivacyVisibility.PRIVATE
+            )
+        ));
+
         toggleHudKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.playerstatushud.toggle_hud",
             InputConstants.Type.KEYBOARD,
