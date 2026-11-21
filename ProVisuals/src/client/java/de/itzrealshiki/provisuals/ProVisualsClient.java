@@ -5,13 +5,8 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
 
 public final class ProVisualsClient implements ClientModInitializer {
     private static final KeyMapping.Category CATEGORY =
@@ -20,7 +15,7 @@ public final class ProVisualsClient implements ClientModInitializer {
     private static double previousGamma = 1.0;
     private static boolean gammaCaptured;
     private static boolean skyLyricsSettingsKeyUnbound;
-    private static boolean skyLyricsHudDisabled;
+    private static boolean skyLyricsHudEnabled;
 
     @Override
     public void onInitializeClient() {
@@ -34,7 +29,7 @@ public final class ProVisualsClient implements ClientModInitializer {
         // Run after every client mod initializer so Nuit cannot overwrite this preference during its own startup.
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
             skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
-            skyLyricsHudDisabled = MusicLyricsBridge.disableSeparateNowPlayingHud();
+            skyLyricsHudEnabled = MusicLyricsBridge.setNowPlayingHudEnabled(true);
             CustomSkyBridge.ensureAllWorldCoverage();
             boolean customSkyEnabled = ProVisualsConfig.isEnabled("custom_sky");
             if (CustomSkyBridge.setEnabled(customSkyEnabled)) {
@@ -44,28 +39,18 @@ public final class ProVisualsClient implements ClientModInitializer {
             }
         });
 
-        HudElementRegistry.attachElementAfter(VanillaHudElements.CHAT,
-                Identifier.fromNamespaceAndPath("provisuals", "music_island"), new MusicIslandHud());
-
-        // Fabric screen events are stable across 26.x GUI input changes.
-        ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            ScreenMouseEvents.allowMouseClick(screen).register((target, event) ->
-                    !MusicIslandHud.handleMouseClick(event.x(), event.y()));
-        });
-
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!skyLyricsSettingsKeyUnbound) {
                 skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
             }
-            if (!skyLyricsHudDisabled) {
-                skyLyricsHudDisabled = MusicLyricsBridge.disableSeparateNowPlayingHud();
+            if (!skyLyricsHudEnabled) {
+                skyLyricsHudEnabled = MusicLyricsBridge.setNowPlayingHudEnabled(true);
             }
             CustomSkyBridge.ensureAllWorldCoverage();
             GlowOutlineRenderer.tick(client);
             while (openMenuKey.consumeClick()) {
                 if (client.player != null) client.gui.setScreen(new ProVisualsScreen());
             }
-            MusicIslandHud.tickInput(client);
             applyFullbright(client);
         });
         Diagnostics.info("ProVisuals client initialized");
