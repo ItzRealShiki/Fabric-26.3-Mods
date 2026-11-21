@@ -27,6 +27,7 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
     private static final double MAX_DISTANCE_SQUARED = 100.0 * 100.0;
     private static final int BOX_WIDTH = 132;
     private static final int BOX_HEIGHT = 64;
+    private static final float HUD_SCALE = 0.4f; // 60% smaller
     private static final int BACKGROUND = 0xE6101014;
     private static final int BORDER = 0xFF35353D;
     private static final int LOW_HEALTH_BACKGROUND = 0xE6261014;
@@ -74,10 +75,12 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
             float screenX = (float) ((projected.x * 0.5 + 0.5) * graphics.guiWidth());
             float screenY = (float) ((0.5 - projected.y * 0.5) * graphics.guiHeight());
 
-            int x = Math.round(screenX - BOX_WIDTH / 2.0f);
-            int y = Math.round(screenY - BOX_HEIGHT);
-            if (x + BOX_WIDTH < 0 || x > graphics.guiWidth()
-                || y + BOX_HEIGHT < 0 || y > graphics.guiHeight()) continue;
+            int x = Math.round(screenX - (BOX_WIDTH * HUD_SCALE) / 2.0f);
+            int y = Math.round(screenY - BOX_HEIGHT * HUD_SCALE);
+            int scaledWidth = Math.round(BOX_WIDTH * HUD_SCALE);
+            int scaledHeight = Math.round(BOX_HEIGHT * HUD_SCALE);
+            if (x + scaledWidth < 0 || x > graphics.guiWidth()
+                || y + scaledHeight < 0 || y > graphics.guiHeight()) continue;
 
             if (target instanceof AbstractClientPlayer clientPlayer) {
                 drawPlayerBox(graphics, client, clientPlayer, x, y);
@@ -94,6 +97,14 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
     }
 
     private static void drawPlayerBox(GuiGraphicsExtractor graphics, Minecraft client, AbstractClientPlayer player, int x, int y) {
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x * (1.0f - HUD_SCALE), y * (1.0f - HUD_SCALE));
+        graphics.pose().scale(HUD_SCALE, HUD_SCALE);
+
+        // Keep the panel's top-left corner anchored while scaling all contents uniformly.
+        x = Math.round(x / HUD_SCALE);
+        y = Math.round(y / HUD_SCALE);
+
         float maxHealth = Math.max(1.0f, player.getMaxHealth());
         float health = Mth.clamp(player.getHealth(), 0.0f, maxHealth);
         float healthFraction = health / maxHealth;
@@ -123,6 +134,7 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
         if (filled > 0) graphics.fill(barX, barY, barX + filled, barY + 5, HEALTH_COLOR);
 
         drawArmor(graphics, player, x + 7, y + 42);
+        graphics.pose().popMatrix();
     }
 
     private static String formatHearts(float value) {
