@@ -8,25 +8,17 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import restudio.reglass.client.api.ReGlassApi;
-import restudio.reglass.client.api.WidgetStyle;
 
 import java.util.List;
 
 /**
- * Privacy dashboard rendered with the actual ReGlass Liquid Glass API.
- * Uses one shared glass surface and a low blur radius for better performance.
+ * Privacy dashboard with a self-contained dark glass-like UI.
+ * All surfaces are rendered directly by PrivacyMod; no external UI library is used.
  */
 public final class PrivacyScreen extends Screen {
     private static final int PANEL_WIDTH = 390;
     private static final int PANEL_PADDING = 16;
     private static final int ROW_HEIGHT = 43;
-    private static final WidgetStyle GLASS_STYLE = WidgetStyle.create()
-        .tint(0x080808, 0.58f)
-        .blurRadius(2)
-        .smoothing(0.05f)
-        .shadow(22.0f, 0.24f, 0.0f, 4.0f)
-        .shadowColor(0x000000, 0.82f);
 
     public PrivacyScreen() {
         super(Component.literal("Privacy"));
@@ -42,60 +34,74 @@ public final class PrivacyScreen extends Screen {
         int top = (height - panelHeight) / 2;
 
         graphics.fill(0, 0, width, height, 0x99000000);
-        ReGlassApi.create(graphics)
-            .dimensions(left, top, PANEL_WIDTH, panelHeight)
-            .cornerRadius(12.0f)
-            .style(GLASS_STYLE)
-            .render();
-        drawRoundedOutline(graphics, left, top, PANEL_WIDTH, panelHeight, 12, 0xFF777777);
+        drawRoundedSurface(graphics, left, top, PANEL_WIDTH, panelHeight, 12,
+            0xF20A0A0E, 0xFF3A3A44);
 
         graphics.centeredText(font, title, width / 2, top + 13, 0xFFFFFFFF);
-        graphics.centeredText(font, Component.literal("LOCAL PRIVACY OVERVIEW"), width / 2, top + 29, 0xFFAAAAAA);
+        graphics.centeredText(font, Component.literal("LOCAL PRIVACY OVERVIEW"),
+            width / 2, top + 29, 0xFF9999A3);
 
         int rowY = top + 55;
         for (PrivacyEntry entry : entries) {
             int stateColor = color(entry.visibility());
-            ReGlassApi.create(graphics)
-                .dimensions(left + PANEL_PADDING, rowY + 2, PANEL_WIDTH - PANEL_PADDING * 2, ROW_HEIGHT - 5)
-                .cornerRadius(8.0f)
-                .style(GLASS_STYLE)
-                .render();
-            graphics.fill(left + PANEL_PADDING + 8, rowY + 2, left + PANEL_WIDTH - PANEL_PADDING - 8, rowY + 3, 0x553F3F3F);
-            graphics.fill(left + PANEL_PADDING, rowY + 8, left + PANEL_PADDING + 3, rowY + 30, stateColor);
-            graphics.text(font, Component.literal(entry.title()), left + PANEL_PADDING + 11, rowY + 5, 0xFFFFFFFF);
-            graphics.text(font, Component.literal(label(entry.visibility())), left + PANEL_WIDTH - PANEL_PADDING - 96, rowY + 5, stateColor);
+            drawRoundedSurface(graphics, left + PANEL_PADDING, rowY + 2,
+                PANEL_WIDTH - PANEL_PADDING * 2, ROW_HEIGHT - 5, 7,
+                0xD91A1A21, 0xFF303039);
+            graphics.fill(left + PANEL_PADDING + 9, rowY + 8,
+                left + PANEL_PADDING + 11, rowY + 29, stateColor);
+            graphics.text(font, Component.literal(entry.title()),
+                left + PANEL_PADDING + 17, rowY + 5, 0xFFF2F2F5);
+            graphics.text(font, Component.literal(label(entry.visibility())),
+                left + PANEL_WIDTH - PANEL_PADDING - 96, rowY + 5, stateColor);
             String explanation = entry.explanation();
             if (explanation.length() > 62) explanation = explanation.substring(0, 59) + "...";
-            graphics.text(font, Component.literal(explanation), left + PANEL_PADDING + 11, rowY + 19, 0xFFAAAAAA);
+            graphics.text(font, Component.literal(explanation),
+                left + PANEL_PADDING + 17, rowY + 19, 0xFFAAAAB2);
             rowY += ROW_HEIGHT;
         }
 
         int settingsY = top + 59 + entries.size() * ROW_HEIGHT;
         PrivacyManager.HudController hud = PrivacyManager.getHudController();
         if (hud != null) {
-            graphics.text(font, Component.literal("PLAYER STATUS HUD"), left + PANEL_PADDING, settingsY, 0xFFFFFFFF);
+            graphics.text(font, Component.literal("PLAYER STATUS HUD"),
+                left + PANEL_PADDING, settingsY, 0xFFF2F2F5);
             int buttonY = settingsY + 16;
             drawButton(graphics, left + PANEL_PADDING, buttonY, 154, 22,
                 hud.isEnabled() ? "HUD: ON" : "HUD: OFF",
                 hud.isEnabled() ? 0xFF245C43 : 0xFF5A3033);
-            graphics.text(font, Component.literal("SIZE"), left + 184, buttonY + 7, 0xFFBBBBBB);
-            drawButton(graphics, left + 235, buttonY, 30, 22, "-", 0xFF303030);
+            graphics.text(font, Component.literal("SIZE"), left + 184, buttonY + 7, 0xFFBBBBC4);
+            drawButton(graphics, left + 235, buttonY, 30, 22, "-", 0xFF292930);
             graphics.centeredText(font, Component.literal(hud.getSizePercent() + "%"),
                 left + 298, buttonY + 7, 0xFFFFFFFF);
-            drawButton(graphics, left + 331, buttonY, 30, 22, "+", 0xFF303030);
+            drawButton(graphics, left + 331, buttonY, 30, 22, "+", 0xFF292930);
         }
 
         graphics.centeredText(font, Component.literal("H  •  CLOSE     |     STATUS IS INFORMATIONAL"),
-            width / 2, top + panelHeight - 18, 0xFF888888);
+            width / 2, top + panelHeight - 18, 0xFF777780);
     }
 
-    private static void drawButton(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
-                                   String label, int background) {
-        graphics.fill(x, y, x + width, y + height, background);
-        graphics.fill(x, y, x + width, y + 1, 0xFF777777);
-        graphics.fill(x, y + height - 1, x + width, y + height, 0xFF777777);
+    private static void drawButton(GuiGraphicsExtractor graphics, int x, int y, int width,
+                                   int height, String label, int background) {
+        drawRoundedSurface(graphics, x, y, width, height, 5, background, 0xFF55555F);
         graphics.centeredText(Minecraft.getInstance().font,
             Component.literal(label), x + width / 2, y + 7, 0xFFFFFFFF);
+    }
+
+    private static void drawRoundedSurface(GuiGraphicsExtractor graphics, int x, int y,
+                                           int width, int height, int radius,
+                                           int fillColor, int borderColor) {
+        for (int row = 0; row < height; row++) {
+            int edge = Math.min(row, height - 1 - row);
+            int inset = edge >= radius ? 0 : radius - (int) Math.ceil(
+                Math.sqrt(Math.max(0.0, radius * radius - Math.pow(radius - edge - 0.5, 2))));
+            graphics.fill(x + inset, y + row, x + width - inset, y + row + 1, fillColor);
+            graphics.fill(x + inset, y + row, x + inset + 1, y + row + 1, borderColor);
+            graphics.fill(x + width - inset - 1, y + row,
+                x + width - inset, y + row + 1, borderColor);
+            if (row == 0 || row == height - 1) {
+                graphics.fill(x + inset, y + row, x + width - inset, y + row + 1, borderColor);
+            }
+        }
     }
 
     @Override
@@ -144,26 +150,5 @@ public final class PrivacyScreen extends Screen {
             case EXPOSED -> "EXPOSED";
             case UNKNOWN -> "UNKNOWN";
         };
-    }
-
-    private static void drawRoundedOutline(GuiGraphicsExtractor graphics, int x, int y,
-                                            int width, int height, int radius, int color) {
-        for (int row = 0; row < height; row++) {
-            int edge = Math.min(row, height - 1 - row);
-            int outerInset = edge >= radius ? 0 : radius - (int) Math.ceil(
-                Math.sqrt(Math.max(0.0, radius * radius - Math.pow(radius - edge - 0.5, 2)))
-            );
-            int innerRadius = Math.max(1, radius - 1);
-            int innerEdge = Math.min(row - 1, height - 2 - row);
-            int innerInset = innerEdge >= innerRadius || innerEdge < 0 ? 0 : innerRadius - (int) Math.ceil(
-                Math.sqrt(Math.max(0.0, innerRadius * innerRadius - Math.pow(innerRadius - innerEdge - 0.5, 2)))
-            );
-            graphics.fill(x + outerInset, y + row, x + outerInset + 1, y + row + 1, color);
-            graphics.fill(x + width - outerInset - 1, y + row, x + width - outerInset, y + row + 1, color);
-            if (innerInset > outerInset + 1) {
-                graphics.fill(x + outerInset + 1, y + row, x + innerInset, y + row + 1, color);
-                graphics.fill(x + width - innerInset, y + row, x + width - outerInset - 1, y + row + 1, color);
-            }
-        }
     }
 }
