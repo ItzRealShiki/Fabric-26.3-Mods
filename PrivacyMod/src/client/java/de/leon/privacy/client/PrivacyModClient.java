@@ -39,18 +39,18 @@ public final class PrivacyModClient implements ClientModInitializer {
                 PrivacyVisibility.PRIVATE)
         ));
 
+        // Minecraft 26.3 uses SDL scancodes; KEY_H is the SDL scancode for H.
         openLibraryKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.privacymod.open_library",
-            InputConstants.Type.KEYSYM,
             InputConstants.KEY_H,
             KEY_CATEGORY
         ));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openLibraryKey.consumeClick()) {
-                if (client.screen == null) {
-                    client.setScreen(new PrivacyScreen());
-                } else if (client.screen instanceof PrivacyScreen) {
-                    client.setScreen(null);
+                if (client.gui.screen() == null) {
+                    client.gui.setScreen(new PrivacyScreen());
+                } else if (client.gui.screen() instanceof PrivacyScreen) {
+                    client.gui.setScreen(null);
                 }
             }
         });
