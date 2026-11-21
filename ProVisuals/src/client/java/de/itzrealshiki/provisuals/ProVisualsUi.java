@@ -3,15 +3,10 @@ package de.itzrealshiki.provisuals;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FontDescription;
-import net.minecraft.resources.Identifier;
 
 import java.util.Locale;
 
 public final class ProVisualsUi {
-    private static final Identifier UI_FONT =
-            Identifier.fromNamespaceAndPath("provisuals", "ui");
-
     private ProVisualsUi() {}
 
     /**
@@ -53,7 +48,7 @@ public final class ProVisualsUi {
     }
 
     public static Component component(String value) {
-        return Component.literal(displayText(value)).withStyle(style -> style.withFont(new FontDescription.Resource(UI_FONT)));
+        return Component.literal(displayText(value));
     }
 
     public static int width(Font font, String value) {
