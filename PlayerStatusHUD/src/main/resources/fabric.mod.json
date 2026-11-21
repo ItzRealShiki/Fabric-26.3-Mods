@@ -3,7 +3,7 @@
   "id": "playerstatushud",
   "version": "${version}",
   "name": "Player Status HUD",
-  "description": "A lightweight player status overlay with health and armor durability.",
+  "description": "A lightweight player status overlay with health and armor durability. Requires Privacy Mod.",
   "authors": ["Leon"],
   "license": "MIT",
   "environment": "client",
@@ -14,6 +14,7 @@
     "fabricloader": ">=0.20.1",
     "minecraft": "~26.3",
     "java": ">=25",
-    "fabric-api": "*"
+    "fabric-api": "*",
+    "privacymod": ">=0.1.0"
   }
 }
