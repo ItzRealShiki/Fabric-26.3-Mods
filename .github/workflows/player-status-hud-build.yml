@@ -1,4 +1,5 @@
 # Build workflow for the Player Status HUD and its required PrivacyMod API.
+# The HUD artifact is valid only when the required PrivacyMod API build succeeds.
 name: Build Player Status HUD
 
 on:
