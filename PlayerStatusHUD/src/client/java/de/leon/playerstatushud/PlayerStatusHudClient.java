@@ -36,6 +36,7 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
     private static final int PANEL_RADIUS = 9;
     private static final WidgetStyle GLASS_STYLE = WidgetStyle.create()
         .tint(0x080808, 0.58f)
+        .blurRadius(2)
         .smoothing(0.05f)
         .shadow(18.0f, 0.22f, 0.0f, 3.0f)
         .shadowColor(0x000000, 0.82f);
