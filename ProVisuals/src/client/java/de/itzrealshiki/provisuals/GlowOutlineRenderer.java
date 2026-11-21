@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.state.level.BlockOutlineRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -68,10 +69,10 @@ public final class GlowOutlineRenderer {
     }
 
     private static boolean hasArmor(LivingEntity living) {
-        for (ItemStack stack : living.getArmorSlots()) {
-            if (!stack.isEmpty()) return true;
-        }
-        return false;
+        return !living.getItemBySlot(EquipmentSlot.HEAD).isEmpty()
+                || !living.getItemBySlot(EquipmentSlot.CHEST).isEmpty()
+                || !living.getItemBySlot(EquipmentSlot.LEGS).isEmpty()
+                || !living.getItemBySlot(EquipmentSlot.FEET).isEmpty();
     }
 
     private static boolean renderOreOutline(LevelRenderContext context, BlockOutlineRenderState outline) {

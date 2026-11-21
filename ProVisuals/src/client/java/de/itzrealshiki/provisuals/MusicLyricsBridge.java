@@ -171,7 +171,8 @@ public final class MusicLyricsBridge {
             }
             return true;
         } catch (ClassNotFoundException exception) {
-            return true;
+            // Keep retrying; the nested module may not be visible until its entrypoint loads.
+            return false;
         } catch (IllegalStateException exception) {
             // SkyLyrics may initialize a few ticks after ProVisuals.
             return false;
