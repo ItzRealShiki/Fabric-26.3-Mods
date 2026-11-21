@@ -6,7 +6,9 @@ on:
   push:
     paths:
       - "PlayerStatusHUD/**"
+      - "scripts/**"
       - "PrivacyMod/**"
+      - "scripts/**"
       - ".github/workflows/player-status-hud-build.yml"
   pull_request:
     paths:
@@ -32,6 +34,9 @@ jobs:
           repository: RedxAx/ReGlass
           ref: master
           path: ReGlass
+      - name: Restrict ReGlass to custom mod UI only
+        working-directory: ReGlass
+        run: python3 ../scripts/patch-reglass-mod-only.py
       - name: Build ReGlass 26.3
         working-directory: ReGlass
         run: |
