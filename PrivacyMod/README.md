@@ -44,6 +44,9 @@ The ReGlass rendering library is bundled inside the Privacy Mod JAR as a nested 
 
 A client mod cannot hide the network source IP from the server endpoint, guarantee anonymity, or make protocol/version details disappear. It also cannot control what a server-side plugin chooses to show other players. Privacy Mod reports observable facts and offers integration points; it does not spoof client identity or bypass server inspection.
 
+
+The mod-only ReGlass patch is applied during the GitHub Actions build.
+
 ## Build
 
 Build the ReGlass 26.3 library first, then run `gradle build` in this project directory. The repository's GitHub Actions workflow performs these steps automatically.
