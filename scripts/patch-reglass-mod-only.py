@@ -41,5 +41,24 @@ for forbidden in ("client.ScreenMixin", "client.InventoryScreenMixin",
     if forbidden in source:
         raise SystemExit("Vanilla UI mixin remains enabled: " + forbidden)
 
+# ReGlass' rendering API must be used only by PrivacyMod's own screen.
+privacy_sources = Path("../PrivacyMod/src").rglob("*.java")
+api_users = []
+for java_file in privacy_sources:
+    java_source = java_file.read_text(encoding="utf-8")
+    if "ReGlassApi.create(" in java_source:
+        api_users.append(java_file.as_posix())
+
+expected_user = "../PrivacyMod/src/client/java/de/leon/privacy/client/PrivacyScreen.java"
+if api_users != [expected_user]:
+    raise SystemExit(
+        "ReGlass API must be used only in PrivacyScreen.java; found: "
+        + ", ".join(api_users)
+    )
+
+privacy_screen = Path(expected_user)
+if not privacy_screen.is_file() or "ReGlassApi.create(" not in privacy_screen.read_text(encoding="utf-8"):
+    raise SystemExit("PrivacyScreen is not configured to use ReGlass.")
+
 config.write_text(source, encoding="utf-8")
-print("ReGlass vanilla UI mixins disabled; custom mod rendering retained.")
+print("ReGlass rendering infrastructure retained; API usage verified as PrivacyScreen-only.")
