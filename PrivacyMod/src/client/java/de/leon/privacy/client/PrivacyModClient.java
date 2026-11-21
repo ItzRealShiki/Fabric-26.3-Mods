@@ -4,15 +4,21 @@ import de.leon.privacy.api.PrivacyEntry;
 import de.leon.privacy.api.PrivacyManager;
 import de.leon.privacy.api.PrivacyVisibility;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-
 public final class PrivacyModClient implements ClientModInitializer {
+    private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
+        Identifier.fromNamespaceAndPath("privacymod", "main")
+    );
+    private static KeyMapping openLibraryKey;
+
     @Override
     public void onInitializeClient() {
         PrivacyManager.registerProvider(() -> List.of(
@@ -33,11 +39,20 @@ public final class PrivacyModClient implements ClientModInitializer {
                 PrivacyVisibility.PRIVATE)
         ));
 
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
-            dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("privacy").executes(context -> {
-                Minecraft.getInstance().gui.setScreen(new PrivacyScreen());
-                return 1;
-            }))
-        );
+        openLibraryKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.privacymod.open_library",
+            InputConstants.Type.KEYSYM,
+            InputConstants.KEY_H,
+            KEY_CATEGORY
+        ));
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (openLibraryKey.consumeClick()) {
+                if (client.screen == null) {
+                    client.setScreen(new PrivacyScreen());
+                } else if (client.screen instanceof PrivacyScreen) {
+                    client.setScreen(null);
+                }
+            }
+        });
     }
 }
