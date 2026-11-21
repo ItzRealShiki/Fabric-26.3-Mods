@@ -1,7 +1,9 @@
 package de.itzrealshiki.hotbardisplay;
 
 import de.itzrealshiki.hotbardisplay.network.HotbarPayload;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -17,7 +19,11 @@ public final class PlayerHotbarDisplay implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        PayloadTypeRegistry.clientboundPlay().register(HotbarPayload.TYPE, HotbarPayload.CODEC);
+        // The client receiver registers this payload type on the client.
+        // Register it here only on a dedicated server to avoid duplicate registration.
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
+            PayloadTypeRegistry.clientboundPlay().register(HotbarPayload.TYPE, HotbarPayload.CODEC);
+        }
         ServerTickEvents.END_SERVER_TICK.register(this::syncHotbars);
     }
 
