@@ -2,7 +2,7 @@ package de.itzrealshiki.hotbardisplay.client;
 
 import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback;
 import net.minecraft.client.model.player.PlayerModel;
-import net.minecraft.client.renderer.entity.AvatarRenderer;
+import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 
