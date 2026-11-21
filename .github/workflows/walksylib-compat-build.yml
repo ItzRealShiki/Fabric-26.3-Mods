@@ -1,0 +1,47 @@
+name: Build WalksyLib Blur Compatibility
+
+on:
+  push:
+    paths:
+      - "WalksyLibCompat/**"
+      - ".github/workflows/walksylib-compat-build.yml"
+  pull_request:
+    paths:
+      - "WalksyLibCompat/**"
+      - ".github/workflows/walksylib-compat-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout compatibility patch
+        uses: actions/checkout@v6
+      - name: Checkout upstream WalksyLib source
+        uses: actions/checkout@v6
+        with:
+          repository: Walksy/WalksyLib
+          ref: 60f7de55a14e29fc0a258ff1354f17ed98c47eb5
+          path: WalksyLib
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: "microsoft"
+      - name: Apply compatibility patch
+        working-directory: WalksyLib
+        run: git apply "$GITHUB_WORKSPACE/WalksyLibCompat/patches/blur-once-per-frame.patch"
+      - name: Build Fabric 26.3
+        working-directory: WalksyLib
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :26.3:build -Pwalksylib.versions=26.3 -Pwalksylib.loaders=fabric
+      - name: Upload compatibility JAR
+        uses: actions/upload-artifact@v7
+        with:
+          name: WalksyLib-2.0.5-26.3-BlurCompat
+          path: WalksyLib/versions/26.3/build/libs/*.jar
+          if-no-files-found: error
