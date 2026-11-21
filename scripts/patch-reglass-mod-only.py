@@ -1,19 +1,30 @@
 #!/usr/bin/env python3
-"""Limit the bundled ReGlass build to its custom rendering API/pipeline.
-
-Keep the render pipeline and accessors required by ReGlassApi, but do not load
-mixins that restyle vanilla Minecraft screens, HUD elements, buttons or sliders.
-"""
+"""Keep ReGlass visual effects scoped to custom mod UI."""
 from pathlib import Path
+import re
 
 config = Path("src/main/resources/reglass.mixins.json")
 source = config.read_text(encoding="utf-8")
 
-# ReGlass' global slider mixin changes vanilla slider widgets.
-source = source.replace('    "widgets.SliderWidgetMixin"\n', "")
+# Remove the global slider restyling mixin wherever it is declared.
+source = re.sub(r'^\s*"widgets\\.SliderWidgetMixin",?\s*$', '', source, flags=re.M)
 
+# Replace the client mixin list with only the rendering infrastructure.
 start = source.index('  "client": [')
-end = source.index('  ],', start) + len('  ],')
+open_bracket = source.index('[', start)
+depth = 0
+end = None
+for i in range(open_bracket, len(source)):
+    if source[i] == '[':
+        depth += 1
+    elif source[i] == ']':
+        depth -= 1
+        if depth == 0:
+            end = i + 1
+            break
+if end is None:
+    raise SystemExit("Could not parse ReGlass client mixin list")
+
 replacement = '''  "client": [
     "accessor.DrawContextAccessor",
     "accessor.GameRendererAccessor",
@@ -24,8 +35,11 @@ replacement = '''  "client": [
   ]'''
 source = source[:start] + replacement + source[end:]
 
-if '"client.ScreenMixin"' in source or '"client.InventoryScreenMixin"' in source:
-    raise SystemExit("Vanilla screen mixins are still present; refusing to build.")
+for forbidden in ("client.ScreenMixin", "client.InventoryScreenMixin",
+                  "client.TitleScreenMixin", "client.InGameHudMixin",
+                  "client.OptionsMixin", "widgets.SliderWidgetMixin"):
+    if forbidden in source:
+        raise SystemExit("Vanilla UI mixin remains enabled: " + forbidden)
 
 config.write_text(source, encoding="utf-8")
-print("ReGlass restricted to custom mod-rendered glass elements.")
+print("ReGlass vanilla UI mixins disabled; custom mod rendering retained.")
