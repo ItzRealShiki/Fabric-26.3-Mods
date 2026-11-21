@@ -4,8 +4,8 @@
   "version": "${version}",
   "name": "CoreMod",
   "description": "A client-side DonutSMP companion with configurable UI tools.",
-  "authors": ["Leon"],
-  "license": "All-Rights-Reserved",
+  "authors": ["ItzRealShiki"],
+  "license": "ItzRealShiki-Attribution-Server-Credit-1.0",
   "environment": "client",
   "entrypoints": {
     "client": ["de.leon.coremod.CoreModClient"]
