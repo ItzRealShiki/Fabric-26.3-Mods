@@ -169,20 +169,20 @@ public final class ProVisualsScreen extends Screen {
                 });
 
         sectionHeaders.add(new SectionHeader("Lyrics in the Sky",
-                "Synced lyrics, typography and placement", py + 256));
+                "Synced lyrics, typography and placement", py + 246));
         addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> {
             boolean enabled = MusicLyricsBridge.toggleLyrics();
             status = "Lyrics " + onOff(enabled);
             rebuildWidgets();
-        }).bounds(x, py + 296, contentWidth, 35).build());
+        }).bounds(x, py + 286, contentWidth, 35).build());
         drawActionRows.add(new ActionRow("Lyrics display",
                 onOff(MusicLyricsBridge.isLyricsEnabled()), "Toggle the lyrics overlay",
-                x, py + 296, contentWidth, 35, false));
+                x, py + 286, contentWidth, 35, false));
 
         addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> MusicLyricsBridge.openSettings())
-                .bounds(x, py + 339, contentWidth, 35).build());
+                .bounds(x, py + 327, contentWidth, 35).build());
         drawActionRows.add(new ActionRow("Open lyrics settings", "›",
-                "Fonts, colours and lyric placement", x, py + 339, contentWidth, 35, true));
+                "Fonts, colours and lyric placement", x, py + 327, contentWidth, 35, true));
     }
 
     private void buildToolsPage(int x, int py, int contentWidth) {
