@@ -3,9 +3,10 @@ package de.leon.privacy.client;
 import de.leon.privacy.api.PrivacyEntry;
 import de.leon.privacy.api.PrivacyManager;
 import de.leon.privacy.api.PrivacyVisibility;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import de.leon.privacy.api.PrivacyManager;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import restudio.reglass.client.api.ReGlassApi;
 import restudio.reglass.client.api.WidgetStyle;
@@ -88,19 +89,20 @@ public final class PrivacyScreen extends Screen {
             width / 2, top + panelHeight - 18, 0xFF888888);
     }
 
-
     private static void drawButton(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
                                    String label, int background) {
         graphics.fill(x, y, x + width, y + height, background);
         graphics.fill(x, y, x + width, y + 1, 0xFF777777);
         graphics.fill(x, y + height - 1, x + width, y + height, 0xFF777777);
-        graphics.centeredText(net.minecraft.client.Minecraft.getInstance().font,
+        graphics.centeredText(Minecraft.getInstance().font,
             Component.literal(label), x + width / 2, y + 7, 0xFFFFFFFF);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (event.button() == 1) {
+            double mouseX = event.x();
+            double mouseY = event.y();
             List<PrivacyEntry> entries = PrivacyManager.getEntries();
             int panelHeight = 132 + entries.size() * ROW_HEIGHT + 24;
             int left = (width - PANEL_WIDTH) / 2;
@@ -123,7 +125,7 @@ public final class PrivacyScreen extends Screen {
                 }
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     private static int color(PrivacyVisibility visibility) {
