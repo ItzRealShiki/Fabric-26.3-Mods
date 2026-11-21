@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "player_hotbar_display",
+  "version": "${version}",
+  "name": "Player Hotbar Display",
+  "authors": ["ItzRealShiki"],
+  "license": "ItzRealShiki-Attribution-Server-Credit-1.0",
+  "description": "Displays nearby players' hotbars above their heads.",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["de.itzrealshiki.hotbardisplay.PlayerHotbarDisplay"]
+  },
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
