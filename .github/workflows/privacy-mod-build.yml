@@ -22,6 +22,17 @@ jobs:
         with:
           java-version: "25"
           distribution: "microsoft"
+      - name: Checkout ReGlass rendering library
+        uses: actions/checkout@v4
+        with:
+          repository: RedxAx/ReGlass
+          ref: master
+          path: ReGlass
+      - name: Build ReGlass 26.3
+        working-directory: ReGlass
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :26.3:build
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
         with:
