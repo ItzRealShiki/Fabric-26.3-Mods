@@ -11,6 +11,11 @@ base {
 repositories {}
 
 dependencies {
+    // Compile against the real ReGlass API; ReGlass remains a separate runtime mod.
+    modCompileOnly files(fileTree(dir: "../ReGlass/versions/26.3/build/libs", include: ["reglass-26.3-*.jar"], exclude: ["*-sources.jar"]))
+}
+
+dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
