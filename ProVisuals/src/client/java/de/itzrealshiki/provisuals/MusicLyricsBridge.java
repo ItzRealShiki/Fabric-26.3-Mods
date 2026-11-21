@@ -75,7 +75,11 @@ public final class MusicLyricsBridge {
     }
 
     public static boolean isPresent() {
-        try { clientClass(); return true; }
-        catch (ClassNotFoundException exception) { return false; }
+        try {
+            clientClass();
+            return true;
+        } catch (ReflectiveOperationException exception) {
+            return false;
+        }
     }
 }
