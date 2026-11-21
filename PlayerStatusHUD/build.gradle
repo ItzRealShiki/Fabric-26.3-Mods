@@ -19,7 +19,7 @@ dependencies {
     // and is also a required runtime dependency in fabric.mod.json.
     compileOnly files("../PrivacyMod/build/classes/java/main")
     // ReGlass supplies the exact Liquid Glass renderer used by the HUD bubble.
-    compileOnly files("../ReGlass/26.3/build/libs/reglass-26.3-2.1.0.jar")
+    compileOnly files("../ReGlass/versions/26.3/build/libs/reglass-26.3-2.1.0.jar")
 }
 
 loom {
