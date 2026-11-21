@@ -17,14 +17,12 @@ public final class PlayerHotbarDisplay implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        PayloadTypeRegistry.playS2C().register(HotbarPayload.TYPE, HotbarPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(HotbarPayload.TYPE, HotbarPayload.CODEC);
         ServerTickEvents.END_SERVER_TICK.register(this::syncHotbars);
     }
 
     private void syncHotbars(MinecraftServer server) {
-        if (server.getTickCount() % SYNC_INTERVAL_TICKS != 0) {
-            return;
-        }
+        if (server.getTickCount() % SYNC_INTERVAL_TICKS != 0) return;
 
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
         if (players.size() < 2) return;
