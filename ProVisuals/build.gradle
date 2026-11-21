@@ -62,3 +62,8 @@ java {
     targetCompatibility = JavaVersion.VERSION_25
     withSourcesJar()
 }
+
+// The generated nested-mod resource is also inspected by the source archive task.
+tasks.named("sourcesJar").configure {
+    dependsOn(tasks.named("downloadLyricsModule"))
+}

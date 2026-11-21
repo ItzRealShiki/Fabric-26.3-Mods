@@ -21,8 +21,7 @@ public final class MusicIslandHud implements HudElement {
     public void extractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
         if (!ProVisualsConfig.musicIslandEnabled) { bounds = null; return; }
         Minecraft minecraft = Minecraft.getInstance();
-        // Minecraft suppresses HUD extraction itself while the HUD is hidden (F1).
-        if (minecraft.level == null) { bounds = null; return; }
+        if (minecraft.level == null || minecraft.options.hideGui) { bounds = null; return; }
 
         int panelWidth = Math.min(210, graphics.guiWidth() - 12);
         if (panelWidth < 150) return;
