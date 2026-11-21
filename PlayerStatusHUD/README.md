@@ -24,3 +24,7 @@ Privacy Mod bundles the ReGlass rendering library. Install Privacy Mod alongside
 ## Build
 
 Build ReGlass 26.3 and Privacy Mod first so their API classes are available, then run `gradle build` in this project directory. The repository's GitHub Actions workflow performs these steps automatically.
+
+## Credits and license
+
+Original work by **ItzRealShiki**. If you use this mod on a Minecraft server, follow the server-credit requirement in the repository's LICENSE.
