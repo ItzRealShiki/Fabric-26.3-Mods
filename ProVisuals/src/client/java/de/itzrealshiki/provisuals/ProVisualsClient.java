@@ -6,7 +6,10 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
@@ -26,6 +29,16 @@ public final class ProVisualsClient implements ClientModInitializer {
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.CHAT,
                 Identifier.fromNamespaceAndPath("provisuals", "music_island"), new MusicIslandHud());
+
+        // Fabric screen events are stable across 26.x GUI input changes.
+        ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            if (screen instanceof ChatScreen) {
+                ScreenMouseEvents.allowMouseClick(screen).register((target, event) -> {
+                    if (MusicIslandHud.handleChatClick(event.x(), event.y())) return false;
+                    return true;
+                });
+            }
+        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenuKey.consumeClick()) {
