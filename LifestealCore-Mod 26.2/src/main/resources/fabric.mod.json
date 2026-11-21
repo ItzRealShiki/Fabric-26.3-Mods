@@ -3,6 +3,8 @@
   "id": "server-mod",
   "version": "${version}",
   "name": "Server-Mod",
+  "authors": ["ItzRealShiki"],
+  "license": "ItzRealShiki-Attribution-Server-Credit-1.0",
   "description": "Server-controlled FastPlace and FastBreak features for supported LifestealCore servers.",
   "environment": "client",
   "entrypoints": {
