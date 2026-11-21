@@ -18,7 +18,7 @@ dependencies {
     // Bundle ReGlass inside PrivacyMod using Fabric's nested-JAR support.
     // Users install PrivacyMod only; the embedded library is loaded automatically.
     def reGlassJar = files("../ReGlass/versions/26.3/build/libs/reglass-26.3-2.1.0.jar")
-    modImplementation reGlassJar
+    implementation reGlassJar
     include reGlassJar
 }
 
