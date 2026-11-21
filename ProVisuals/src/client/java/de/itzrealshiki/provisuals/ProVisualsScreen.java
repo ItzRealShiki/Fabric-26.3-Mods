@@ -173,12 +173,15 @@ public final class ProVisualsScreen extends Screen {
             default -> {
                 sectionHeaders.add(new SectionHeader("Music player",
                         "Playback information and media controls", py + 76));
-                addSettingRow("Music Island", onOff(ProVisualsConfig.musicIslandEnabled),
-                        "Show the compact player overlay", x, py + 116, contentWidth,
+                addSettingRow("SkyLyrics Music Island", onOff(MusicLyricsBridge.booleanSetting("showHud", true)),
+                        "Show the original SkyLyrics player overlay", x, py + 116, contentWidth,
                         b -> {
-                            ProVisualsConfig.musicIslandEnabled = !ProVisualsConfig.musicIslandEnabled;
-                            ProVisualsConfig.save();
-                            status = "Music Island " + onOff(ProVisualsConfig.musicIslandEnabled);
+                            boolean enabled = !MusicLyricsBridge.booleanSetting("showHud", true);
+                            if (MusicLyricsBridge.setNowPlayingHudEnabled(enabled)) {
+                                status = "SkyLyrics Music Island " + onOff(enabled);
+                            } else {
+                                status = "SkyLyrics is not ready — try again in a moment";
+                            }
                             rebuildWidgets();
                         });
             }
