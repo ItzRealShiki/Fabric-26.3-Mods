@@ -1,23 +1,20 @@
 package de.leon.playerstatushud;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.ClipContext;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.util.List;
 import java.util.Locale;
@@ -37,15 +34,11 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
         HudElementRegistry.addLast(HUD_ID, (graphics, deltaTracker) -> renderPlayers(graphics));
     }
 
-    private static void renderPlayers(GuiGraphics graphics) {
+    private static void renderPlayers(GuiGraphicsExtractor graphics) {
         Minecraft client = Minecraft.getInstance();
-        if (client.level == null || client.player == null || client.options.hideGui) return;
+        if (client.level == null || client.player == null || client.gui.hud.isHidden()) return;
 
         var localPlayer = client.player;
-        var camera = client.gameRenderer.getMainCamera();
-        Vec3 cameraPosition = camera.getPosition();
-        Quaternionf cameraRotation = new Quaternionf(camera.rotation()).conjugate();
-        var projection = new org.joml.Matrix4f(RenderSystem.getProjectionMatrix());
 
         for (Player target : client.level.players()) {
             if (target == localPlayer || target.isRemoved() || target.isSpectator()) continue;
@@ -53,16 +46,19 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
             if (!hasLineOfSight(client, localPlayer, target)) continue;
 
             Vec3 anchor = target.position().add(0.0, target.getBbHeight() + 0.42, 0.0);
-            float[] screen = project(anchor, cameraPosition, cameraRotation, projection,
-                graphics.guiWidth(), graphics.guiHeight());
-            if (screen == null) continue;
+            Vec3 projected = client.gameRenderer.projectPointToScreen(anchor);
+            if (projected.z < -1.0 || projected.z > 1.0) continue;
+            float screenX = (float) ((projected.x * 0.5 + 0.5) * graphics.guiWidth());
+            float screenY = (float) ((0.5 - projected.y * 0.5) * graphics.guiHeight());
 
-            int x = Math.round(screen[0] - BOX_WIDTH / 2.0f);
-            int y = Math.round(screen[1] - BOX_HEIGHT);
+            int x = Math.round(screenX - BOX_WIDTH / 2.0f);
+            int y = Math.round(screenY - BOX_HEIGHT);
             if (x + BOX_WIDTH < 0 || x > graphics.guiWidth()
                 || y + BOX_HEIGHT < 0 || y > graphics.guiHeight()) continue;
 
-            drawPlayerBox(graphics, client, target, x, y);
+            if (target instanceof AbstractClientPlayer clientPlayer) {
+                drawPlayerBox(graphics, client, clientPlayer, x, y);
+            }
         }
     }
 
@@ -74,44 +70,24 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
         return hit.getType() == HitResult.Type.MISS;
     }
 
-    private static float[] project(Vec3 worldPosition, Vec3 cameraPosition, Quaternionf inverseRotation,
-                                   org.joml.Matrix4f projection, int screenWidth, int screenHeight) {
-        Vec3 relative = worldPosition.subtract(cameraPosition);
-        Vector3f view = new Vector3f((float) relative.x, (float) relative.y, (float) relative.z)
-            .rotate(inverseRotation);
-        if (view.z >= -0.05f) return null;
-
-        Vector4f clip = new Vector4f(view.x, view.y, view.z, 1.0f);
-        projection.transform(clip);
-        if (clip.w <= 0.0f) return null;
-
-        float ndcX = clip.x / clip.w;
-        float ndcY = clip.y / clip.w;
-        if (ndcX < -1.25f || ndcX > 1.25f || ndcY < -1.25f || ndcY > 1.25f) return null;
-
-        float screenX = (ndcX * 0.5f + 0.5f) * screenWidth;
-        float screenY = (0.5f - ndcY * 0.5f) * screenHeight;
-        return new float[]{screenX, screenY};
-    }
-
-    private static void drawPlayerBox(GuiGraphics graphics, Minecraft client, Player player, int x, int y) {
+    private static void drawPlayerBox(GuiGraphicsExtractor graphics, Minecraft client, AbstractClientPlayer player, int x, int y) {
         drawRoundedPanel(graphics, x, y, BOX_WIDTH, BOX_HEIGHT);
 
         // Player face, including the outer skin layer.
-        Identifier skin = player.getSkin().texture();
-        graphics.blit(RenderPipelines.GUI_TEXTURED, skin, x + 7, y + 7, 18, 18,
-            8.0f, 8.0f, 8, 8, 64, 64);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, skin, x + 7, y + 7, 18, 18,
-            40.0f, 8.0f, 8, 8, 64, 64);
+        Identifier skin = player.getSkin().body().texturePath();
+        graphics.blit(RenderPipelines.GUI_TEXTURED, skin, x + 7, y + 7,
+            8.0f, 8.0f, 18, 18, 8, 8, 64, 64);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, skin, x + 7, y + 7,
+            40.0f, 8.0f, 18, 18, 8, 8, 64, 64);
 
         String name = player.getName().getString();
-        graphics.text(client.font, name, x + 31, y + 7, 0xFFFFFFFF, true);
+        graphics.text(client.font, net.minecraft.network.chat.Component.literal(name), x + 31, y + 7, 0xFFFFFFFF);
 
         float maxHealth = Math.max(1.0f, player.getMaxHealth());
         float health = Mth.clamp(player.getHealth(), 0.0f, maxHealth);
         float healthFraction = health / maxHealth;
         String hearts = formatHearts(health / 2.0f);
-        graphics.text(client.font, hearts + " ♥", x + 31, y + 19, 0xFFFFD5D8, true);
+        graphics.text(client.font, net.minecraft.network.chat.Component.literal(hearts + " ♥"), x + 31, y + 19, 0xFFFFD5D8);
 
         int barX = x + 31;
         int barY = y + 32;
@@ -130,7 +106,7 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
         return String.format(Locale.ROOT, "%.1f", value);
     }
 
-    private static void drawArmor(GuiGraphics graphics, Player player, int startX, int y) {
+    private static void drawArmor(GuiGraphicsExtractor graphics, Player player, int startX, int y) {
         List<EquipmentSlot> slots = List.of(
             EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
         );
@@ -139,7 +115,7 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
             int slotX = startX + i * 29;
             if (stack.isEmpty()) continue;
 
-            graphics.renderItem(stack, slotX, y);
+            graphics.item(stack, slotX, y);
             if (!stack.isDamageableItem()) continue;
 
             float remaining = 1.0f - (float) stack.getDamageValue() / stack.getMaxDamage();
@@ -151,7 +127,7 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
         }
     }
 
-    private static void drawRoundedPanel(GuiGraphics graphics, int x, int y, int width, int height) {
+    private static void drawRoundedPanel(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
         graphics.fill(x + 3, y, x + width - 3, y + height, BACKGROUND);
         graphics.fill(x + 1, y + 2, x + width - 1, y + height - 2, BACKGROUND);
         graphics.fill(x, y + 4, x + width, y + height - 4, BACKGROUND);
