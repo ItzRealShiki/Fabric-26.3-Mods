@@ -21,7 +21,7 @@ public final class ProVisualsConfig {
     public static boolean oreInteriorGlow = true;
     public static boolean oreOutlineGlow = false;
     public static boolean musicIslandEnabled = true;
-    /** Rounded UI corners are the default, but can be changed in ProVisuals Settings. */
+    public static boolean genreRecognitionEnabled = true;
     public static boolean roundedCorners = true;
 
     static {
@@ -58,6 +58,7 @@ public final class ProVisualsConfig {
             oreInteriorGlow = Boolean.parseBoolean(properties.getProperty("ores.interior", "true"));
             oreOutlineGlow = Boolean.parseBoolean(properties.getProperty("ores.outline", "false"));
             musicIslandEnabled = Boolean.parseBoolean(properties.getProperty("music.island.enabled", "true"));
+            genreRecognitionEnabled = Boolean.parseBoolean(properties.getProperty("music.genre_recognition.enabled", "true"));
             roundedCorners = Boolean.parseBoolean(properties.getProperty("ui.rounded_corners", "true"));
             Diagnostics.info("Configuration loaded");
         } catch (Exception exception) {
@@ -65,6 +66,7 @@ public final class ProVisualsConfig {
             MODULES.clear();
             MODULES.putAll(DEFAULTS);
             roundedCorners = true;
+            genreRecognitionEnabled = true;
         }
     }
 
@@ -99,6 +101,7 @@ public final class ProVisualsConfig {
         properties.setProperty("ores.interior", String.valueOf(oreInteriorGlow));
         properties.setProperty("ores.outline", String.valueOf(oreOutlineGlow));
         properties.setProperty("music.island.enabled", String.valueOf(musicIslandEnabled));
+        properties.setProperty("music.genre_recognition.enabled", String.valueOf(genreRecognitionEnabled));
         properties.setProperty("ui.rounded_corners", String.valueOf(roundedCorners));
         try {
             Files.createDirectories(FILE.getParent());

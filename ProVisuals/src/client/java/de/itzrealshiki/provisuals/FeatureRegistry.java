@@ -6,7 +6,7 @@ public final class FeatureRegistry {
     public record Feature(String key, String title, String description, String category, boolean rendererConnected) {}
 
     public static final List<String> CATEGORIES = List.of(
-            "Overview", "World Visuals", "Player Visuals", "Combat Visuals", "HUD & Interface", "Music", "Settings", "Errors"
+            "Overview", "PvP", "Visuals", "HUD", "Music", "Settings", "Tools"
     );
 
     public static final List<Feature> FEATURES = List.of(
@@ -25,7 +25,26 @@ public final class FeatureRegistry {
     );
 
     private FeatureRegistry() {}
+
+    public static List<String> subcategories(String category) {
+        return switch (category) {
+            case "PvP" -> List.of("Combat Visuals", "Player Visuals");
+            case "Visuals" -> List.of("World Visuals");
+            case "HUD" -> List.of("HUD & Interface");
+            default -> List.of();
+        };
+    }
+
     public static List<Feature> inCategory(String category) {
         return FEATURES.stream().filter(feature -> feature.category().equals(category)).toList();
+    }
+
+    public static int countInTopCategory(String category) {
+        return switch (category) {
+            case "PvP" -> inCategory("Combat Visuals").size() + inCategory("Player Visuals").size();
+            case "Visuals" -> inCategory("World Visuals").size();
+            case "HUD" -> inCategory("HUD & Interface").size();
+            default -> 0;
+        };
     }
 }

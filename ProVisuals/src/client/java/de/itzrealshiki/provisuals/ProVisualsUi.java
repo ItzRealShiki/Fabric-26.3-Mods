@@ -4,61 +4,56 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
-/**
- * Shared drawing and typography helpers for every ProVisuals surface.
- */
+import java.util.Locale;
+
 public final class ProVisualsUi {
     private ProVisualsUi() {}
 
     /**
-     * Unicode small-cap substitutions used consistently by the complete ProVisuals UI.
-     * Characters without a dedicated small-cap form (for example x) use their lowercase
-     * glyph so that the text remains readable instead of showing a missing-glyph box.
+     * Replaces the sharp Unicode small-cap look with regular Minecraft glyphs.
+     * All-uppercase UI labels are softened to title case; mixed-case text and
+     * media metadata are left untouched.
      */
-    public static String smallCaps(String value) {
+    public static String displayText(String value) {
         if (value == null || value.isEmpty()) return value == null ? "" : value;
-        StringBuilder result = new StringBuilder(value.length());
-        value.codePoints().forEach(codePoint -> {
-            int lower = Character.toLowerCase(codePoint);
-            result.append(switch (lower) {
-                case 'a' -> "ᴀ";
-                case 'b' -> "ʙ";
-                case 'c' -> "ᴄ";
-                case 'd' -> "ᴅ";
-                case 'e' -> "ᴇ";
-                case 'f' -> "ꜰ";
-                case 'g' -> "ɢ";
-                case 'h' -> "ʜ";
-                case 'i' -> "ɪ";
-                case 'j' -> "ᴊ";
-                case 'k' -> "ᴋ";
-                case 'l' -> "ʟ";
-                case 'm' -> "ᴍ";
-                case 'n' -> "ɴ";
-                case 'o' -> "ᴏ";
-                case 'p' -> "ᴘ";
-                case 'q' -> "ꞯ";
-                case 'r' -> "ʀ";
-                case 's' -> "ꜱ";
-                case 't' -> "ᴛ";
-                case 'u' -> "ᴜ";
-                case 'v' -> "ᴠ";
-                case 'w' -> "ᴡ";
-                case 'y' -> "ʏ";
-                case 'z' -> "ᴢ";
-                default -> new String(Character.toChars(lower));
-            });
-        });
-        return result.toString();
+
+        boolean hasLetters = value.codePoints().anyMatch(Character::isLetter);
+        boolean hasLowercase = value.codePoints().anyMatch(Character::isLowerCase);
+        if (!hasLetters || hasLowercase) return value;
+
+        String lower = value.toLowerCase(Locale.ROOT);
+        StringBuilder result = new StringBuilder(lower.length());
+        boolean startWord = true;
+        for (int offset = 0; offset < lower.length();) {
+            int codePoint = lower.codePointAt(offset);
+            if (Character.isLetter(codePoint)) {
+                result.appendCodePoint(startWord ? Character.toUpperCase(codePoint) : codePoint);
+                startWord = false;
+            } else {
+                result.appendCodePoint(codePoint);
+                startWord = !Character.isDigit(codePoint);
+            }
+            offset += Character.charCount(codePoint);
+        }
+
+        return result.toString()
+                .replace("Hud", "HUD")
+                .replace("Pvp", "PvP")
+                .replace("Ui", "UI")
+                .replace("Fps", "FPS")
+                .replace("Cpu", "CPU")
+                .replace("Gpu", "GPU")
+                .replace("On", "ON")
+                .replace("Off", "OFF");
     }
 
     public static Component component(String value) {
-        return Component.literal(smallCaps(value));
+        return Component.literal(displayText(value));
     }
 
     public static void text(GuiGraphicsExtractor graphics, Font font, String value,
                             int x, int y, int color, boolean shadow) {
-        graphics.text(font, smallCaps(value), x, y, color, shadow);
+        graphics.text(font, displayText(value), x, y, color, shadow);
     }
 
     public static void fill(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
@@ -88,10 +83,6 @@ public final class ProVisualsUi {
         }
     }
 
-    /**
-     * Clips the four square corners of a widget to the rounded-corner shape.
-     * The caller supplies the panel colour so the cut-outs blend into the screen.
-     */
     public static void roundWidgetCorners(GuiGraphicsExtractor graphics, int x, int y,
                                           int width, int height, int radius, int backgroundColor) {
         if (!ProVisualsConfig.roundedCorners || width <= 0 || height <= 0) return;
