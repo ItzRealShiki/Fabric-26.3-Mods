@@ -4,8 +4,8 @@
   "version": "${version}",
   "name": "SimpleLitematica",
   "description": "A lightweight schematic preview and building helper for Minecraft 26.3.",
-  "authors": ["Leon"],
-  "license": "MIT",
+  "authors": ["ItzRealShiki"],
+  "license": "ItzRealShiki-Attribution-Server-Credit-1.0",
   "environment": "client",
   "entrypoints": {
     "client": ["de.leon.simplelitematica.SimpleLitematicaClient"]
