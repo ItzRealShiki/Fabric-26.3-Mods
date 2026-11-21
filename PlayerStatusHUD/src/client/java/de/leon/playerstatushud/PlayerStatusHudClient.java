@@ -3,6 +3,8 @@ package de.leon.playerstatushud;
 import de.leon.privacy.api.PrivacyEntry;
 import de.leon.privacy.api.PrivacyManager;
 import de.leon.privacy.api.PrivacyVisibility;
+import restudio.reglass.client.api.ReGlassApi;
+import restudio.reglass.client.api.WidgetStyle;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -30,9 +32,13 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
     private static final double MAX_DISTANCE_SQUARED = 100.0 * 100.0;
     private static final int BOX_WIDTH = 132;
     private static final int BOX_HEIGHT = 64;
-    private static final int PANEL_BACKGROUND = 0xFF000000;
     private static final int PANEL_BORDER = 0xFF777777;
     private static final int PANEL_RADIUS = 9;
+    private static final WidgetStyle GLASS_STYLE = WidgetStyle.create()
+        .tint(0x080808, 0.58f)
+        .smoothing(0.05f)
+        .shadow(18.0f, 0.22f, 0.0f, 3.0f)
+        .shadowColor(0x000000, 0.82f);
     private static final int LOW_HEALTH_TEXT = 0xFFFF5963;
     private static final int HEALTH_BACKGROUND = 0xFF3B2024;
     private static final int HEALTH_COLOR = 0xFFE34B55;
@@ -112,7 +118,12 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
         float health = Mth.clamp(player.getHealth(), 0.0f, maxHealth);
         float healthFraction = health / maxHealth;
         boolean lowHealth = health < 6.0f;
-        drawRoundedPanel(graphics, x, y, BOX_WIDTH, BOX_HEIGHT, lowHealth);
+        ReGlassApi.create(graphics)
+            .dimensions(x, y, BOX_WIDTH, BOX_HEIGHT)
+            .cornerRadius(PANEL_RADIUS)
+            .style(GLASS_STYLE)
+            .render();
+        drawRoundedOutline(graphics, x, y, BOX_WIDTH, BOX_HEIGHT, PANEL_RADIUS, PANEL_BORDER);
 
         // Player face, including the outer skin layer.
         Identifier skin = player.getSkin().body().texturePath();
@@ -167,12 +178,13 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
         }
     }
 
-    private static void drawRoundedPanel(GuiGraphicsExtractor graphics, int x, int y, int width, int height, boolean lowHealth) {
-        // A custom rounded rectangle: one-pixel grey outline and a solid black interior.
-        // Low health is indicated by the text, not by changing the panel's shape or border.
-        drawRoundedRect(graphics, x, y, width, height, PANEL_RADIUS, PANEL_BORDER);
-        drawRoundedRect(graphics, x + 1, y + 1, width - 2, height - 2,
-            PANEL_RADIUS - 1, PANEL_BACKGROUND);
+    private static void drawRoundedOutline(GuiGraphicsExtractor graphics, int x, int y,
+                                            int width, int height, int radius, int color) {
+        // Thin grey contour, drawn as four low-cost edge strips.
+        graphics.fill(x + radius, y, x + width - radius, y + 1, color);
+        graphics.fill(x + radius, y + height - 1, x + width - radius, y + height, color);
+        graphics.fill(x, y + radius, x + 1, y + height - radius, color);
+        graphics.fill(x + width - 1, y + radius, x + width, y + height - radius, color);
     }
 
     private static void drawRoundedRect(GuiGraphicsExtractor graphics, int x, int y,
