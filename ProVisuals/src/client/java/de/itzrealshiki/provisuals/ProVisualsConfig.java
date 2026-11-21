@@ -37,6 +37,7 @@ public final class ProVisualsConfig {
         DEFAULTS.put("item_outline_glow", false);
         DEFAULTS.put("hits_energy_wave", false);
         DEFAULTS.put("ground_reflections", false);
+        DEFAULTS.put("custom_sky", true);
         MODULES.putAll(DEFAULTS);
     }
 
