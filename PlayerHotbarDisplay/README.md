@@ -1,29 +1,26 @@
 # Player Hotbar Display
 
-Standalone Fabric mod for Minecraft Java 26.3.
+A standalone Fabric mod for Minecraft Java 26.3. It is built as its own project and produces its own JAR; it is not a feature inside another mod.
 
-## Goal
-Display the nine hotbar slots of nearby players above their heads.
+## Features
+- Displays the nine hotbar item icons in a camera-facing row above other players.
+- Synchronizes hotbar contents from the server to compatible clients.
+- Updates the displayed contents every 5 server ticks.
+- Uses vanilla item models, including item textures and enchantment glint.
 
-## Compatibility
-The mod is designed as a common Fabric mod and must be installed on the server and on clients. The server sends hotbar snapshots only to clients that have the mod's network payload registered. An unmodified vanilla server does not expose other players' full hotbar contents to clients, so universal client-only support on arbitrary servers is not technically possible.
+## Installation and compatibility
+Install this same mod JAR on the server and on every client that should see the hotbar displays. The server sends the data only to clients that have registered this mod's network payload.
 
-## Current implementation
-- Standalone project with its own Gradle configuration.
-- Server-side hotbar synchronization for players in the same dimension.
-- Client-side receiver and cache for synchronized hotbar snapshots.
-- Synchronization runs every 5 ticks and sends only to compatible clients.
-
-The above-head item rendering and an end-to-end build check are still pending; this repository state is not yet a finished playable release.
+A client-only mod cannot discover other players' complete hotbars on an unmodified vanilla server. Therefore it cannot work on arbitrary servers without server-side support. This is a Minecraft networking limitation, not a restriction of the rendering code.
 
 ## Build
-Requires Java 25. Run:
+Requires Java 25. From this directory run:
 
 ```bash
 gradle --no-daemon build
 ```
 
-The JAR is produced in `build/libs/`.
+The standalone mod JAR is created in `build/libs/`.
 
 ## License
 This project follows the repository's ItzRealShiki Attribution & Server Credit License 1.0. Retain attribution and the required server credit.
