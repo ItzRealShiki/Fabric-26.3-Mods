@@ -8,7 +8,8 @@
   "description": "Displays nearby players' hotbars above their heads.",
   "environment": "*",
   "entrypoints": {
-    "main": ["de.itzrealshiki.hotbardisplay.PlayerHotbarDisplay"]
+    "main": ["de.itzrealshiki.hotbardisplay.PlayerHotbarDisplay"],
+    "client": ["de.itzrealshiki.hotbardisplay.client.PlayerHotbarDisplayClient"]
   },
   "depends": {
     "fabricloader": ">=0.20.1",
