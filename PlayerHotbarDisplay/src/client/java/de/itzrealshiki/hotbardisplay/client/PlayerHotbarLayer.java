@@ -32,11 +32,20 @@ public final class PlayerHotbarLayer extends RenderLayer<AvatarRenderState, Play
                        float xRot) {
         if (state.isInvisible || state.isSpectator) return;
 
-        List<ItemStack> items = HotbarCache.get(state.id);
-        if (items.isEmpty()) return;
-
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return;
+
+        List<ItemStack> items;
+        if (minecraft.player != null && state.id == minecraft.player.getId()) {
+            if (!PlayerHotbarDisplayClient.isOwnHotbarVisible()) return;
+            items = java.util.stream.IntStream.range(0, 9)
+                    .mapToObj(slot -> minecraft.player.getInventory().getItem(slot))
+                    .map(ItemStack::copy)
+                    .toList();
+        } else {
+            items = HotbarCache.get(state.id);
+        }
+        if (items.isEmpty()) return;
 
         var camera = minecraft.gameRenderer.mainCamera();
         var cameraPosition = camera.position();
