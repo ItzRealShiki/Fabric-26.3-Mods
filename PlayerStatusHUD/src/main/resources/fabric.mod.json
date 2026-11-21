@@ -3,7 +3,7 @@
   "id": "playerstatushud",
   "version": "${version}",
   "name": "Player Status HUD",
-  "description": "A lightweight player status overlay with health and armor durability. Requires Privacy Mod.",
+  "description": "A lightweight player status overlay with health and armor durability. Requires Privacy Mod, which bundles the Liquid Glass library.",
   "authors": ["Leon"],
   "license": "MIT",
   "environment": "client",
@@ -15,7 +15,6 @@
     "minecraft": "~26.3",
     "java": ">=25",
     "fabric-api": "*",
-    "privacymod": ">=0.1.0",
-    "reglass": ">=2.1.0"
+    "privacymod": ">=0.1.0"
   }
 }
