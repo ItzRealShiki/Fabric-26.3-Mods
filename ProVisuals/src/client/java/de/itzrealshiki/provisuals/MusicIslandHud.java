@@ -6,6 +6,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public final class MusicIslandHud implements HudElement {
@@ -15,18 +17,46 @@ public final class MusicIslandHud implements HudElement {
         }
     }
 
+    private record NavigationHit(String value, Rect rect) {}
+
     private static volatile Rect previousButton;
     private static volatile Rect playButton;
     private static volatile Rect nextButton;
     private static volatile Rect bounds;
+    private static volatile Rect navigationBounds;
+
+    private static final List<NavigationHit> CATEGORY_HITS = new ArrayList<>();
+    private static final List<NavigationHit> SUBCATEGORY_HITS = new ArrayList<>();
+
+    private static final int NAV_ROW_HEIGHT = 15;
+    private static final int NAV_MAIN_HEIGHT = NAV_ROW_HEIGHT * 2;
+    private static final int NAV_SUB_HEIGHT = 17;
+    private static final int NAV_GAP = 2;
+
+    private static String activeCategory = "PvP";
+    private static String activeSubcategory = "Combat Visuals";
+    private static float navigationProgress;
+    private static long lastNavigationFrameTime;
+    private static boolean leftButtonWasDown;
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
-        clearHitboxes();
-        if (!ProVisualsConfig.musicIslandEnabled) return;
+        clearMediaHitboxes();
+        if (!ProVisualsConfig.musicIslandEnabled) {
+            navigationProgress = 0.0f;
+            navigationBounds = null;
+            bounds = null;
+            CATEGORY_HITS.clear();
+            SUBCATEGORY_HITS.clear();
+            return;
+        }
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) return;
+        if (minecraft.level == null) {
+            bounds = null;
+            navigationBounds = null;
+            return;
+        }
 
         int panelWidth = Math.min(278, graphics.guiWidth() - 20);
         if (panelWidth < 220) return;
@@ -100,6 +130,205 @@ public final class MusicIslandHud implements HudElement {
         String state = track == null ? "Idle" : (playing ? "Playing" : "Paused");
         graphics.centeredText(font, ProVisualsUi.component(state),
                 controlsX + 34, y + 54, stateColor);
+
+        updateNavigationVisibility(minecraft);
+        drawNavigation(graphics, font);
+    }
+
+    /**
+     * Handles hover and click input when the player is in-world (no screen is open).
+     * Screen clicks are handled by the Fabric ScreenMouseEvents hook.
+     */
+    public static void tickInput(Minecraft minecraft) {
+        if (!ProVisualsConfig.musicIslandEnabled || minecraft.level == null) {
+            leftButtonWasDown = minecraft.mouseHandler.isLeftPressed();
+            return;
+        }
+
+        boolean leftDown = minecraft.mouseHandler.isLeftPressed();
+        if (leftDown && !leftButtonWasDown
+                && minecraft.gui.screen() == null
+                && !minecraft.mouseHandler.isMouseGrabbed()
+                && navigationProgress >= 0.55f) {
+            double mouseX = minecraft.mouseHandler.getScaledXPos(minecraft.getWindow());
+            double mouseY = minecraft.mouseHandler.getScaledYPos(minecraft.getWindow());
+            handleMouseClick(mouseX, mouseY);
+        }
+        leftButtonWasDown = leftDown;
+    }
+
+    private static void updateNavigationVisibility(Minecraft minecraft) {
+        long now = System.nanoTime();
+        if (lastNavigationFrameTime == 0L) lastNavigationFrameTime = now;
+        float elapsed = Math.min(0.05f,
+                Math.max(0.0f, (now - lastNavigationFrameTime) / 1_000_000_000.0f));
+        lastNavigationFrameTime = now;
+
+        boolean cursorVisible = !minecraft.mouseHandler.isMouseGrabbed();
+        double mouseX = minecraft.mouseHandler.getScaledXPos(minecraft.getWindow());
+        double mouseY = minecraft.mouseHandler.getScaledYPos(minecraft.getWindow());
+
+        boolean overIsland = bounds != null && bounds.contains(mouseX, mouseY);
+        boolean overNavigation = navigationBounds != null
+                && navigationBounds.contains(mouseX, mouseY)
+                && navigationProgress > 0.001f;
+        boolean hovered = cursorVisible && (overIsland || overNavigation);
+
+        float amount = elapsed / 0.14f;
+        navigationProgress = hovered
+                ? Math.min(1.0f, navigationProgress + amount)
+                : Math.max(0.0f, navigationProgress - amount);
+    }
+
+    private static void drawNavigation(GuiGraphicsExtractor graphics, Font font) {
+        CATEGORY_HITS.clear();
+        SUBCATEGORY_HITS.clear();
+        navigationBounds = null;
+        if (bounds == null || navigationProgress <= 0.015f) return;
+
+        int x = bounds.x();
+        int width = bounds.width();
+        int baseY = bounds.y() + bounds.height() + NAV_GAP;
+        int slide = Math.round((1.0f - navigationProgress) * 5.0f);
+
+        List<String> subcategories = ProVisualsScreen.categorySubcategories(activeCategory);
+        int totalHeight = NAV_MAIN_HEIGHT + (subcategories.isEmpty() ? 0 : NAV_SUB_HEIGHT);
+        navigationBounds = new Rect(x, baseY - slide, width, totalHeight + slide);
+
+        int background = withAlpha(0xF0181726, navigationProgress);
+        int border = withAlpha(0xFF5E4A83, navigationProgress);
+        ProVisualsUi.fill(graphics, x, baseY - slide, width, totalHeight, 8, background);
+        ProVisualsUi.fill(graphics, x + 7, baseY - slide, width - 14, 1, 1, border);
+
+        List<String> categories = FeatureRegistry.CATEGORIES;
+        int cellWidth = width / 4;
+        for (int i = 0; i < categories.size(); i++) {
+            String category = categories.get(i);
+            int row = i / 4;
+            int col = i % 4;
+            int cellX = x + col * cellWidth;
+            int cellY = baseY + row * NAV_ROW_HEIGHT - slide;
+            int actualWidth = col == 3 ? width - col * cellWidth : cellWidth;
+            Rect rect = new Rect(cellX, cellY, actualWidth, NAV_ROW_HEIGHT);
+            CATEGORY_HITS.add(new NavigationHit(category, rect));
+
+            boolean selected = category.equals(activeCategory);
+            if (selected) {
+                ProVisualsUi.fill(graphics, cellX + 5, cellY + 2, actualWidth - 10,
+                        NAV_ROW_HEIGHT - 4, 4, withAlpha(0xFF3B2D56, navigationProgress));
+            }
+            int labelColor = selected ? withAlpha(0xFFF5F1FF, navigationProgress)
+                    : withAlpha(0xFFB7B0C5, navigationProgress);
+            graphics.centeredText(font, ProVisualsUi.component(navLabel(category)),
+                    cellX + actualWidth / 2, cellY + 4, labelColor);
+        }
+
+        if (!subcategories.isEmpty()) {
+            int subY = baseY + NAV_MAIN_HEIGHT - slide;
+            ProVisualsUi.fill(graphics, x + 8, subY, width - 16, 1, 1,
+                    withAlpha(0x445E536F, navigationProgress));
+            int subCellWidth = width / subcategories.size();
+            for (int i = 0; i < subcategories.size(); i++) {
+                String subcategory = subcategories.get(i);
+                int cellX = x + i * subCellWidth;
+                int actualWidth = i == subcategories.size() - 1
+                        ? width - i * subCellWidth : subCellWidth;
+                Rect rect = new Rect(cellX, subY + 1, actualWidth, NAV_SUB_HEIGHT - 1);
+                SUBCATEGORY_HITS.add(new NavigationHit(subcategory, rect));
+
+                boolean selected = subcategory.equals(activeSubcategory);
+                if (selected) {
+                    ProVisualsUi.fill(graphics, cellX + 5, subY + 3, actualWidth - 10,
+                            NAV_SUB_HEIGHT - 5, 4, withAlpha(0xFF332747, navigationProgress));
+                }
+                int labelColor = selected ? withAlpha(0xFFDCCEFF, navigationProgress)
+                        : withAlpha(0xFFAAA4BA, navigationProgress);
+                graphics.centeredText(font, ProVisualsUi.component(navSubcategoryLabel(subcategory)),
+                        cellX + actualWidth / 2, subY + 5, labelColor);
+            }
+        }
+    }
+
+    public static boolean handleMouseClick(double mouseX, double mouseY) {
+        if (navigationProgress >= 0.55f && navigationBounds != null
+                && navigationBounds.contains(mouseX, mouseY)) {
+            for (NavigationHit hit : CATEGORY_HITS) {
+                if (!hit.rect().contains(mouseX, mouseY)) continue;
+                activeCategory = hit.value();
+                List<String> subcategories = ProVisualsScreen.categorySubcategories(activeCategory);
+                if (subcategories.isEmpty()) {
+                    ProVisualsScreen.openFromMusicIsland(activeCategory, null);
+                } else {
+                    activeSubcategory = subcategories.get(0);
+                }
+                return true;
+            }
+
+            for (NavigationHit hit : SUBCATEGORY_HITS) {
+                if (hit.rect().contains(mouseX, mouseY)) {
+                    activeSubcategory = hit.value();
+                    ProVisualsScreen.openFromMusicIsland(activeCategory, activeSubcategory);
+                    return true;
+                }
+            }
+            return true;
+        }
+
+        if (bounds == null) return false;
+        if (previousButton != null && previousButton.contains(mouseX, mouseY)) {
+            MusicMediaControls.send(MusicMediaControls.Action.PREVIOUS);
+            return true;
+        }
+        if (playButton != null && playButton.contains(mouseX, mouseY)) {
+            MusicMediaControls.send(MusicMediaControls.Action.PLAY_PAUSE);
+            return true;
+        }
+        if (nextButton != null && nextButton.contains(mouseX, mouseY)) {
+            MusicMediaControls.send(MusicMediaControls.Action.NEXT);
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean handleChatClick(double mouseX, double mouseY) {
+        return handleMouseClick(mouseX, mouseY);
+    }
+
+    private static String navLabel(String category) {
+        return switch (category) {
+            case "Overview" -> "Home";
+            case "PvP" -> "PvP";
+            case "Glowing" -> "Glowing";
+            case "World" -> "World";
+            case "HUD" -> "HUD";
+            case "Music" -> "Music";
+            case "Settings" -> "Settings";
+            case "Tools" -> "Tools";
+            default -> category;
+        };
+    }
+
+    private static String navSubcategoryLabel(String subcategory) {
+        return switch (subcategory) {
+            case "Combat Visuals" -> "Combat";
+            case "Player Visuals" -> "Player";
+            case "World Visuals" -> "Environment";
+            case "HUD & Interface" -> "HUD";
+            case "Block Glow" -> "Blocks";
+            case "Armor Glow" -> "Armor";
+            case "Item Glow" -> "Items";
+            case "Genres" -> "Genres";
+            case "Lyrics" -> "Lyrics";
+            case "Ore Glow" -> "Ore Glow";
+            case "Error Center" -> "Errors";
+            default -> subcategory;
+        };
+    }
+
+    private static int withAlpha(int color, float opacity) {
+        int alpha = color >>> 24;
+        int faded = Math.max(0, Math.min(255, Math.round(alpha * opacity)));
+        return (faded << 24) | (color & 0x00FFFFFF);
     }
 
     private static void drawAlbumArt(GuiGraphicsExtractor graphics, int x, int y, boolean playing) {
@@ -133,8 +362,7 @@ public final class MusicIslandHud implements HudElement {
                 rect.x() + rect.width() / 2, rect.y() + 4, foreground);
     }
 
-    private static void clearHitboxes() {
-        bounds = null;
+    private static void clearMediaHitboxes() {
         previousButton = null;
         playButton = null;
         nextButton = null;
@@ -154,22 +382,5 @@ public final class MusicIslandHud implements HudElement {
     private static String formatTime(long milliseconds) {
         long seconds = Math.max(0L, milliseconds) / 1000L;
         return String.format(Locale.ROOT, "%d:%02d", seconds / 60L, seconds % 60L);
-    }
-
-    public static boolean handleChatClick(double mouseX, double mouseY) {
-        if (bounds == null) return false;
-        if (previousButton != null && previousButton.contains(mouseX, mouseY)) {
-            MusicMediaControls.send(MusicMediaControls.Action.PREVIOUS);
-            return true;
-        }
-        if (playButton != null && playButton.contains(mouseX, mouseY)) {
-            MusicMediaControls.send(MusicMediaControls.Action.PLAY_PAUSE);
-            return true;
-        }
-        if (nextButton != null && nextButton.contains(mouseX, mouseY)) {
-            MusicMediaControls.send(MusicMediaControls.Action.NEXT);
-            return true;
-        }
-        return false;
     }
 }

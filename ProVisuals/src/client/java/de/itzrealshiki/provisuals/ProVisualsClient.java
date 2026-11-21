@@ -9,7 +9,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
@@ -32,18 +31,15 @@ public final class ProVisualsClient implements ClientModInitializer {
 
         // Fabric screen events are stable across 26.x GUI input changes.
         ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            if (screen instanceof ChatScreen) {
-                ScreenMouseEvents.allowMouseClick(screen).register((target, event) -> {
-                    if (MusicIslandHud.handleChatClick(event.x(), event.y())) return false;
-                    return true;
-                });
-            }
+            ScreenMouseEvents.allowMouseClick(screen).register((target, event) ->
+                    !MusicIslandHud.handleMouseClick(event.x(), event.y()));
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenuKey.consumeClick()) {
                 if (client.player != null) client.gui.setScreen(new ProVisualsScreen());
             }
+            MusicIslandHud.tickInput(client);
             applyFullbright(client);
         });
         Diagnostics.info("ProVisuals client initialized");
