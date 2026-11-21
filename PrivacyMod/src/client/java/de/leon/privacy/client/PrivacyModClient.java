@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
-import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 public final class PrivacyModClient implements ClientModInitializer {
     @Override
