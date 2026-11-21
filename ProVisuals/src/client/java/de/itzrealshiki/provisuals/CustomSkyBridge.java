@@ -33,7 +33,6 @@ public final class CustomSkyBridge {
     public static boolean setEnabled(boolean enabled) {
         try {
             Object nuit = manager();
-            invoke(nuit, "setEnabled", boolean.class);
             Method setter = nuit.getClass().getMethod("setEnabled", boolean.class);
             setter.invoke(nuit, enabled);
             Object actual = invoke(nuit, "isEnabled");
