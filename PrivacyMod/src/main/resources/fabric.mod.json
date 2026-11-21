@@ -3,18 +3,13 @@
   "id": "privacymod",
   "version": "${version}",
   "name": "Privacy Mod",
-  "description": "A privacy dashboard and shared privacy API with an embedded Liquid Glass library.",
+  "description": "A privacy dashboard and shared privacy API with a custom dark glass interface.",
   "authors": ["ItzRealShiki"],
   "license": "ItzRealShiki-Attribution-Server-Credit-1.0",
   "environment": "client",
   "entrypoints": {
     "client": ["de.leon.privacy.client.PrivacyModClient"]
   },
-  "jars": [
-    {
-      "file": "META-INF/jars/reglass-26.3-2.1.0.jar"
-    }
-  ],
   "depends": {
     "fabricloader": ">=0.20.1",
     "minecraft": "~26.3",
