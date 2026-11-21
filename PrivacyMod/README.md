@@ -43,3 +43,7 @@ A client mod cannot hide the network source IP from the server endpoint, guarant
 ## Build
 
 Build the ReGlass 26.3 library first, then run `gradle build` in this project directory. The repository's GitHub Actions workflow performs these steps automatically.
+
+## Credits and license
+
+Original work by **ItzRealShiki**. If you use this mod on a Minecraft server, follow the server-credit requirement in the repository's LICENSE.
