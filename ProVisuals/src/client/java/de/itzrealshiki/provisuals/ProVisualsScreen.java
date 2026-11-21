@@ -133,6 +133,14 @@ public final class ProVisualsScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
+        if (ProVisualsConfig.roundedCorners) {
+            for (var child : children()) {
+                if (child instanceof Button button) {
+                    ProVisualsUi.roundWidgetCorners(graphics, button.getX(), button.getY(),
+                            button.getWidth(), button.getHeight(), 5, 0xF0151520);
+                }
+            }
+        }
         int x = Math.max(14, width / 2 - 350);
         int y = Math.max(18, height / 2 - 180);
         graphics.text(font, "ProVisuals", x, y, 0xFFFFFFFF, true);
