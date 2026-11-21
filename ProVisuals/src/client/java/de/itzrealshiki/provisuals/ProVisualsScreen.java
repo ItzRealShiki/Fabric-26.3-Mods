@@ -76,9 +76,7 @@ public final class ProVisualsScreen extends Screen {
                 new DashboardCard("Settings", "Appearance and visual quality",
                         "Options", "06", 0, 0, 0, 0),
                 new DashboardCard("Tools", "Diagnostics and recent error logs",
-                        "Error Center", "07", 0, 0, 0, 0),
-                new DashboardCard("PvP", "Combat, player and hit visuals",
-                        FeatureRegistry.countInTopCategory("PvP") + " modules", "08", 0, 0, 0, 0)
+                        "Error Center", "07", 0, 0, 0, 0)
         };
 
         int gap = 10;
