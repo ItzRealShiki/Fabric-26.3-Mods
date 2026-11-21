@@ -64,7 +64,7 @@ public final class MusicGenreDetector {
             return;
         }
 
-        String key = (artist.trim() + "\u0000" + title.trim()).toLowerCase(Locale.ROOT);
+        String key = (artist.trim() + " || " + title.trim()).toLowerCase(Locale.ROOT);
         if (key.equals(activeTrackKey)) return;
 
         activeTrackKey = key;

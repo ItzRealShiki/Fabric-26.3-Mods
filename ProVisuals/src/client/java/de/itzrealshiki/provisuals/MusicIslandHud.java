@@ -31,50 +31,51 @@ public final class MusicIslandHud implements HudElement {
         int panelWidth = Math.min(278, graphics.guiWidth() - 20);
         if (panelWidth < 220) return;
 
-        int panelHeight = 72;
+        int panelHeight = 84;
         int x = graphics.guiWidth() - panelWidth - 10;
         int y = 12;
         bounds = new Rect(x, y, panelWidth, panelHeight);
 
         MusicLyricsBridge.Track track = MusicLyricsBridge.currentTrack();
+        MusicGenreDetector.update(track == null ? null : track.title(), track == null ? null : track.artist());
         boolean playing = track != null && track.playing();
         Font font = minecraft.font;
 
-        // Soft shadow, layered glass-like surface and restrained violet edge lighting.
         ProVisualsUi.fill(graphics, x + 2, y + 4, panelWidth, panelHeight, 13, 0x55000000);
         ProVisualsUi.fill(graphics, x, y, panelWidth, panelHeight, 13, 0xEF0D0D17);
         ProVisualsUi.fill(graphics, x + 1, y + 1, panelWidth - 2, panelHeight - 2, 12, 0xF313121E);
         ProVisualsUi.fill(graphics, x + 1, y + 1, panelWidth - 2, 2, 1, 0xFF6E4CC7);
         ProVisualsUi.fill(graphics, x + 1, y + 9, 2, panelHeight - 18, 1, 0xFF9A6BFF);
 
-        drawAlbumArt(graphics, x + 10, y + 15, playing);
+        drawAlbumArt(graphics, x + 10, y + 20, playing);
 
         int contentX = x + 61;
         int controlsX = x + panelWidth - 76;
         int contentWidth = Math.max(64, controlsX - contentX - 8);
 
-        // Tiny live indicator and eyebrow label establish a clear hierarchy.
         ProVisualsUi.fill(graphics, contentX, y + 9, 5, 5, 3,
                 playing ? 0xFFBCA4FF : 0xFF777184);
-        ProVisualsUi.text(graphics, font, track == null ? "WAITING FOR AUDIO" : "NOW PLAYING",
+        ProVisualsUi.text(graphics, font, track == null ? "Waiting for audio" : "Now playing",
                 contentX + 9, y + 7, 0xFFBCA4FF, false);
 
         String title = track == null ? "No music detected" : track.title();
         String artist = track == null ? "Start music on your device" : track.artist();
-        ProVisualsUi.text(graphics, font, trim(font, title, contentWidth),
-                contentX, y + 21, 0xFFF5F1FF, true);
-        ProVisualsUi.text(graphics, font, trim(font, artist, contentWidth),
-                contentX, y + 34, 0xFFAAA4BA, false);
+        graphics.text(font, trim(font, title, contentWidth), contentX, y + 21, 0xFFF5F1FF, true);
+        graphics.text(font, trim(font, artist, contentWidth), contentX, y + 34, 0xFFAAA4BA, false);
+
+        String genre = MusicGenreDetector.currentGenre();
+        int genreWidth = Math.min(contentWidth, Math.max(48, font.width(genre) + 12));
+        ProVisualsUi.fill(graphics, contentX, y + 47, genreWidth, 12, 6, 0xFF29233A);
+        graphics.text(font, trim(font, genre, genreWidth - 10), contentX + 6, y + 49,
+                0xFFD0BFFF, false);
 
         int progressX = contentX;
-        int progressY = y + 49;
-        int progressWidth = contentWidth;
-        ProVisualsUi.fill(graphics, progressX, progressY, progressWidth, 3, 2, 0xFF34313F);
-
+        int progressY = y + 63;
+        ProVisualsUi.fill(graphics, progressX, progressY, contentWidth, 3, 2, 0xFF34313F);
         if (track != null && track.durationMs() > 0) {
             float fraction = Math.max(0.0f,
                     Math.min(1.0f, track.positionMs() / (float) track.durationMs()));
-            int filledWidth = Math.round(progressWidth * fraction);
+            int filledWidth = Math.round(contentWidth * fraction);
             if (filledWidth > 0) {
                 ProVisualsUi.fill(graphics, progressX, progressY, filledWidth, 3, 2, 0xFF9A6BFF);
                 ProVisualsUi.fill(graphics, progressX + Math.max(0, filledWidth - 2),
@@ -85,7 +86,7 @@ public final class MusicIslandHud implements HudElement {
         String timing = track == null || track.durationMs() <= 0
                 ? "0:00 / 0:00"
                 : formatTime(track.positionMs()) + " / " + formatTime(track.durationMs());
-        ProVisualsUi.text(graphics, font, timing, contentX, y + 57, 0xFF888296, false);
+        ProVisualsUi.text(graphics, font, timing, contentX, y + 70, 0xFF888296, false);
 
         previousButton = new Rect(controlsX, y + 25, 18, 18);
         playButton = new Rect(controlsX + 22, y + 25, 25, 18);
@@ -95,10 +96,10 @@ public final class MusicIslandHud implements HudElement {
         drawControl(graphics, nextButton, "›", false);
 
         int stateColor = playing ? 0xFFBCA4FF : 0xFF9A93A9;
-        ProVisualsUi.fill(graphics, controlsX, y + 50, 69, 12, 5, 0xFF211D2D);
-        String state = track == null ? "IDLE" : (playing ? "PLAYING" : "PAUSED");
+        ProVisualsUi.fill(graphics, controlsX, y + 52, 69, 12, 5, 0xFF211D2D);
+        String state = track == null ? "Idle" : (playing ? "Playing" : "Paused");
         graphics.centeredText(font, ProVisualsUi.component(state),
-                controlsX + 34, y + 52, stateColor);
+                controlsX + 34, y + 54, stateColor);
     }
 
     private static void drawAlbumArt(GuiGraphicsExtractor graphics, int x, int y, boolean playing) {
@@ -140,7 +141,7 @@ public final class MusicIslandHud implements HudElement {
     }
 
     private static String trim(Font font, String value, int maxWidth) {
-        String text = ProVisualsUi.smallCaps(value == null || value.isBlank() ? "Unknown" : value);
+        String text = value == null || value.isBlank() ? "Unknown" : value;
         if (font.width(text) <= maxWidth) return text;
         String ellipsis = "…";
         while (!text.isEmpty() && font.width(text + ellipsis) > maxWidth) {
