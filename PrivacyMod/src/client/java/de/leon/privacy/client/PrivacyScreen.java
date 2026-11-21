@@ -5,6 +5,7 @@ import de.leon.privacy.api.PrivacyManager;
 import de.leon.privacy.api.PrivacyVisibility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import de.leon.privacy.api.PrivacyManager;
 import net.minecraft.network.chat.Component;
 import restudio.reglass.client.api.ReGlassApi;
 import restudio.reglass.client.api.WidgetStyle;
@@ -35,7 +36,7 @@ public final class PrivacyScreen extends Screen {
         super.extractRenderState(graphics, mouseX, mouseY, delta);
 
         List<PrivacyEntry> entries = PrivacyManager.getEntries();
-        int panelHeight = 64 + entries.size() * ROW_HEIGHT + 24;
+        int panelHeight = 132 + entries.size() * ROW_HEIGHT + 24;
         int left = (width - PANEL_WIDTH) / 2;
         int top = (height - panelHeight) / 2;
 
@@ -68,8 +69,61 @@ public final class PrivacyScreen extends Screen {
             rowY += ROW_HEIGHT;
         }
 
-        graphics.centeredText(font, Component.literal("ESC  •  CLOSE     |     STATUS IS INFORMATIONAL"),
+        int settingsY = top + 59 + entries.size() * ROW_HEIGHT;
+        PrivacyManager.HudController hud = PrivacyManager.getHudController();
+        if (hud != null) {
+            graphics.text(font, Component.literal("PLAYER STATUS HUD"), left + PANEL_PADDING, settingsY, 0xFFFFFFFF);
+            int buttonY = settingsY + 16;
+            drawButton(graphics, left + PANEL_PADDING, buttonY, 154, 22,
+                hud.isEnabled() ? "HUD: ON" : "HUD: OFF",
+                hud.isEnabled() ? 0xFF245C43 : 0xFF5A3033);
+            graphics.text(font, Component.literal("SIZE"), left + 184, buttonY + 7, 0xFFBBBBBB);
+            drawButton(graphics, left + 235, buttonY, 30, 22, "-", 0xFF303030);
+            graphics.centeredText(font, Component.literal(hud.getSizePercent() + "%"),
+                left + 298, buttonY + 7, 0xFFFFFFFF);
+            drawButton(graphics, left + 331, buttonY, 30, 22, "+", 0xFF303030);
+        }
+
+        graphics.centeredText(font, Component.literal("H  •  CLOSE     |     STATUS IS INFORMATIONAL"),
             width / 2, top + panelHeight - 18, 0xFF888888);
+    }
+
+
+    private static void drawButton(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
+                                   String label, int background) {
+        graphics.fill(x, y, x + width, y + height, background);
+        graphics.fill(x, y, x + width, y + 1, 0xFF777777);
+        graphics.fill(x, y + height - 1, x + width, y + height, 0xFF777777);
+        graphics.centeredText(net.minecraft.client.Minecraft.getInstance().font,
+            Component.literal(label), x + width / 2, y + 7, 0xFFFFFFFF);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            List<PrivacyEntry> entries = PrivacyManager.getEntries();
+            int panelHeight = 132 + entries.size() * ROW_HEIGHT + 24;
+            int left = (width - PANEL_WIDTH) / 2;
+            int top = (height - panelHeight) / 2;
+            int settingsY = top + 59 + entries.size() * ROW_HEIGHT;
+            int buttonY = settingsY + 16;
+            PrivacyManager.HudController hud = PrivacyManager.getHudController();
+            if (hud != null && mouseY >= buttonY && mouseY < buttonY + 22) {
+                if (mouseX >= left + PANEL_PADDING && mouseX < left + PANEL_PADDING + 154) {
+                    hud.setEnabled(!hud.isEnabled());
+                    return true;
+                }
+                if (mouseX >= left + 235 && mouseX < left + 265) {
+                    hud.setSizePercent(hud.getSizePercent() - 5);
+                    return true;
+                }
+                if (mouseX >= left + 331 && mouseX < left + 361) {
+                    hud.setSizePercent(hud.getSizePercent() + 5);
+                    return true;
+                }
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     private static int color(PrivacyVisibility visibility) {
