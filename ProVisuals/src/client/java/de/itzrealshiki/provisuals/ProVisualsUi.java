@@ -3,10 +3,14 @@ package de.itzrealshiki.provisuals;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.Locale;
 
 public final class ProVisualsUi {
+    private static final ResourceLocation UI_FONT =
+            ResourceLocation.fromNamespaceAndPath("provisuals", "ui");
+
     private ProVisualsUi() {}
 
     /**
@@ -48,12 +52,16 @@ public final class ProVisualsUi {
     }
 
     public static Component component(String value) {
-        return Component.literal(displayText(value));
+        return Component.literal(displayText(value)).withStyle(style -> style.withFont(UI_FONT));
+    }
+
+    public static int width(Font font, String value) {
+        return font.width(component(value));
     }
 
     public static void text(GuiGraphicsExtractor graphics, Font font, String value,
                             int x, int y, int color, boolean shadow) {
-        graphics.text(font, displayText(value), x, y, color, shadow);
+        graphics.text(font, component(value), x, y, color, shadow);
     }
 
     public static void fill(GuiGraphicsExtractor graphics, int x, int y, int width, int height,

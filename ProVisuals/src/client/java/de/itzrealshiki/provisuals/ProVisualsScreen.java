@@ -63,25 +63,29 @@ public final class ProVisualsScreen extends Screen {
 
     private void buildOverview(int x, int py, int contentWidth) {
         DashboardCard[] cards = {
-                new DashboardCard("PvP", "Combat, armor and player visuals",
+                new DashboardCard("PvP", "Combat and player-focused visuals",
                         FeatureRegistry.countInTopCategory("PvP") + " modules", "01", 0, 0, 0, 0),
-                new DashboardCard("Visuals", "Lighting, ores and world reflections",
-                        FeatureRegistry.countInTopCategory("Visuals") + " modules", "02", 0, 0, 0, 0),
+                new DashboardCard("Glowing", "Ore, armor and item glow effects",
+                        FeatureRegistry.countInTopCategory("Glowing") + " modules", "02", 0, 0, 0, 0),
+                new DashboardCard("World", "Lighting and ground reflections",
+                        FeatureRegistry.countInTopCategory("World") + " modules", "03", 0, 0, 0, 0),
                 new DashboardCard("HUD", "Armor, target, inventory and status panels",
-                        FeatureRegistry.countInTopCategory("HUD") + " modules", "03", 0, 0, 0, 0),
+                        FeatureRegistry.countInTopCategory("HUD") + " modules", "04", 0, 0, 0, 0),
                 new DashboardCard("Music", "Music Island, genre and synced lyrics",
-                        "3 features", "04", 0, 0, 0, 0),
+                        "3 features", "05", 0, 0, 0, 0),
                 new DashboardCard("Settings", "Appearance and visual quality",
-                        "Options", "05", 0, 0, 0, 0),
+                        "Options", "06", 0, 0, 0, 0),
                 new DashboardCard("Tools", "Diagnostics and recent error logs",
-                        "Error Center", "06", 0, 0, 0, 0)
+                        "Error Center", "07", 0, 0, 0, 0),
+                new DashboardCard("PvP", "Combat, player and hit visuals",
+                        FeatureRegistry.countInTopCategory("PvP") + " modules", "08", 0, 0, 0, 0)
         };
 
         int gap = 10;
         int cardWidth = (contentWidth - gap) / 2;
-        int cardHeight = 58;
+        int cardHeight = 52;
         int startY = py + 91;
-        int rowGap = 10;
+        int rowGap = 8;
 
         for (int i = 0; i < cards.length; i++) {
             DashboardCard card = cards[i];
@@ -104,7 +108,8 @@ public final class ProVisualsScreen extends Screen {
 
         String subtitle = switch (page) {
             case "PvP" -> "Combat and player-focused visual modules";
-            case "Visuals" -> "World appearance, lighting and environment";
+            case "Glowing" -> "Block, armor and item glow categories";
+            case "World" -> "World appearance, lighting and environment";
             case "HUD" -> "Information panels and interface elements";
             default -> "Visual modules and their options";
         };
@@ -116,7 +121,7 @@ public final class ProVisualsScreen extends Screen {
         int tabX = x;
         for (String subcategory : subcategories) {
             String label = subcategoryLabel(subcategory);
-            int tabWidth = Math.max(90, font.width(ProVisualsUi.displayText(label)) + 30);
+            int tabWidth = Math.max(90, ProVisualsUi.width(font, label) + 30);
             SubcategoryTab tab = new SubcategoryTab(label, tabX, tabY, tabWidth, 25);
             subcategoryTabs.add(tab);
             addRenderableWidget(Button.builder(ProVisualsUi.component(""), b -> {
@@ -255,8 +260,11 @@ public final class ProVisualsScreen extends Screen {
         return switch (value) {
             case "Combat Visuals" -> "Combat";
             case "Player Visuals" -> "Player";
-            case "World Visuals" -> "World";
+            case "World Visuals" -> "Environment";
             case "HUD & Interface" -> "HUD elements";
+            case "Block Glow" -> "Blocks";
+            case "Armor Glow" -> "Armor";
+            case "Item Glow" -> "Items";
             default -> value;
         };
     }
@@ -308,7 +316,8 @@ public final class ProVisualsScreen extends Screen {
         return switch (category) {
             case "Overview" -> "Home";
             case "PvP" -> "PvP";
-            case "Visuals" -> "Visuals";
+            case "Glowing" -> "Glowing";
+            case "World" -> "World";
             case "HUD" -> "HUD";
             case "Music" -> "Music";
             case "Settings" -> "Settings";
@@ -402,7 +411,7 @@ public final class ProVisualsScreen extends Screen {
             ProVisualsUi.text(graphics, font, card.description(), card.x() + 42,
                     card.y() + 25, 0xFFAAA4BA, false);
             ProVisualsUi.text(graphics, font, card.meta(),
-                    card.x() + card.width() - font.width(ProVisualsUi.displayText(card.meta())) - 12,
+                    card.x() + card.width() - ProVisualsUi.width(font, card.meta()) - 12,
                     card.y() + card.height() - 13, 0xFF9A86C3, false);
         }
     }
@@ -496,7 +505,7 @@ public final class ProVisualsScreen extends Screen {
                 0xFFF1EDFA, true);
         ProVisualsUi.text(graphics, font, row.description(), row.x() + 14, row.y() + 21,
                 0xFFAAA4BA, false);
-        int valueWidth = font.width(ProVisualsUi.displayText(row.value()));
+        int valueWidth = ProVisualsUi.width(font, row.value());
         ProVisualsUi.text(graphics, font, row.value(),
                 row.x() + row.width() - valueWidth - 14, row.y() + 12,
                 row.secondary() ? 0xFFBCA4FF : 0xFFD0BFFF, true);
