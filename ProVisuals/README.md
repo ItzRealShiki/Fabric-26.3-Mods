@@ -6,6 +6,8 @@ Client-side visual customization mod for Minecraft Java 26.3 / Fabric.
 - Modern, minimal dark interface
 - Violet accent
 - English in-game UI
+- Rounded corners enabled by default across ProVisuals custom surfaces
+- A global UI Corners setting switches between Rounded and Square; the choice is saved locally
 - Dedicated Error Center
 
 ## Modules
@@ -18,7 +20,7 @@ Client-side visual customization mod for Minecraft Java 26.3 / Fabric.
 ## Music integration
 ProVisuals bundles Lyrics in the Sky 1.3.0-dev.24 for Minecraft 26.3 as a nested Fabric mod. Its original menus, synced lyric timing, font resources, song-based palettes, display styles and media-session detection are retained. Use the Music page in ProVisuals to open its settings. The release download is checksum-verified during the build.
 
-The ProVisuals Music Island shows the current track and playback progress. While the Minecraft chat screen is open, its previous / play-pause / next controls send system media commands. Controls are supported on Windows (system media keys) and Linux/BSD (MPRIS); other platforms currently show the widget without playback control.
+The ProVisuals Music Island uses a compact 184 x 50 layout (reduced from 210 x 66), with a small waveform mark, track and artist text, progress indicator and compact media controls. Its panel, progress bar and controls follow the global Rounded / Square corner setting. While the Minecraft chat screen is open, its previous / play-pause / next controls send system media commands. Controls are supported on Windows (system media keys) and Linux/BSD (MPRIS); other platforms currently show the widget without playback control.
 
 Lyrics in the Sky uses its own online lyrics sources and local cache. Review its settings and source notice before enabling optional online lookup or an account connection.
 

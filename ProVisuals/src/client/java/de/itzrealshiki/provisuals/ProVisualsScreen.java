@@ -78,6 +78,9 @@ public final class ProVisualsScreen extends Screen {
             addRenderableWidget(Button.builder(Component.literal("ORE OUTLINE GLOW: " + onOff(ProVisualsConfig.oreOutlineGlow)),
                     b -> { ProVisualsConfig.oreOutlineGlow = !ProVisualsConfig.oreOutlineGlow; ProVisualsConfig.save(); rebuildWidgets(); })
                     .bounds(contentX, panelY + 178, contentWidth, 22).build());
+            addRenderableWidget(Button.builder(Component.literal("UI CORNERS: " + (ProVisualsConfig.roundedCorners ? "ROUNDED" : "SQUARE")),
+                    b -> { ProVisualsConfig.roundedCorners = !ProVisualsConfig.roundedCorners; ProVisualsConfig.save(); rebuildWidgets(); })
+                    .bounds(contentX, panelY + 206, contentWidth, 22).build());
         } else {
             List<FeatureRegistry.Feature> features = FeatureRegistry.inCategory(page);
             int y = panelY + 64;
@@ -122,9 +125,9 @@ public final class ProVisualsScreen extends Screen {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         graphics.fillGradient(0, 0, width, height, 0xF2090911, 0xF2171027);
-        graphics.fill(width / 2 - 366, height / 2 - 196, width / 2 + 366, height / 2 + 196, 0xF0151520);
-        graphics.fill(width / 2 - 366, height / 2 - 196, width / 2 - 362, height / 2 + 196, 0xFF9A6BFF);
-        graphics.fill(width / 2 - 350, height / 2 - 144, width / 2 - 190, height / 2 - 143, 0xFF7650D8);
+        ProVisualsUi.fill(graphics, width / 2 - 366, height / 2 - 196, 732, 392, 14, 0xF0151520);
+        ProVisualsUi.fill(graphics, width / 2 - 366, height / 2 - 196, 4, 392, 2, 0xFF9A6BFF);
+        ProVisualsUi.fill(graphics, width / 2 - 350, height / 2 - 144, 160, 1, 1, 0xFF7650D8);
     }
 
     @Override
@@ -143,7 +146,7 @@ public final class ProVisualsScreen extends Screen {
             graphics.text(font, "M  /  Open ProVisuals", width / 2 - 172, y + 92, 0xFF9F92B8, true);
         } else if (page.equals("Music")) {
             graphics.text(font, "LYRICS IN THE SKY + MUSIC ISLAND", width / 2 - 172, y + 36, 0xFFFFFFFF, true);
-            graphics.text(font, "Synced line timing, automatic song palettes and multiple display looks.", width / 2 - 172, y + 56, 0xFFC4C0D0, true);
+            graphics.text(font, "Compact Music Island with track info, progress and media controls.", width / 2 - 172, y + 56, 0xFFC4C0D0, true);
             graphics.text(font, "Windows / Linux media controls are clickable while chat is open.", width / 2 - 172, y + 74, 0xFFC4C0D0, true);
             graphics.text(font, "Open Lyrics Settings for fonts, colours and lyric placement.", width / 2 - 172, y + 92, 0xFFBCA4FF, true);
         } else if (page.equals("Errors")) {
@@ -162,7 +165,7 @@ public final class ProVisualsScreen extends Screen {
             graphics.text(font, "Saved to config/provisuals-diagnostics.log", width / 2 - 172, y + 207, 0xFF9F92B8, true);
         } else if (page.equals("Settings")) {
             graphics.text(font, "RENDER QUALITY & GENERAL OPTIONS", width / 2 - 172, y + 36, 0xFFFFFFFF, true);
-            graphics.text(font, "Reflection and ore glow settings are saved locally.", width / 2 - 172, y + 211, 0xFFFFD78B, true);
+            graphics.text(font, "Rounded is the default. Use UI CORNERS above to switch to square.", width / 2 - 172, y + 224, 0xFFFFD78B, true);
         } else {
             List<FeatureRegistry.Feature> features = FeatureRegistry.inCategory(page);
             graphics.text(font, features.size() + " MODULES  /  CLICK TO CHANGE SAVED STATE", width / 2 - 172, y + 36, 0xFFC4C0D0, true);
