@@ -2,7 +2,7 @@ package de.itzrealshiki.provisuals;
 
 import net.minecraft.client.Minecraft;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.lang.reflect.ReflectiveOperationException;
 
 /** Bridge to the separately versioned nested Lyrics in the Sky Fabric module. */
 public final class MusicLyricsBridge {
@@ -75,7 +75,11 @@ public final class MusicLyricsBridge {
     }
 
     public static boolean isPresent() {
-        try { clientClass(); return true; }
-        catch (ClassNotFoundException exception) { return false; }
+        try {
+            clientClass();
+            return true;
+        } catch (ReflectiveOperationException exception) {
+            return false;
+        }
     }
 }
