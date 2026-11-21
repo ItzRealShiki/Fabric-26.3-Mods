@@ -1,13 +1,65 @@
 package de.itzrealshiki.provisuals;
 
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 
 /**
- * Shared drawing helpers for ProVisuals surfaces.
- * Keeps corner styling consistent and lets the user switch it globally.
+ * Shared drawing and typography helpers for every ProVisuals surface.
  */
 public final class ProVisualsUi {
     private ProVisualsUi() {}
+
+    /**
+     * Unicode small-cap substitutions used consistently by the complete ProVisuals UI.
+     * Characters without a dedicated small-cap form (for example x) use their lowercase
+     * glyph so that the text remains readable instead of showing a missing-glyph box.
+     */
+    public static String smallCaps(String value) {
+        if (value == null || value.isEmpty()) return value == null ? "" : value;
+        StringBuilder result = new StringBuilder(value.length());
+        value.codePoints().forEach(codePoint -> {
+            int lower = Character.toLowerCase(codePoint);
+            result.append(switch (lower) {
+                case 'a' -> "ᴀ";
+                case 'b' -> "ʙ";
+                case 'c' -> "ᴄ";
+                case 'd' -> "ᴅ";
+                case 'e' -> "ᴇ";
+                case 'f' -> "ꜰ";
+                case 'g' -> "ɢ";
+                case 'h' -> "ʜ";
+                case 'i' -> "ɪ";
+                case 'j' -> "ᴊ";
+                case 'k' -> "ᴋ";
+                case 'l' -> "ʟ";
+                case 'm' -> "ᴍ";
+                case 'n' -> "ɴ";
+                case 'o' -> "ᴏ";
+                case 'p' -> "ᴘ";
+                case 'q' -> "ꞯ";
+                case 'r' -> "ʀ";
+                case 's' -> "ꜱ";
+                case 't' -> "ᴛ";
+                case 'u' -> "ᴜ";
+                case 'v' -> "ᴠ";
+                case 'w' -> "ᴡ";
+                case 'y' -> "ʏ";
+                case 'z' -> "ᴢ";
+                default -> new String(Character.toChars(lower));
+            });
+        });
+        return result.toString();
+    }
+
+    public static Component component(String value) {
+        return Component.literal(smallCaps(value));
+    }
+
+    public static void text(GuiGraphicsExtractor graphics, Font font, String value,
+                            int x, int y, int color, boolean shadow) {
+        graphics.text(font, smallCaps(value), x, y, color, shadow);
+    }
 
     public static void fill(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
                             int radius, int color) {
