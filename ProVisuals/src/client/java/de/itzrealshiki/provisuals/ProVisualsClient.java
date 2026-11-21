@@ -18,13 +18,16 @@ public final class ProVisualsClient implements ClientModInitializer {
     private static KeyMapping openMenuKey;
     private static double previousGamma = 1.0;
     private static boolean gammaCaptured;
+    private static boolean skyLyricsSettingsKeyUnbound;
 
     @Override
     public void onInitializeClient() {
         Diagnostics.loadPreviousEntries();
         ProVisualsConfig.load();
+        CustomSkyBridge.setEnabled(ProVisualsConfig.isEnabled("custom_sky"));
+        skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.provisuals.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_M, CATEGORY));
+                "key.provisuals.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY));
 
         HudElementRegistry.attachElementAfter(VanillaHudElements.CHAT,
                 Identifier.fromNamespaceAndPath("provisuals", "music_island"), new MusicIslandHud());
@@ -36,6 +39,9 @@ public final class ProVisualsClient implements ClientModInitializer {
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (!skyLyricsSettingsKeyUnbound) {
+                skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
+            }
             while (openMenuKey.consumeClick()) {
                 if (client.player != null) client.gui.setScreen(new ProVisualsScreen());
             }
