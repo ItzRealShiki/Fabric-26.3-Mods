@@ -1,3 +1,4 @@
+# Build workflow for the Player Status HUD mod.
 name: Build Player Status HUD
 
 on:
