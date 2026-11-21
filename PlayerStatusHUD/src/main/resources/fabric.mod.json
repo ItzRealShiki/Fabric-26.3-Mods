@@ -4,8 +4,8 @@
   "version": "${version}",
   "name": "Player Status HUD",
   "description": "A lightweight player status overlay with health and armor durability. Requires Privacy Mod, which bundles the Liquid Glass library.",
-  "authors": ["Leon"],
-  "license": "MIT",
+  "authors": ["ItzRealShiki"],
+  "license": "ItzRealShiki-Attribution-Server-Credit-1.0",
   "environment": "client",
   "entrypoints": {
     "client": ["de.leon.playerstatushud.PlayerStatusHudClient"]
