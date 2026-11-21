@@ -6,7 +6,6 @@ import de.leon.privacy.api.PrivacyVisibility;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
@@ -35,22 +34,8 @@ public final class PrivacyModClient implements ClientModInitializer {
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
             dispatcher.register(literal("privacy").executes(context -> {
-                var player = context.getSource().getPlayer();
                 Minecraft.getInstance().setScreen(new PrivacyScreen());
                 return 1;
-                /*
-                for (PrivacyEntry entry : PrivacyManager.getEntries()) {
-                    String color = switch (entry.visibility()) {
-                        case PRIVATE -> "§a";
-                        case PARTIALLY_EXPOSED -> "§e";
-                        case EXPOSED -> "§c";
-                        case UNKNOWN -> "§7";
-                    };
-                    player.sendSystemMessage(Component.literal(color + entry.title() + " §8— §7" + entry.explanation()));
-                }
-                player.sendSystemMessage(Component.literal("§8Status is informational; no client mod can guarantee anonymity."));
-                return 1;
-                */
             }))
         );
     }
