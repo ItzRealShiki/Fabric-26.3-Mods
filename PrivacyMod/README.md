@@ -8,6 +8,8 @@ Standalone Fabric client mod for Minecraft 26.3 (Java 25).
 - Reports a small set of built-in privacy observations.
 - Exposes a public Java API so other client mods can register privacy entries.
 - Uses `UNKNOWN` as a distinct state; an unverified item is never presented as private.
+- Opens a graphical `/privacy` dashboard using the original ReGlass liquid-glass API.
+- Requires ReGlass 2.1.0 or newer for the glass UI.
 
 ## Integration API
 
@@ -32,4 +34,4 @@ Use stable, namespaced entry IDs (for example, `yourmod.setting-name`). Provider
 
 A client mod cannot hide the network source IP from the server endpoint, guarantee anonymity, or make protocol/version details disappear. It also cannot control what a server-side plugin chooses to show other players. This project reports observable facts and offers opt-in integration points; it does not spoof client identity, suppress anti-cheat checks, or claim to defeat server inspection.
 
-The current command output is an initial API/dashboard foundation. A graphical settings screen and additional verified checks are planned separately.
+The `/privacy` command opens the ReGlass-powered dashboard. ReGlass is a separate required client mod; the dashboard uses its original shader-based liquid-glass renderer, not a CSS-like imitation.
