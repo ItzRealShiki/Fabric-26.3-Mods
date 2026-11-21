@@ -10,7 +10,7 @@ import net.minecraft.client.Minecraft;
 
 import java.util.List;
 
-import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
 public final class PrivacyModClient implements ClientModInitializer {
     @Override
@@ -34,8 +34,8 @@ public final class PrivacyModClient implements ClientModInitializer {
         ));
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
-            dispatcher.register(literal<FabricClientCommandSource>("privacy").executes(context -> {
-                Minecraft.getInstance().setScreen(new PrivacyScreen());
+            dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("privacy").executes(context -> {
+                Minecraft.getInstance().gui.setScreen(new PrivacyScreen());
                 return 1;
             }))
         );
