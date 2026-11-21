@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Keep ReGlass visual effects scoped to custom mod UI."""
 from pathlib import Path
-import re
 
 config = Path("src/main/resources/reglass.mixins.json")
 source = config.read_text(encoding="utf-8")
 
-# Remove the global slider restyling mixin wherever it is declared.
-source = re.sub(r'^\s*"widgets\\.SliderWidgetMixin",?\s*$', '', source, flags=re.M)
+# Remove ReGlass' global vanilla slider styling mixin.
+source = "\n".join(line for line in source.splitlines()
+                   if "SliderWidgetMixin" not in line)
 
-# Replace the client mixin list with only the rendering infrastructure.
+# Keep only the client rendering infrastructure required by custom glass widgets.
 start = source.index('  "client": [')
 open_bracket = source.index('[', start)
 depth = 0
@@ -37,7 +37,7 @@ source = source[:start] + replacement + source[end:]
 
 for forbidden in ("client.ScreenMixin", "client.InventoryScreenMixin",
                   "client.TitleScreenMixin", "client.InGameHudMixin",
-                  "client.OptionsMixin", "widgets.SliderWidgetMixin"):
+                  "client.OptionsMixin", "SliderWidgetMixin"):
     if forbidden in source:
         raise SystemExit("Vanilla UI mixin remains enabled: " + forbidden)
 
