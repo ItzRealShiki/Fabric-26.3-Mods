@@ -173,7 +173,7 @@ public final class ProVisualsScreen extends Screen {
     private final List<ActionRow> drawActionRows = new ArrayList<>();
 
     private void addSettingRow(String title, String value, String description,
-                               int x, int y, int w, java.util.function.Consumer<Button> action) {
+                               int x, int y, int w, Button.OnPress action) {
         addRenderableWidget(Button.builder(ProVisualsUi.component(""), action)
                 .bounds(x, y, w, 35).build());
         drawActionRows.add(new ActionRow(title, value, description, x, y, w, 35, false));
