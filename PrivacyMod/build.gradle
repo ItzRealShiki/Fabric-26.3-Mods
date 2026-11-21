@@ -8,16 +8,12 @@ base {
     archivesName = project.archives_base_name
 }
 
-def reGlassJar = file("../ReGlass/versions/26.3/build/libs/reglass-26.3-2.1.0.jar")
-
 repositories {}
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-    // ReGlass is compile-only here; the jar is embedded manually below as a Fabric nested mod.
-    compileOnly files(reGlassJar)
 }
 
 loom {
@@ -27,13 +23,6 @@ loom {
             sourceSet sourceSets.main
             sourceSet sourceSets.client
         }
-    }
-}
-
-// Package ReGlass as a nested Fabric mod without Loom's module-component resolver.
-tasks.named("jar", Jar).configure {
-    from(reGlassJar) {
-        into("META-INF/jars")
     }
 }
 
