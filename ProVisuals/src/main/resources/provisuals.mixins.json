@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "de.itzrealshiki.provisuals.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": ["MusicIslandChatMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

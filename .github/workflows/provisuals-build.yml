@@ -1,0 +1,40 @@
+name: Build ProVisuals
+
+on:
+  push:
+    branches: [main, "provisuals/**"]
+    paths:
+      - "ProVisuals/**"
+      - ".github/workflows/provisuals-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.8.0"
+      - name: Build ProVisuals
+        working-directory: ProVisuals
+        run: gradle --no-daemon clean build
+      - name: Verify JAR and nested lyrics module
+        run: |
+          set -euo pipefail
+          test -f ProVisuals/build/libs/provisuals-0.1.0.jar
+          jar tf ProVisuals/build/libs/provisuals-0.1.0.jar >/tmp/provisuals-files.txt
+          grep -q "META-INF/jars/lyrics-in-the-sky.jar" /tmp/provisuals-files.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ProVisuals-0.1.0-mc26.3
+          path: ProVisuals/build/libs/provisuals-0.1.0.jar
+          if-no-files-found: error
+          retention-days: 14

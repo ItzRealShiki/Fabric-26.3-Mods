@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "provisuals",
+  "version": "${version}",
+  "name": "ProVisuals",
+  "description": "A modern client-side visual suite with a violet interface and a music island.",
+  "authors": ["ItzRealShiki"],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": { "client": ["de.itzrealshiki.provisuals.ProVisualsClient"] },
+  "mixins": ["provisuals.mixins.json"],
+  "jars": [{ "file": "META-INF/jars/lyrics-in-the-sky.jar" }],
+  "depends": {
+    "fabricloader": ">=0.20.1",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

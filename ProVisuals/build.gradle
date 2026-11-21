@@ -1,0 +1,64 @@
+plugins {
+    id "net.fabricmc.fabric-loom" version "${loom_version}"
+}
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+
+repositories { mavenCentral() }
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        "provisuals" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+def lyricsJar = layout.buildDirectory.file("generated/provisuals-resources/META-INF/jars/lyrics-in-the-sky.jar")
+def lyricsUrl = "https://github.com/Henner4746/lyrics-in-the-sky/releases/download/v1.3.0-dev.24/lyrics-in-the-sky-1.3.0-dev.24%2Bmc26.3.jar"
+def lyricsSha256 = "730dd5c8efb97efa0b5868d9af213efe05eea686415aac6da924c1f5abf1e812"
+
+tasks.register("downloadLyricsModule") {
+    outputs.file(lyricsJar)
+    doLast {
+        File destination = lyricsJar.get().asFile
+        destination.parentFile.mkdirs()
+        if (!destination.exists()) {
+            new URI(lyricsUrl).toURL().withInputStream { input ->
+                destination.withOutputStream { output -> output << input }
+            }
+        }
+        def digest = java.security.MessageDigest.getInstance("SHA-256")
+        String actual = digest.digest(destination.bytes).collect { String.format("%02x", it) }.join()
+        if (actual != lyricsSha256) {
+            destination.delete()
+            throw new GradleException("Lyrics in the Sky checksum mismatch. Expected ${lyricsSha256}, got ${actual}")
+        }
+    }
+}
+
+sourceSets.main.resources.srcDir(layout.buildDirectory.dir("generated/provisuals-resources"))
+tasks.named("processResources").configure {
+    dependsOn(tasks.named("downloadLyricsModule"))
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") { expand "version": project.version }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release = 25
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    withSourcesJar()
+}
