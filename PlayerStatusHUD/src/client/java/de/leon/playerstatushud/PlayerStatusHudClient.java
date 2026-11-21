@@ -102,8 +102,6 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
         graphics.pose().scale(HUD_SCALE, HUD_SCALE);
 
         // Keep the panel's top-left corner anchored while scaling all contents uniformly.
-        x = Math.round(x / HUD_SCALE);
-        y = Math.round(y / HUD_SCALE);
 
         float maxHealth = Math.max(1.0f, player.getMaxHealth());
         float health = Mth.clamp(player.getHealth(), 0.0f, maxHealth);
