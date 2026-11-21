@@ -67,39 +67,70 @@ public final class ProVisualsUi {
             graphics.fill(x, y, x + width, y + height, color);
             return;
         }
-
         int r = Math.min(radius, Math.min(width / 2, height / 2));
         if (r <= 0) {
             graphics.fill(x, y, x + width, y + height, color);
             return;
         }
-
-        graphics.fill(x, y + r, x + width, y + height - r, color);
         graphics.fill(x + r, y, x + width - r, y + height, color);
-
-        for (int row = 0; row < r; row++) {
-            int distanceFromCenter = r - row - 1;
-            int inset = r - (int) Math.floor(Math.sqrt((double) r * r
-                    - (double) distanceFromCenter * distanceFromCenter));
-            graphics.fill(x + inset, y + row, x + width - inset, y + row + 1, color);
-            graphics.fill(x + inset, y + height - row - 1,
-                    x + width - inset, y + height - row, color);
+        graphics.fill(x, y + r, x + width, y + height - r, color);
+        for (int corner = 0; corner < 4; corner++) {
+            boolean right = (corner & 1) != 0;
+            boolean bottom = (corner & 2) != 0;
+            float centerX = right ? 0.0f : r;
+            float centerY = bottom ? 0.0f : r;
+            int originX = right ? x + width - r : x;
+            int originY = bottom ? y + height - r : y;
+            for (int row = 0; row < r; row++) {
+                for (int col = 0; col < r; col++) {
+                    float dx = col + 0.5f - centerX;
+                    float dy = row + 0.5f - centerY;
+                    float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                    float coverage = clamp01(r + 0.5f - distance);
+                    if (coverage <= 0.0f) continue;
+                    graphics.fill(originX + col, originY + row,
+                            originX + col + 1, originY + row + 1, withOpacity(color, coverage));
+                }
+            }
         }
+    }
+
+    private static float clamp01(float value) {
+        return Math.max(0.0f, Math.min(1.0f, value));
+    }
+
+    private static int withOpacity(int color, float opacity) {
+        int alpha = color >>> 24;
+        int adjusted = Math.max(0, Math.min(255, Math.round(alpha * opacity)));
+        return (adjusted << 24) | (color & 0x00FFFFFF);
     }
 
     public static void roundWidgetCorners(GuiGraphicsExtractor graphics, int x, int y,
                                           int width, int height, int radius, int backgroundColor) {
         if (!ProVisualsConfig.roundedCorners || width <= 0 || height <= 0) return;
         int r = Math.min(radius, Math.min(width / 2, height / 2));
-        for (int row = 0; row < r; row++) {
-            int distanceFromCenter = r - row - 1;
-            int inset = r - (int) Math.floor(Math.sqrt((double) r * r
-                    - (double) distanceFromCenter * distanceFromCenter));
-            graphics.fill(x, y + row, x + inset, y + row + 1, backgroundColor);
-            graphics.fill(x + width - inset, y + row, x + width, y + row + 1, backgroundColor);
-            graphics.fill(x, y + height - row - 1, x + inset, y + height - row, backgroundColor);
-            graphics.fill(x + width - inset, y + height - row - 1,
-                    x + width, y + height - row, backgroundColor);
+        if (r <= 0) return;
+        for (int corner = 0; corner < 4; corner++) {
+            boolean right = (corner & 1) != 0;
+            boolean bottom = (corner & 2) != 0;
+            float centerX = right ? 0.0f : r;
+            float centerY = bottom ? 0.0f : r;
+            int originX = right ? x + width - r : x;
+            int originY = bottom ? y + height - r : y;
+            for (int row = 0; row < r; row++) {
+                for (int col = 0; col < r; col++) {
+                    float dx = col + 0.5f - centerX;
+                    float dy = row + 0.5f - centerY;
+                    float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                    float insideCoverage = clamp01(r + 0.5f - distance);
+                    float outsideCoverage = 1.0f - insideCoverage;
+                    if (outsideCoverage <= 0.0f) continue;
+                    graphics.fill(originX + col, originY + row,
+                            originX + col + 1, originY + row + 1,
+                            withOpacity(backgroundColor, outsideCoverage));
+                }
+            }
         }
     }
+
 }
