@@ -20,8 +20,6 @@ dependencies {
     compileOnly files("../PrivacyMod/build/classes/java/main")
     // ReGlass supplies the exact Liquid Glass renderer used by the HUD bubble.
     modCompileOnly files("../ReGlass/26.3/build/libs/reglass-26.3-2.1.0.jar")
-    // The original ReGlass API is supplied by the required ReGlass runtime mod.
-    modCompileOnly files(fileTree(dir: "../ReGlass/versions/26.3/build/libs", include: ["reglass-26.3-*.jar"], exclude: ["*-sources.jar"]))
 }
 
 loom {
