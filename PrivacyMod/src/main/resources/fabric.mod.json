@@ -3,7 +3,7 @@
   "id": "privacymod",
   "version": "${version}",
   "name": "Privacy Mod",
-  "description": "A privacy dashboard and shared privacy API for client-side mods.",
+  "description": "A privacy dashboard and shared privacy API with an embedded Liquid Glass library.",
   "authors": ["Leon"],
   "license": "MIT",
   "environment": "client",
@@ -14,7 +14,6 @@
     "fabricloader": ">=0.20.1",
     "minecraft": "~26.3",
     "java": ">=25",
-    "fabric-api": "*",
-    "reglass": ">=2.1.0"
+    "fabric-api": "*"
   }
 }
