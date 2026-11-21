@@ -30,10 +30,9 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
     private static final double MAX_DISTANCE_SQUARED = 100.0 * 100.0;
     private static final int BOX_WIDTH = 132;
     private static final int BOX_HEIGHT = 64;
-    private static final int BACKGROUND = 0xE6101014;
-    private static final int BORDER = 0xFF35353D;
-    private static final int LOW_HEALTH_BACKGROUND = 0xE6261014;
-    private static final int LOW_HEALTH_BORDER = 0xFFFF343F;
+    private static final int PANEL_BACKGROUND = 0xFF000000;
+    private static final int PANEL_BORDER = 0xFF777777;
+    private static final int PANEL_RADIUS = 9;
     private static final int LOW_HEALTH_TEXT = 0xFFFF5963;
     private static final int HEALTH_BACKGROUND = 0xFF3B2024;
     private static final int HEALTH_COLOR = 0xFFE34B55;
@@ -169,18 +168,33 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
     }
 
     private static void drawRoundedPanel(GuiGraphicsExtractor graphics, int x, int y, int width, int height, boolean lowHealth) {
-        int background = lowHealth ? LOW_HEALTH_BACKGROUND : BACKGROUND;
-        int border = lowHealth ? LOW_HEALTH_BORDER : BORDER;
-        graphics.fill(x + 3, y, x + width - 3, y + height, background);
-        graphics.fill(x + 1, y + 2, x + width - 1, y + height - 2, background);
-        graphics.fill(x, y + 4, x + width, y + height - 4, background);
+        // A custom rounded rectangle: one-pixel grey outline and a solid black interior.
+        // Low health is indicated by the text, not by changing the panel's shape or border.
+        drawRoundedRect(graphics, x, y, width, height, PANEL_RADIUS, PANEL_BORDER);
+        drawRoundedRect(graphics, x + 1, y + 1, width - 2, height - 2,
+            PANEL_RADIUS - 1, PANEL_BACKGROUND);
+    }
 
-        graphics.fill(x + 4, y, x + width - 4, y + 1, border);
-        graphics.fill(x + 2, y + 1, x + width - 2, y + 2, border);
-        graphics.fill(x + 1, y + 2, x + width - 1, y + 3, border);
-        graphics.fill(x, y + 4, x + 1, y + height - 4, border);
-        graphics.fill(x + width - 1, y + 4, x + width, y + height - 4, border);
-        graphics.fill(x + 1, y + height - 3, x + width - 1, y + height - 2, border);
-        graphics.fill(x + 2, y + height - 2, x + width - 2, y + height - 1, border);
+    private static void drawRoundedRect(GuiGraphicsExtractor graphics, int x, int y,
+                                        int width, int height, int radius, int color) {
+        for (int row = 0; row < height; row++) {
+            int distanceFromTop = row;
+            int distanceFromBottom = height - 1 - row;
+            int inset = 0;
+
+            if (distanceFromTop < radius) {
+                inset = roundedCornerInset(radius, distanceFromTop);
+            } else if (distanceFromBottom < radius) {
+                inset = roundedCornerInset(radius, distanceFromBottom);
+            }
+
+            graphics.fill(x + inset, y + row, x + width - inset, y + row + 1, color);
+        }
+    }
+
+    private static int roundedCornerInset(int radius, int row) {
+        double vertical = radius - row - 0.5;
+        double horizontal = Math.sqrt(Math.max(0.0, radius * radius - vertical * vertical));
+        return Math.max(0, radius - (int) Math.ceil(horizontal));
     }
 }
