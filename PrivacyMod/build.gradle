@@ -15,7 +15,7 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     // ReGlass is a required runtime mod; this jar is built from the upstream 26.3 source in CI.
-    modCompileOnly files("../ReGlass/26.3/build/libs/reglass-26.3-2.1.0.jar")
+    compileOnly files("../ReGlass/26.3/build/libs/reglass-26.3-2.1.0.jar")
 }
 
 loom {
