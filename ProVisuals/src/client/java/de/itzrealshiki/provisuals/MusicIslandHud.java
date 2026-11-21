@@ -219,8 +219,21 @@ public final class MusicIslandHud implements HudElement {
             }
             int labelColor = selected ? withAlpha(0xFFF5F1FF, navigationProgress)
                     : withAlpha(0xFFB7B0C5, navigationProgress);
-            graphics.centeredText(font, ProVisualsUi.component(navLabel(category)),
-                    cellX + actualWidth / 2, cellY + 4, labelColor);
+            if ("Settings".equals(category)) {
+                String label = navLabel(category);
+                int gearSize = 13;
+                int gap = 3;
+                int totalWidth = gearSize + gap + font.width(label);
+                int startX = cellX + Math.max(2, (actualWidth - totalWidth) / 2);
+                drawSettingsGear(graphics, startX, cellY + 1, gearSize,
+                        selected ? 0xFFE9DDFF : 0xFFB7B0C5,
+                        selected ? 0xFF3B2D56 : 0xFF262333);
+                ProVisualsUi.text(graphics, font, label, startX + gearSize + gap,
+                        cellY + 4, labelColor, false);
+            } else {
+                graphics.centeredText(font, ProVisualsUi.component(navLabel(category)),
+                        cellX + actualWidth / 2, cellY + 4, labelColor);
+            }
         }
 
         if (!subcategories.isEmpty()) {
@@ -292,6 +305,30 @@ public final class MusicIslandHud implements HudElement {
 
     public static boolean handleChatClick(double mouseX, double mouseY) {
         return handleMouseClick(mouseX, mouseY);
+    }
+
+    private static void drawSettingsGear(GuiGraphicsExtractor graphics, int x, int y,
+                                         int size, int color, int holeColor) {
+        int offset = size - 5;
+        int shadow = 0x66302A3F;
+        ProVisualsUi.fill(graphics, x + 4, y + 1, 5, 4, 2, shadow);
+        ProVisualsUi.fill(graphics, x + 4, y + size - 5, 5, 4, 2, shadow);
+        ProVisualsUi.fill(graphics, x + 1, y + 4, 4, 5, 2, shadow);
+        ProVisualsUi.fill(graphics, x + size - 5, y + 4, 4, 5, 2, shadow);
+        ProVisualsUi.fill(graphics, x + 2, y + 2, 4, 4, 2, shadow);
+        ProVisualsUi.fill(graphics, x + offset - 1, y + 2, 4, 4, 2, shadow);
+        ProVisualsUi.fill(graphics, x + 2, y + offset - 1, 4, 4, 2, shadow);
+        ProVisualsUi.fill(graphics, x + offset - 1, y + offset - 1, 4, 4, 2, shadow);
+        ProVisualsUi.fill(graphics, x + 4, y, 5, 4, 2, color);
+        ProVisualsUi.fill(graphics, x + 4, y + size - 4, 5, 4, 2, color);
+        ProVisualsUi.fill(graphics, x, y + 4, 4, 5, 2, color);
+        ProVisualsUi.fill(graphics, x + size - 4, y + 4, 4, 5, 2, color);
+        ProVisualsUi.fill(graphics, x + 2, y + 2, 4, 4, 2, color);
+        ProVisualsUi.fill(graphics, x + offset - 1, y + 2, 4, 4, 2, color);
+        ProVisualsUi.fill(graphics, x + 2, y + offset - 1, 4, 4, 2, color);
+        ProVisualsUi.fill(graphics, x + offset - 1, y + offset - 1, 4, 4, 2, color);
+        ProVisualsUi.fill(graphics, x + 2, y + 2, size - 4, size - 4, 5, color);
+        ProVisualsUi.fill(graphics, x + 5, y + 5, 3, 3, 2, holeColor);
     }
 
     private static String navLabel(String category) {
