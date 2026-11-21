@@ -25,6 +25,9 @@ Liquid-glass effects are used only by this mod's own player-status overlay. Vani
 
 Privacy Mod bundles the ReGlass rendering library. Install Privacy Mod alongside Player Status HUD; a separate ReGlass installation is not required.
 
+
+The mod-only ReGlass patch is applied during the GitHub Actions build.
+
 ## Build
 
 Build ReGlass 26.3 and Privacy Mod first so their API classes are available, then run `gradle build` in this project directory. The repository's GitHub Actions workflow performs these steps automatically.
