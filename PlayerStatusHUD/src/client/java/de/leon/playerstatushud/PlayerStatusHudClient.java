@@ -2,6 +2,10 @@ package de.leon.playerstatushud;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -31,15 +35,31 @@ public final class PlayerStatusHudClient implements ClientModInitializer {
     private static final int HEALTH_BACKGROUND = 0xFF3B2024;
     private static final int HEALTH_COLOR = 0xFFE34B55;
     private static final Identifier HUD_ID = Identifier.fromNamespaceAndPath("playerstatushud", "player_status");
+    private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
+        Identifier.fromNamespaceAndPath("playerstatushud", "main")
+    );
+    private static KeyMapping toggleHudKey;
+    private static boolean hudEnabled = true;
 
     @Override
     public void onInitializeClient() {
+        toggleHudKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.playerstatushud.toggle_hud",
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_H,
+            KEY_CATEGORY
+        ));
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (toggleHudKey.consumeClick()) {
+                hudEnabled = !hudEnabled;
+            }
+        });
         HudElementRegistry.addLast(HUD_ID, (graphics, deltaTracker) -> renderPlayers(graphics));
     }
 
     private static void renderPlayers(GuiGraphicsExtractor graphics) {
         Minecraft client = Minecraft.getInstance();
-        if (client.level == null || client.player == null || client.gui.hud.isHidden()) return;
+        if (!hudEnabled || client.level == null || client.player == null || client.gui.hud.isHidden()) return;
 
         var localPlayer = client.player;
 
