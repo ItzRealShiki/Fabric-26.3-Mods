@@ -15,10 +15,8 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-    // Compile against the public API. PrivacyMod is built first by the CI workflow
-    // and is also a required runtime dependency in fabric.mod.json.
+    // Compile against the PrivacyMod API and its embedded ReGlass API.
     compileOnly files("../PrivacyMod/build/classes/java/main")
-    // ReGlass supplies the exact Liquid Glass renderer used by the HUD bubble.
     compileOnly files("../ReGlass/versions/26.3/build/libs/reglass-26.3-2.1.0.jar")
 }
 
