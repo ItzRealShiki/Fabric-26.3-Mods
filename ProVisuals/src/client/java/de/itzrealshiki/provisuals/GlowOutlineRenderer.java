@@ -20,8 +20,8 @@ import net.minecraft.world.phys.Vec3;
 /** Client-side outline render-state hooks for dropped items, friends and ore blocks. */
 public final class GlowOutlineRenderer {
     public static int accentColor() { return ProVisualsUi.accentPrimary(); }
-    public static final int FRIEND_COLOR = 0xFFFF83C7;
     public static final int TRIM_COLOR = 0xFFFFD17A;
+    private static final ThreadLocal<Integer> FRIEND_ARMOR_COLOR = new ThreadLocal<>();
     private static boolean registered;
 
     private GlowOutlineRenderer() {
@@ -48,13 +48,13 @@ public final class GlowOutlineRenderer {
 
         for (EntityRenderState state : levelState.entityRenderStates) {
             if (itemGlow && state instanceof ItemEntityRenderState) {
-                state.outlineColor = FriendManager.colorForName(state.nameTag.getString());
+                state.outlineColor = accentColor();
                 continue;
             }
 
             if (friendsGlow && state.nameTag != null
                     && FriendManager.isFriend(state.nameTag.getString())) {
-                state.outlineColor = FRIEND_COLOR;
+                state.outlineColor = FriendManager.colorForName(state.nameTag.getString());
             }
         }
     }
