@@ -36,14 +36,13 @@ public final class HeldItemGlowRenderer {
             ItemStackRenderStateAccessor access = (ItemStackRenderStateAccessor) state;
             ItemStackRenderState.LayerRenderState[] layers = access.provisuals$getLayers();
             int active = Math.min(access.provisuals$getActiveLayerCount(), layers.length);
-            int[] tintLayers = ((ItemStackRenderStateLayerAccessor) layers[i]).provisuals$getTintLayers();
-
             long red = 0L;
             long green = 0L;
             long blue = 0L;
             long count = 0L;
 
             for (int i = 0; i < active; i++) {
+                int[] tintLayers = ((ItemStackRenderStateLayerAccessor) layers[i]).provisuals$getTintLayers();
                 ItemQuads quads = ((ItemStackRenderStateLayerAccessor) layers[i]).provisuals$getQuads();
                 if (quads == null) continue;
 
