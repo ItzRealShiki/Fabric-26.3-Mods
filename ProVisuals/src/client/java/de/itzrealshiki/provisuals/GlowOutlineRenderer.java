@@ -19,7 +19,7 @@ import net.minecraft.world.phys.Vec3;
 
 /** Client-side outline render-state hooks for dropped items, friends and ore blocks. */
 public final class GlowOutlineRenderer {
-    public static final int VIOLET = 0xFF9A6BFF;
+    public static int accentColor() { return ProVisualsUi.accentPrimary(); }
     public static final int FRIEND_COLOR = 0xFFFF83C7;
     public static final int TRIM_COLOR = 0xFFFFD17A;
     private static boolean registered;
@@ -48,7 +48,7 @@ public final class GlowOutlineRenderer {
 
         for (EntityRenderState state : levelState.entityRenderStates) {
             if (itemGlow && state instanceof ItemEntityRenderState) {
-                state.outlineColor = VIOLET;
+                state.outlineColor = accentColor();
                 continue;
             }
 
@@ -62,7 +62,7 @@ public final class GlowOutlineRenderer {
     /** Outline color supplied to the individual equipment piece render call. */
     public static int armorPieceOutline(ItemStack stack, int original) {
         return ProVisualsConfig.isEnabled("armor_glow") && stack != null && !stack.isEmpty()
-                ? VIOLET : original;
+                ? accentColor() : original;
     }
 
     /** A trim is a separate submitted model, so it receives its own independent color. */
@@ -89,11 +89,12 @@ public final class GlowOutlineRenderer {
         if (ProVisualsConfig.oreInteriorGlow) {
             context.submitNodeCollector().submitCustomGeometry(poseStack, RenderTypes.debugFilledBox(),
                     (pose, buffer) -> drawFilledBox(pose, buffer,
-                            new AABB(0.025, 0.025, 0.025, 0.975, 0.975, 0.975), 0x269A6BFF));
+                            new AABB(0.025, 0.025, 0.025, 0.975, 0.975, 0.975),
+                            ProVisualsUi.accentWithAlpha(accentColor(), 38)));
         }
         if (ProVisualsConfig.oreOutlineGlow) {
-            submitEdgeLayer(context, poseStack, 0.105, 0x559A6BFF);
-            submitEdgeLayer(context, poseStack, 0.032, 0xFFE4D7FF);
+            submitEdgeLayer(context, poseStack, 0.105, ProVisualsUi.accentWithAlpha(accentColor(), 85));
+            submitEdgeLayer(context, poseStack, 0.032, ProVisualsUi.accentLight());
         }
 
         poseStack.popPose();
