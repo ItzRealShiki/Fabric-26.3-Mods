@@ -45,6 +45,8 @@ public final class BlackHoleSkyController {
             }
 
             nuit.getClass().getMethod("removePermanentSkybox", Identifier.class).invoke(nuit, SKY_ID);
+            nuit.getClass().getMethod("removePermanentSkybox", Identifier.class).invoke(nuit,
+                    Identifier.fromNamespaceAndPath("provisuals", "black_hole_lensing"));
             installed = false;
             stopMusic(Minecraft.getInstance());
             return true;
