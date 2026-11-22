@@ -47,8 +47,127 @@ tasks.register("downloadLyricsModule") {
 }
 
 sourceSets.main.resources.srcDir(layout.buildDirectory.dir("generated/provisuals-resources"))
+
+def blackHoleSkyTexture = layout.buildDirectory.file("generated/provisuals-resources/assets/provisuals/sky/black_hole.png")
+tasks.register("generateBlackHoleSkyTexture") {
+    outputs.file(blackHoleSkyTexture)
+    doLast {
+        File destination = blackHoleSkyTexture.get().asFile
+        destination.parentFile.mkdirs()
+
+        final int faceSize = 512
+        def atlas = new java.awt.image.BufferedImage(faceSize * 3, faceSize * 2,
+                java.awt.image.BufferedImage.TYPE_INT_ARGB)
+
+        // Nuit's 3x2 cubemap layout: bottom, north, south, top, east, west.
+        def faces = [
+                [0, 0, -1d, -1d, -1d,  2d, 0d, 0d,  0d, 0d, 2d],
+                [1, 1, -1d,  1d, -1d,  2d, 0d, 0d,  0d,-2d, 0d],
+                [2, 0,  1d,  1d,  1d, -2d, 0d, 0d,  0d,-2d, 0d],
+                [1, 0, -1d,  1d,  1d,  2d, 0d, 0d,  0d, 0d,-2d],
+                [2, 1,  1d,  1d, -1d,  0d, 0d, 2d,  0d,-2d, 0d],
+                [0, 1, -1d,  1d,  1d,  0d, 0d,-2d,  0d,-2d, 0d]
+        ]
+
+        double cx = 0.0d, cy = 0.28d, cz = -0.96d
+        double cn = Math.sqrt(cx*cx + cy*cy + cz*cz)
+        cx /= cn; cy /= cn; cz /= cn
+        // A stable camera-up tangent basis around the black-hole direction.
+        double rx = -cz, ry = 0.0d, rz = cx
+        double rn = Math.sqrt(rx*rx + ry*ry + rz*rz)
+        rx /= rn; ry /= rn; rz /= rn
+        double ux = ry*cz - rz*cy
+        double uy = rz*cx - rx*cz
+        double uz = rx*cy - ry*cx
+        double un = Math.sqrt(ux*ux + uy*uy + uz*uz)
+        ux /= un; uy /= un; uz /= un
+
+        def clampByte = { double v -> (int)Math.max(0d, Math.min(255d, v)) }
+        for (int faceIndex = 0; faceIndex < faces.size(); faceIndex++) {
+            def f = faces[faceIndex]
+            int tileX = (int)f[0], tileY = (int)f[1]
+            double ox=f[2], oy=f[3], oz=f[4]
+            double ax=f[5], ay=f[6], az=f[7]
+            double bx=f[8], by=f[9], bz=f[10]
+
+            for (int py = 0; py < faceSize; py++) {
+                double v = (py + 0.5d) / faceSize
+                for (int px = 0; px < faceSize; px++) {
+                    double u = (px + 0.5d) / faceSize
+                    double dx = ox + ax*u + bx*v
+                    double dy = oy + ay*u + by*v
+                    double dz = oz + az*u + bz*v
+                    double length = Math.sqrt(dx*dx + dy*dy + dz*dz)
+                    dx /= length; dy /= length; dz /= length
+
+                    double forward = dx*cx + dy*cy + dz*cz
+                    double tx = Math.atan2(dx*rx + dy*ry + dz*rz, forward)
+                    double ty = Math.atan2(dx*ux + dy*uy + dz*uz, forward)
+                    double dist = Math.sqrt(tx*tx + ty*ty)
+
+                    // Slow diagonal accretion plane with a bright, uneven inner rim.
+                    double tilt = 0.22d
+                    double angle = Math.toRadians(17d)
+                    double qx = tx*Math.cos(angle) + ty*Math.sin(angle)
+                    double qy = -tx*Math.sin(angle) + ty*Math.cos(angle)
+                    double ellipse = Math.sqrt(qx*qx + (qy/tilt)*(qy/tilt))
+                    double ring = Math.exp(-Math.pow((ellipse-0.285d)/0.072d, 2d))
+                    double innerFade = 1d/(1d+Math.exp(-(ellipse-0.135d)*95d))
+                    double outerFade = 1d/(1d+Math.exp((ellipse-0.435d)*75d))
+                    double swirl = 0.58d + 0.42d*Math.sin(10d*Math.atan2(qy/tilt,qx) + ellipse*74d
+                            + 1.6d*Math.sin(5d*Math.atan2(qy,qx)))
+                    double doppler = 0.68d + 0.32d*Math.max(0d, Math.min(1d, 0.5d - qy/0.20d))
+                    double disk = ring*innerFade*outerFade*swirl*doppler
+
+                    double halo = Math.exp(-Math.pow((ellipse-0.31d)/0.145d, 2d))*0.20d
+                    double photonRing = Math.exp(-Math.pow((dist-0.112d)/0.006d, 2d))
+                    double lensGlow = Math.exp(-Math.pow((dist-0.132d)/0.026d, 2d))*0.48d
+
+                    // Low-contrast cosmic clouds keep the far sides from becoming flat black.
+                    double cloudA = Math.sin(dx*17d + dy*23d + dz*11d)
+                    double cloudB = Math.cos(dx*29d - dy*13d + dz*19d)
+                    double nebula = Math.max(0d, (cloudA*cloudB + 0.22d))*0.5d
+                    double baseR = 2d + nebula*9d + Math.max(0d,dy)*2d
+                    double baseG = 3d + nebula*5d
+                    double baseB = 9d + nebula*23d
+
+                    double warm = disk*1.18d + photonRing*0.95d + lensGlow*0.32d
+                    double violet = disk*0.55d + halo*0.72d + lensGlow*0.55d
+                    double red = baseR + warm*248d + violet*82d
+                    double green = baseG + warm*120d + violet*48d
+                    double blue = baseB + warm*33d + violet*225d
+
+                    // A clean, light-absorbing event horizon with a narrow photon ring.
+                    if (dist < 0.102d) {
+                        red = 0.5d; green = 0.7d; blue = 2.0d
+                    } else if (dist < 0.118d) {
+                        red = Math.max(red, 230d + photonRing*25d)
+                        green = Math.max(green, 155d + photonRing*80d)
+                        blue = Math.max(blue, 92d + photonRing*80d)
+                    }
+
+                    // Stable sparse star field, generated from the cubemap texel coordinates.
+                    double hash = Math.abs(Math.sin((px + faceIndex*733)*127.1d
+                            + (py + faceIndex*199)*311.7d)*43758.5453d)
+                    double fract = hash - Math.floor(hash)
+                    if (fract > 0.99972d && dist > 0.46d) {
+                        double star = 115d + (fract-0.99972d)*950000d
+                        red = Math.max(red, star)
+                        green = Math.max(green, star*0.96d)
+                        blue = Math.max(blue, star*1.05d)
+                    }
+
+                    int argb = (255 << 24) | (clampByte(red) << 16)
+                            | (clampByte(green) << 8) | clampByte(blue)
+                    atlas.setRGB(tileX*faceSize + px, tileY*faceSize + py, argb)
+                }
+            }
+        }
+        javax.imageio.ImageIO.write(atlas, "png", destination)
+    }
+}
 tasks.named("processResources").configure {
-    dependsOn(tasks.named("downloadLyricsModule"))
+    dependsOn(tasks.named("downloadLyricsModule"), tasks.named("generateBlackHoleSkyTexture"))
     inputs.property "version", project.version
     filesMatching("fabric.mod.json") { expand "version": project.version }
 }
@@ -65,5 +184,5 @@ java {
 
 // The generated nested-mod resource is also inspected by the source archive task.
 tasks.named("sourcesJar").configure {
-    dependsOn(tasks.named("downloadLyricsModule"))
+    dependsOn(tasks.named("downloadLyricsModule"), tasks.named("generateBlackHoleSkyTexture"))
 }
