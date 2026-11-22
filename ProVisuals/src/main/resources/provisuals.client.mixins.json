@@ -10,7 +10,8 @@
     "ItemStackRenderStateAccessor",
     "ItemStackRenderStateLayerAccessor",
     "SpriteContentsImageAccessor",
-    "EntityRendererTextureAccessor"
+    "EntityRendererTextureAccessor",
+    "BossHealthOverlayMixin"
   ],
   "injectors": {
     "defaultRequire": 1
