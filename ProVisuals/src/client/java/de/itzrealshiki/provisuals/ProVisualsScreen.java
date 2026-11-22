@@ -3,6 +3,7 @@ package de.itzrealshiki.provisuals;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ public final class ProVisualsScreen extends Screen {
     private String page = "Overview";
     private String selectedSubcategory = "Combat Visuals";
     private String status = "All systems ready";
+    private EditBox friendNameInput;
 
     private final List<FeatureRow> featureRows = new ArrayList<>();
     private final List<NavigationRow> navigationRows = new ArrayList<>();
@@ -36,6 +38,7 @@ public final class ProVisualsScreen extends Screen {
         navigationRows.clear();
         sectionHeaders.clear();
         drawActionRows.clear();
+        friendNameInput = null;
 
         int contentX = panelX() + 164;
         int contentWidth = Math.max(220, Math.min(520, width - contentX - 28));
@@ -114,6 +117,10 @@ public final class ProVisualsScreen extends Screen {
     }
 
     private void buildFeaturePage(int x, int py, int contentWidth) {
+        if ("PvP".equals(page) && "Player Visuals".equals(selectedSubcategory)) {
+            buildFriendsPage(x, py, contentWidth);
+            return;
+        }
         List<String> subcategories = categorySubcategories(page);
         if (subcategories.isEmpty()) return;
         if (!subcategories.contains(selectedSubcategory)) selectedSubcategory = subcategories.get(0);
@@ -151,6 +158,47 @@ public final class ProVisualsScreen extends Screen {
                 rebuildWidgets();
             }).bounds(x, y, contentWidth, rowHeight).build());
             y += rowHeight + rowGap;
+        }
+    }
+
+    private void buildFriendsPage(int x, int py, int contentWidth) {
+        sectionHeaders.add(new SectionHeader("Visual Friends",
+                "Add a username to mark that player with a local outline", py + 72));
+
+        int addButtonWidth = 82;
+        int gap = 8;
+        friendNameInput = new EditBox(font, x, py + 112, contentWidth - addButtonWidth - gap,
+                31, ProVisualsUi.component("Minecraft username"));
+        friendNameInput.setMaxLength(16);
+        addRenderableWidget(friendNameInput);
+
+        addRenderableWidget(Button.builder(ProVisualsUi.component("Add"), button -> {
+            String name = friendNameInput == null ? "" : friendNameInput.getValue();
+            if (FriendManager.add(name)) {
+                status = "Added friend: " + name.trim();
+            } else {
+                status = "Enter a valid, non-duplicate Minecraft username";
+            }
+            rebuildWidgets();
+        }).bounds(x + contentWidth - addButtonWidth, py + 112, addButtonWidth, 31).build());
+
+        int y = py + 156;
+        List<String> friends = FriendManager.friends();
+        if (friends.isEmpty()) {
+            drawActionRows.add(new ActionRow("No friends added", "",
+                    "Add a Minecraft username above", x, y, contentWidth, 34, false));
+            return;
+        }
+
+        for (String friend : friends.stream().limit(6).toList()) {
+            drawActionRows.add(new ActionRow(friend, "REMOVE",
+                    "Click this row to remove the friend", x, y, contentWidth, 31, true));
+            addRenderableWidget(Button.builder(ProVisualsUi.component(""), button -> {
+                FriendManager.remove(friend);
+                status = "Removed friend: " + friend;
+                rebuildWidgets();
+            }).bounds(x, y, contentWidth, 31).build());
+            y += 38;
         }
     }
 
@@ -346,6 +394,18 @@ public final class ProVisualsScreen extends Screen {
                         "Glow around ore outlines", x + half + gap, py + 116, half,
                         b -> { ProVisualsConfig.oreOutlineGlow = !ProVisualsConfig.oreOutlineGlow; ProVisualsConfig.save(); rebuildWidgets(); });
             }
+            case "Held Items" -> {
+                sectionHeaders.add(new SectionHeader("Held item glow",
+                        "Use sampled item-model texture colors for hand outlines", py + 76));
+                addSettingRow("Texture-matched color", onOff(ProVisualsConfig.heldItemTextureColor),
+                        "Sample the visible item texture and tint layers", x, py + 116, contentWidth,
+                        b -> {
+                            ProVisualsConfig.heldItemTextureColor = !ProVisualsConfig.heldItemTextureColor;
+                            ProVisualsConfig.save();
+                            status = "Texture-matched held glow " + onOff(ProVisualsConfig.heldItemTextureColor);
+                            rebuildWidgets();
+                        });
+            }
             case "Interface" -> {
                 sectionHeaders.add(new SectionHeader("Interface",
                         "Appearance of the ProVisuals menu", py + 76));
@@ -395,7 +455,7 @@ public final class ProVisualsScreen extends Screen {
     public static List<String> categorySubcategories(String category) {
         return switch (category) {
             case "Music" -> List.of("Player", "Genres", "Lyrics");
-            case "Settings" -> List.of("Reflections", "Ore Glow", "Interface");
+            case "Settings" -> List.of("Reflections", "Ore Glow", "Held Items", "Interface");
             case "Tools" -> List.of("Error Center");
             default -> FeatureRegistry.subcategories(category);
         };
@@ -413,6 +473,7 @@ public final class ProVisualsScreen extends Screen {
             case "Genres" -> "Genres";
             case "Lyrics" -> "Lyrics";
             case "Ore Glow" -> "Ore glow";
+            case "Held Items" -> "Held Items";
             case "Error Center" -> "Error Center";
             default -> value;
         };
@@ -486,6 +547,10 @@ public final class ProVisualsScreen extends Screen {
 
     private void renderFeaturePage(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         renderSectionHeaders(graphics);
+        if ("PvP".equals(page) && "Player Visuals".equals(selectedSubcategory)) {
+            for (ActionRow row : drawActionRows) renderActionRow(graphics, row, mouseX, mouseY);
+            return;
+        }
         for (FeatureRow row : featureRows) {
             FeatureRegistry.Feature feature = row.feature();
             boolean hovered = inside(row.x(), row.y(), row.width(), row.height(), mouseX, mouseY);
