@@ -22,6 +22,10 @@ public final class ProVisualsConfig {
     public static boolean oreOutlineGlow = true;
     public static boolean heldItemTextureColor = true;
     public static boolean earthquakeEnabled;
+    public static boolean onlyOnMaceHit;
+    public static String accentPalette = "VIOLET";
+    public static final java.util.List<String> ACCENT_PALETTES =
+            java.util.List.of("VIOLET", "BLUE", "CYAN", "PINK", "GOLD", "GREEN");
     public static boolean musicIslandEnabled = true;
     public static boolean genreRecognitionEnabled = true;
     public static boolean roundedCorners = true;
@@ -65,6 +69,9 @@ public final class ProVisualsConfig {
             oreOutlineGlow = Boolean.parseBoolean(properties.getProperty("ores.outline", "true"));
             heldItemTextureColor = Boolean.parseBoolean(properties.getProperty("items.texture_color", "true"));
             earthquakeEnabled = Boolean.parseBoolean(properties.getProperty("combat.earthquake.enabled", "false"));
+            onlyOnMaceHit = Boolean.parseBoolean(properties.getProperty("combat.energy_wave.only_mace_hit", "false"));
+            accentPalette = properties.getProperty("ui.accent_palette", "VIOLET").toUpperCase(java.util.Locale.ROOT);
+            if (!ACCENT_PALETTES.contains(accentPalette)) accentPalette = "VIOLET";
             musicIslandEnabled = Boolean.parseBoolean(properties.getProperty("music.island.enabled", "true"));
             genreRecognitionEnabled = Boolean.parseBoolean(properties.getProperty("music.genre_recognition.enabled", "true"));
             roundedCorners = Boolean.parseBoolean(properties.getProperty("ui.rounded_corners", "true"));
@@ -78,6 +85,8 @@ public final class ProVisualsConfig {
             genreRecognitionEnabled = true;
             heldItemTextureColor = true;
             earthquakeEnabled = false;
+            onlyOnMaceHit = false;
+            accentPalette = "VIOLET";
             hotkeyMigrationDone = false;
         }
     }
@@ -114,6 +123,8 @@ public final class ProVisualsConfig {
         properties.setProperty("ores.outline", String.valueOf(oreOutlineGlow));
         properties.setProperty("items.texture_color", String.valueOf(heldItemTextureColor));
         properties.setProperty("combat.earthquake.enabled", String.valueOf(earthquakeEnabled));
+        properties.setProperty("combat.energy_wave.only_mace_hit", String.valueOf(onlyOnMaceHit));
+        properties.setProperty("ui.accent_palette", accentPalette);
         properties.setProperty("music.island.enabled", String.valueOf(musicIslandEnabled));
         properties.setProperty("music.genre_recognition.enabled", String.valueOf(genreRecognitionEnabled));
         properties.setProperty("ui.rounded_corners", String.valueOf(roundedCorners));
