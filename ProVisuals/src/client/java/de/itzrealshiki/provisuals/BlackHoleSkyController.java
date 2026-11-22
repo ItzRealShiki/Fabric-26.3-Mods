@@ -13,7 +13,8 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 
 /**
- * Client-only bridge that installs a permanent, dimension-independent Nuit skybox.
+ * Client-only bridge that installs a permanent, all-dimension Nuit skybox and
+ * plays the bundled original ambience while the feature is active.
  * Nuit is optional at runtime, so all of its API access stays reflective.
  */
 public final class BlackHoleSkyController {
@@ -45,8 +46,7 @@ public final class BlackHoleSkyController {
             }
 
             nuit.getClass().getMethod("removePermanentSkybox", Identifier.class).invoke(nuit, SKY_ID);
-            nuit.getClass().getMethod("removePermanentSkybox", Identifier.class).invoke(nuit,
-                    Identifier.fromNamespaceAndPath("provisuals", "black_hole_lensing"));
+
             installed = false;
             stopMusic(Minecraft.getInstance());
             return true;
@@ -67,48 +67,27 @@ public final class BlackHoleSkyController {
                   "type": "square-textured",
                   "properties": {
                     "layer": 10000,
+                    "visibleUnderwater": true,
                     "rotation": {
                       "skyboxRotation": true,
-                      "axis": { "0": [0, 0, 0] },
-                      "speed": 0.07
+                      "axis": { "0": [0, 1, 0] },
+                      "speed": 0.16
                     },
                     "blend": "normal"
                   },
                   "conditions": {},
-                  "texture": "provisuals:sky/black_hole_stars"
+                  "texture": "provisuals:textures/sky/black_hole.png"
                 }
                 """;
-        String overlayJsonText = """
-                {
-                  "schemaVersion": 1,
-                  "type": "square-textured",
-                  "properties": {
-                    "layer": 10001,
-                    "rotation": {
-                      "skyboxRotation": true,
-                      "axis": { "0": [0, 0, 0] },
-                      "speed": 0.45
-                    },
-                    "blend": "normal"
-                  },
-                  "conditions": {},
-                  "texture": "provisuals:sky/black_hole_lensing"
-                }
-                """;
-        JsonObject starsJson = JsonParser.parseString(jsonText).getAsJsonObject();
-        JsonObject lensingJson = JsonParser.parseString(overlayJsonText).getAsJsonObject();
+        JsonObject skyJson = JsonParser.parseString(jsonText).getAsJsonObject();
         Class<?> skyboxType = Class.forName(SKYBOX);
         Method parse = nuit.getClass().getMethod("parseSkybox", Identifier.class, JsonObject.class);
         Method addPermanent = nuit.getClass().getMethod("addPermanentSkybox", Identifier.class, skyboxType);
-        Optional<?> stars = (Optional<?>) parse.invoke(nuit, SKY_ID, starsJson);
-        Optional<?> lensing = (Optional<?>) parse.invoke(nuit,
-                Identifier.fromNamespaceAndPath("provisuals", "black_hole_lensing"), lensingJson);
-        if (stars.isEmpty() || lensing.isEmpty()) {
+        Optional<?> skybox = (Optional<?>) parse.invoke(nuit, SKY_ID, skyJson);
+        if (skybox.isEmpty()) {
             throw new IllegalStateException("Nuit rejected the Black Hole Sky definition.");
         }
-        addPermanent.invoke(nuit, SKY_ID, stars.get());
-        addPermanent.invoke(nuit, Identifier.fromNamespaceAndPath("provisuals", "black_hole_lensing"),
-                lensing.get());
+        addPermanent.invoke(nuit, SKY_ID, skybox.get());
         installed = true;
         Diagnostics.info("Permanent Black Hole Sky installed for every dimension.");
     }
