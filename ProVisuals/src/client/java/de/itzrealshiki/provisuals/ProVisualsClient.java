@@ -69,7 +69,7 @@ public final class ProVisualsClient implements ClientModInitializer {
         if (ProVisualsConfig.hotkeyMigrationDone) return;
 
         InputConstants.Key legacyM = InputConstants.Type.KEYBOARD.getOrCreate(77);
-        if (legacyM.equals(openMenuKey.getKey())) {
+        if (openMenuKey.matches(legacyM)) {
             openMenuKey.setKey(InputConstants.Type.KEYBOARD.getOrCreate(InputConstants.KEY_RSHIFT));
             try {
                 var reset = KeyMapping.class.getDeclaredMethod("resetMapping");
