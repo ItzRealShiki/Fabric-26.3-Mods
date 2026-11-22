@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.ItemQuads;
 import net.minecraft.util.ARGB;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.world.item.ItemDisplayContext;
 import de.itzrealshiki.provisuals.mixin.client.ItemStackRenderStateAccessor;
 import de.itzrealshiki.provisuals.mixin.client.ItemStackRenderStateLayerAccessor;
@@ -42,7 +43,7 @@ public final class HeldItemGlowRenderer {
             long count = 0L;
 
             for (int i = 0; i < active; i++) {
-                int[] tintLayers = ((ItemStackRenderStateLayerAccessor) layers[i]).provisuals$getTintLayers();
+                IntList tintLayers = ((ItemStackRenderStateLayerAccessor) layers[i]).provisuals$getTintLayers();
                 ItemQuads quads = ((ItemStackRenderStateLayerAccessor) layers[i]).provisuals$getQuads();
                 if (quads == null) continue;
 
@@ -53,8 +54,8 @@ public final class HeldItemGlowRenderer {
                     if (sample == 0) continue;
 
                     int tintIndex = quad.materialInfo().tintIndex();
-                    if (tintIndex >= 0 && tintIndex < tintLayers.length) {
-                        int tint = tintLayers[tintIndex];
+                    if (tintIndex >= 0 && tintLayers != null && tintIndex < tintLayers.size()) {
+                        int tint = tintLayers.getInt(tintIndex);
                         sample = multiplyTint(sample, tint);
                     }
 
