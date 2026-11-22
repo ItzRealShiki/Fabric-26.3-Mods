@@ -38,13 +38,19 @@ public final class ProVisualsClient implements ClientModInitializer {
             skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
             skyLyricsHudEnabled = MusicLyricsBridge.setNowPlayingHudEnabled(true);
             CustomSkyBridge.ensureAllWorldCoverage();
-            boolean customSkyEnabled = ProVisualsConfig.isEnabled("custom_sky");
-            if (CustomSkyBridge.setEnabled(customSkyEnabled)) {
-                Diagnostics.info(CustomSkyBridge.statusText(customSkyEnabled));
+            boolean skyEngineEnabled = ProVisualsConfig.isEnabled("custom_sky")
+                    || ProVisualsConfig.isEnabled("black_hole_sky");
+            if (CustomSkyBridge.setEnabled(skyEngineEnabled)) {
+                Diagnostics.info(CustomSkyBridge.statusText(skyEngineEnabled));
             } else {
-                Diagnostics.warn(CustomSkyBridge.statusText(customSkyEnabled));
+                Diagnostics.warn(CustomSkyBridge.statusText(skyEngineEnabled));
+            }
+            if (ProVisualsConfig.isEnabled("black_hole_sky")) {
+                BlackHoleSkyController.setEnabled(true);
             }
         });
+
+        ClientLifecycleEvents.CLIENT_STOPPING.register(BlackHoleSkyController::stopMusic);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!skyLyricsSettingsKeyUnbound) {
@@ -54,6 +60,7 @@ public final class ProVisualsClient implements ClientModInitializer {
                 skyLyricsHudEnabled = MusicLyricsBridge.setNowPlayingHudEnabled(true);
             }
             CustomSkyBridge.ensureAllWorldCoverage();
+            BlackHoleSkyController.tick(client);
             FriendManager.tickPresence(client);
             KillEffectsRenderer.tickTracking(client);
             while (openMenuKey.consumeClick()) {
