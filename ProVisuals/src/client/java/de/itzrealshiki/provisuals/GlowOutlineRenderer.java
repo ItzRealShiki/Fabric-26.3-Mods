@@ -48,7 +48,7 @@ public final class GlowOutlineRenderer {
 
         for (EntityRenderState state : levelState.entityRenderStates) {
             if (itemGlow && state instanceof ItemEntityRenderState) {
-                state.outlineColor = accentColor();
+                state.outlineColor = FriendManager.colorForName(state.nameTag.getString());
                 continue;
             }
 
@@ -60,13 +60,39 @@ public final class GlowOutlineRenderer {
     }
 
     /** Outline color supplied to the individual equipment piece render call. */
-    public static int armorPieceOutline(ItemStack stack, int original) {
+    private static int friendColorFromState(Object renderState) {
+        if (!ProVisualsConfig.isEnabled("visual_friends")) return 0;
+        if (renderState instanceof EntityRenderState state && state.nameTag != null) {
+            String name = state.nameTag.getString();
+            if (FriendManager.isFriend(name)) return FriendManager.colorForName(name);
+        }
+        return 0;
+    }
+
+    public static int armorPieceOutline(ItemStack stack, Object renderState, int original) {
+        int friendColor = friendColorFromState(renderState);
+        if (friendColor != 0) return friendColor;
         return ProVisualsConfig.isEnabled("armor_glow") && stack != null && !stack.isEmpty()
                 ? accentColor() : original;
     }
 
+    /** The nested trim submission inherits its owning friend's custom color. */
+    public static void withArmorPieceContext(Object renderState, Runnable render) {
+        Integer previous = FRIEND_ARMOR_COLOR.get();
+        int color = friendColorFromState(renderState);
+        if (color != 0) FRIEND_ARMOR_COLOR.set(color);
+        try {
+            render.run();
+        } finally {
+            if (previous == null) FRIEND_ARMOR_COLOR.remove();
+            else FRIEND_ARMOR_COLOR.set(previous);
+        }
+    }
+
     /** A trim is a separate submitted model, so it receives its own independent color. */
     public static int trimOutline(int original) {
+        Integer friendColor = FRIEND_ARMOR_COLOR.get();
+        if (friendColor != null) return friendColor;
         return ProVisualsConfig.isEnabled("glowing_armor_trims") ? TRIM_COLOR : 0;
     }
 
