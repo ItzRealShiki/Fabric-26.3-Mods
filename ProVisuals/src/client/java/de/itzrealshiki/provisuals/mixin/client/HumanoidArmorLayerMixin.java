@@ -37,8 +37,9 @@ public abstract class HumanoidArmorLayerMixin {
             int lightCoords,
             int originalOutline
     ) {
-        int outline = GlowOutlineRenderer.armorPieceOutline(stack, originalOutline);
-        renderer.renderLayers(layerType, equipmentAssetId, model, state, stack,
-                poseStack, collector, lightCoords, outline);
+        int outline = GlowOutlineRenderer.armorPieceOutline(stack, state, originalOutline);
+        GlowOutlineRenderer.withArmorPieceContext(state, () ->
+                renderer.renderLayers(layerType, equipmentAssetId, model, state, stack,
+                        poseStack, collector, lightCoords, outline));
     }
 }
