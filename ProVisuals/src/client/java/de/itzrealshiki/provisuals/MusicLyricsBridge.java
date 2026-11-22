@@ -2,6 +2,9 @@ package de.itzrealshiki.provisuals;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 
 /** Reflection bridge to the nested Lyrics in the Sky module. */
@@ -178,6 +181,40 @@ public final class MusicLyricsBridge {
             return false;
         } catch (ReflectiveOperationException | RuntimeException exception) {
             Diagnostics.warn("Could not update SkyLyrics Music Island HUD: " + exception.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Opens SkyLyrics' original illustrated sky gallery and settings page.
+     * The native screen is reused so its image previews and interactions stay intact.
+     */
+    public static boolean openNativeSkySettings(Screen parent) {
+        try {
+            Class<?> client = clientClass();
+            Object activeController = controller();
+            if (activeController == null) {
+                Diagnostics.warn("SkyLyrics controller is not initialized yet.");
+                return false;
+            }
+
+            Field spotifyField = client.getDeclaredField("spotify");
+            spotifyField.setAccessible(true);
+            Object spotify = spotifyField.get(null);
+
+            Class<?> screenType = Class.forName("de.henner.lyricsinthesky.gui.GlassMenuScreen");
+            Constructor<?> constructor = screenType.getConstructor(
+                    Screen.class, activeController.getClass(), spotifyField.getType());
+            Object nativeScreen = constructor.newInstance(parent, activeController, spotify);
+
+            Minecraft.getInstance().gui.setScreen((Screen) nativeScreen);
+            screenType.getMethod("show", String.class).invoke(nativeScreen, "sky");
+            return true;
+        } catch (ClassNotFoundException exception) {
+            Diagnostics.warn("The original SkyLyrics settings screen is unavailable.");
+            return false;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError exception) {
+            Diagnostics.error("Could not open the original SkyLyrics sky gallery", exception);
             return false;
         }
     }
