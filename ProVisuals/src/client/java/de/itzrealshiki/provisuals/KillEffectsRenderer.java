@@ -51,7 +51,7 @@ public final class KillEffectsRenderer {
     }
 
     private static synchronized void rememberTarget(Player target) {
-        recentTarget = new RecentTarget(target.getUUID(), target.getGameProfile().getName(),
+        recentTarget = new RecentTarget(target.getUUID(), target.getName().getString(),
                 target.position(), System.currentTimeMillis());
     }
 
@@ -111,10 +111,10 @@ public final class KillEffectsRenderer {
                     SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS,
                     friend ? 0.62f : 0.42f, friend ? 1.08f : 1.18f, false);
             for (int i = 0; i < 16; i++) {
-                double ox = (client.level.random.nextDouble() - 0.5) * 1.25;
-                double oz = (client.level.random.nextDouble() - 0.5) * 1.25;
+                double ox = (Math.random() - 0.5) * 1.25;
+                double oz = (Math.random() - 0.5) * 1.25;
                 client.level.addParticle(ParticleTypes.ELECTRIC_SPARK,
-                        position.x + ox, position.y + 0.2 + client.level.random.nextDouble() * 3.5,
+                        position.x + ox, position.y + 0.2 + Math.random() * 3.5,
                         position.z + oz, 0.0, -0.08, 0.0);
             }
         } else if ("SOUL_BURST".equals(style)) {
