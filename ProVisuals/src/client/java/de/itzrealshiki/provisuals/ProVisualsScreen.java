@@ -121,6 +121,10 @@ public final class ProVisualsScreen extends Screen {
             buildFriendsPage(x, py, contentWidth);
             return;
         }
+        if ("World".equals(page) && "Sky Lyrics".equals(selectedSubcategory)) {
+            buildSkyLyricsPage(x, py, contentWidth);
+            return;
+        }
         List<String> subcategories = categorySubcategories(page);
         if (subcategories.isEmpty()) return;
         if (!subcategories.contains(selectedSubcategory)) selectedSubcategory = subcategories.get(0);
@@ -245,8 +249,8 @@ public final class ProVisualsScreen extends Screen {
     }
 
     private void buildSkyLyricsPage(int x, int py, int contentWidth) {
-        sectionHeaders.add(new SectionHeader("SkyLyrics",
-                "Lyrics in the Sky  /  all settings in ProVisuals", py + 72));
+        sectionHeaders.add(new SectionHeader("Sky Lyrics",
+                "Placement, style, colors and animation for lyrics in the world", py + 72));
         if (!MusicLyricsBridge.isPresent()) {
             addLyricsOption("SkyLyrics module", "Unavailable",
                     "The bundled lyrics module could not be found", x, py + 112, contentWidth,
@@ -465,6 +469,7 @@ public final class ProVisualsScreen extends Screen {
             case "Music" -> List.of("Player", "Genres", "Lyrics");
             case "Settings" -> List.of("Reflections", "Ore Glow", "Held Items", "Interface");
             case "Tools" -> List.of("Error Center");
+            case "World" -> List.of("World Visuals", "Sky Lyrics");
             default -> FeatureRegistry.subcategories(category);
         };
     }
@@ -480,6 +485,7 @@ public final class ProVisualsScreen extends Screen {
             case "Item Glow" -> "Items";
             case "Genres" -> "Genres";
             case "Lyrics" -> "Lyrics";
+            case "Sky Lyrics" -> "Sky Lyrics";
             case "Ore Glow" -> "Ore glow";
             case "Held Items" -> "Held Items";
             case "Error Center" -> "Error Center";
