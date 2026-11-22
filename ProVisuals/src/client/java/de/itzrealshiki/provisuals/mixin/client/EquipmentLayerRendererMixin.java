@@ -11,7 +11,6 @@ import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
-import com.llamalad7.mixinextras.sugar.Local;
 
 /** Gives the trim overlay its own glow color, independent from the armor texture. */
 @Mixin(EquipmentLayerRenderer.class)
@@ -25,7 +24,7 @@ public abstract class EquipmentLayerRendererMixin {
             ),
             index = 8
     )
-    private int provisuals$trimOnlyOutline(int original, @Local(argsOnly = true) ItemStack stack) {
+    private int provisuals$trimOnlyOutline(int original) {
         return GlowOutlineRenderer.trimOutline(original);
     }
 }
