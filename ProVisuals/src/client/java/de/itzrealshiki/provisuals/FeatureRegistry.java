@@ -10,13 +10,14 @@ public final class FeatureRegistry {
     );
 
     public static final List<Feature> FEATURES = List.of(
-            new Feature("hits_energy_wave", "Hits — Energy Wave", "A short, violet ground wave at a registered hit location.", "Combat Visuals", false),
-            new Feature("visual_friends", "Visual Friends", "Local friend list with individual visual markers.", "Player Visuals", false),
+            new Feature("hits_energy_wave", "Hits — Energy Wave", "A violet ground wave at the target when you click an entity.", "Combat Visuals", true),
+            new Feature("visual_friends", "Visual Friends", "Add local friends and outline their visible name-tagged entities.", "Player Visuals", true),
             new Feature("glowing_ores", "Glowing Ores", "Soft fill and layered outline for the ore block under your crosshair.", "Block Glow", true),
-            new Feature("armor_glow", "Armor Outline Glow", "Vanilla outline for living entities wearing armor.", "Armor Glow", true),
-            new Feature("glowing_armor_trims", "Glowing Armor Trims", "Glow focused on armor trim details.", "Armor Glow", false),
-            new Feature("item_outline_glow", "Item Outline Glow", "Vanilla outline for dropped item entities in the world.", "Item Glow", true),
-            new Feature("ground_reflections", "Ground Reflections", "Configurable reflections for selected block surfaces.", "World Visuals", false),
+            new Feature("armor_glow", "Armor Piece Glow", "Outline each equipped armor piece separately.", "Armor Glow", true),
+            new Feature("glowing_armor_trims", "Glowing Armor Trims", "Glow the trim layer independently from the armor base.", "Armor Glow", true),
+            new Feature("item_outline_glow", "Dropped Item Glow", "Outline item entities dropped in the world.", "Item Glow", true),
+            new Feature("held_item_glow", "Held Item Glow", "Outline items in both hands using their model texture color.", "Item Glow", true),
+            new Feature("ground_reflections", "Ground Reflections", "Mirrored entity reflections on water and selected solid surfaces.", "World Visuals", true),
             new Feature("custom_sky", "Custom Sky", "Nuit skyboxes from resource packs; preserves the source texture resolution (GPU limit applies).", "World Visuals", true),
             new Feature("fullbright", "Fullbright", "Client-side brightness control.", "World Visuals", true),
             new Feature("armor_hud", "Armor HUD", "Armor icons with durability bars and low-durability warnings.", "HUD & Interface", false),
