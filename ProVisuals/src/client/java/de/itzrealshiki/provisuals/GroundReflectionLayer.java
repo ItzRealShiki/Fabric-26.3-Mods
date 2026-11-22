@@ -1,7 +1,5 @@
 package de.itzrealshiki.provisuals;
 
-import de.itzrealshiki.provisuals.mixin.client.EntityRendererTextureAccessor;
-
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
@@ -9,7 +7,6 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -51,8 +48,7 @@ public final class GroundReflectionLayer extends RenderLayer<LivingEntityRenderS
         double distanceFromSurface = Math.abs(state.y - surfaceY);
         if (distanceFromSurface > (water ? 0.22 : 0.14)) return;
 
-        Identifier texture = textureFor(state);
-        if (texture == null) return;
+        Identifier texture = Identifier.withDefaultNamespace("textures/block/white_concrete.png");
 
         float intensity = Math.max(0.0f, Math.min(1.0f, ProVisualsConfig.reflectionIntensity));
         float quality = switch (ProVisualsConfig.reflectionQuality) {
@@ -86,11 +82,4 @@ public final class GroundReflectionLayer extends RenderLayer<LivingEntityRenderS
         };
     }
 
-    private Identifier textureFor(EntityRenderState state) {
-        try {
-            return ((EntityRendererTextureAccessor) renderer).provisuals$getTextureLocation(state);
-        } catch (Throwable throwable) {
-            return null;
-        }
-    }
 }
