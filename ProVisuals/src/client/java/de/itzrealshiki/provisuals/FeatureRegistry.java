@@ -20,6 +20,7 @@ public final class FeatureRegistry {
             new Feature("item_outline_glow", "Dropped Item Glow", "Outline item entities dropped in the world.", "Item Glow", true),
             new Feature("held_item_glow", "Held Item Glow", "Outline items in both hands using their model texture color.", "Item Glow", true),
             new Feature("custom_sky", "Custom Sky", "Nuit skyboxes from resource packs; preserves the source texture resolution (GPU limit applies).", "World Visuals", true),
+            new Feature("black_hole_sky", "Black Hole Sky", "A huge animated black hole skybox for every dimension, with an ambient soundtrack.", "World Visuals", true),
             new Feature("fullbright", "Fullbright", "Client-side brightness control.", "World Visuals", true),
             new Feature("armor_hud", "Armor HUD", "Armor icons with durability bars and low-durability warnings.", "HUD & Interface", false),
             new Feature("target_hud", "Target HUD", "Compact target name, ping, health and armor display.", "HUD & Interface", false),
