@@ -193,17 +193,15 @@ public final class ProVisualsScreen extends Screen {
         }
 
         if ("PvP".equals(page) && "Combat Visuals".equals(selectedSubcategory)) {
-            int earthquakeY = y + 2;
-            drawActionRows.add(new ActionRow("Earthquake",
-                    onOff(ProVisualsConfig.earthquakeEnabled),
-                    "A 20-block circular wave briefly lifts nearby block visuals",
-                    x, earthquakeY, contentWidth, 37, false));
-            addRenderableWidget(Button.builder(ProVisualsUi.component(""), button -> {
-                ProVisualsConfig.earthquakeEnabled = !ProVisualsConfig.earthquakeEnabled;
-                ProVisualsConfig.save();
-                status = "Earthquake " + onOff(ProVisualsConfig.earthquakeEnabled);
-                rebuildWidgets();
-            }).bounds(x, earthquakeY, contentWidth, 37).build());
+            addSettingRow("Only on Mace Hit", onOff(ProVisualsConfig.onlyOnMaceHit),
+                    "Only trigger the enabled combat visuals when the held weapon is a Mace",
+                    x, y + 2, contentWidth,
+                    button -> {
+                        ProVisualsConfig.onlyOnMaceHit = !ProVisualsConfig.onlyOnMaceHit;
+                        ProVisualsConfig.save();
+                        status = "Only on Mace Hit " + onOff(ProVisualsConfig.onlyOnMaceHit);
+                        rebuildWidgets();
+                    });
         }
     }
 
