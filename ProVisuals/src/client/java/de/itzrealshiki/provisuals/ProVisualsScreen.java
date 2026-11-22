@@ -182,10 +182,18 @@ public final class ProVisualsScreen extends Screen {
                 ProVisualsConfig.toggle(feature.key());
                 boolean enabled = ProVisualsConfig.isEnabled(feature.key());
                 if ("custom_sky".equals(feature.key())) {
-                    boolean applied = CustomSkyBridge.setEnabled(enabled);
+                    boolean engineEnabled = enabled || ProVisualsConfig.isEnabled("black_hole_sky");
+                    boolean applied = CustomSkyBridge.setEnabled(engineEnabled);
                     status = applied
-                            ? CustomSkyBridge.statusText(enabled)
+                            ? CustomSkyBridge.statusText(engineEnabled)
                             : "Nuit is missing or could not be controlled — check the mod installation";
+                } else if ("black_hole_sky".equals(feature.key())) {
+                    boolean applied = BlackHoleSkyController.setEnabled(enabled);
+                    boolean engineApplied = CustomSkyBridge.setEnabled(
+                            enabled || ProVisualsConfig.isEnabled("custom_sky"));
+                    status = applied && engineApplied
+                            ? "Black Hole Sky " + onOff(enabled) + " — all dimensions"
+                            : "Black Hole Sky could not be initialized — check Nuit and the Error Center";
                 } else {
                     status = feature.rendererConnected()
                             ? feature.title() + " " + onOff(enabled)
@@ -194,6 +202,29 @@ public final class ProVisualsScreen extends Screen {
                 rebuildWidgets();
             }).bounds(x, y, contentWidth, rowHeight).build());
             y += rowHeight + rowGap;
+        }
+
+        if ("World".equals(page) && "World Visuals".equals(selectedSubcategory)) {
+            addSettingRow("Black Hole Music", onOff(ProVisualsConfig.blackHoleMusicEnabled),
+                    "Play the original ambient soundtrack while the Black Hole Sky is active",
+                    x, y + 2, contentWidth,
+                    button -> {
+                        ProVisualsConfig.blackHoleMusicEnabled = !ProVisualsConfig.blackHoleMusicEnabled;
+                        ProVisualsConfig.save();
+                        BlackHoleSkyController.refreshMusicSettings();
+                        status = "Black Hole Music " + onOff(ProVisualsConfig.blackHoleMusicEnabled);
+                        rebuildWidgets();
+                    });
+            addSettingRow("Music Volume", Math.round(ProVisualsConfig.blackHoleMusicVolume * 100) + "%",
+                    "Cycle the separate Black Hole soundtrack volume",
+                    x, y + 45, contentWidth,
+                    button -> {
+                        ProVisualsConfig.blackHoleMusicVolume = nextBlackHoleMusicVolume(ProVisualsConfig.blackHoleMusicVolume);
+                        ProVisualsConfig.save();
+                        BlackHoleSkyController.refreshMusicSettings();
+                        status = "Black Hole Music Volume: " + Math.round(ProVisualsConfig.blackHoleMusicVolume * 100) + "%";
+                        rebuildWidgets();
+                    });
         }
 
         if ("PvP".equals(page) && "Combat Visuals".equals(selectedSubcategory)) {
@@ -568,6 +599,16 @@ public final class ProVisualsScreen extends Screen {
     }
     private static String surfaceLabel(String value) {
         return switch (value) { case "SELECTED" -> "Selected blocks"; case "WATER_ONLY" -> "Water only"; default -> "All blocks"; };
+    }
+
+    private static float nextBlackHoleMusicVolume(float current) {
+        int value = Math.round(current * 100);
+        return switch (value) {
+            case 25 -> 0.40f;
+            case 40 -> 0.55f;
+            case 55 -> 0.70f;
+            default -> 0.25f;
+        };
     }
 
     private static String nextKillEffectStyle(String current) {
