@@ -22,7 +22,10 @@ public final class ProVisualsClient implements ClientModInitializer {
     public void onInitializeClient() {
         Diagnostics.loadPreviousEntries();
         ProVisualsConfig.load();
+        FriendManager.load();
         GlowOutlineRenderer.register();
+        EnergyWaveRenderer.register();
+        GroundReflectionRenderer.register();
         skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.provisuals.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY));
