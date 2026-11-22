@@ -1,6 +1,5 @@
 package de.itzrealshiki.provisuals;
 
-import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -37,7 +36,7 @@ public final class HeldItemGlowRenderer {
             ItemStackRenderStateAccessor access = (ItemStackRenderStateAccessor) state;
             ItemStackRenderState.LayerRenderState[] layers = access.provisuals$getLayers();
             int active = Math.min(access.provisuals$getActiveLayerCount(), layers.length);
-            IntList tintLayers = state.tintLayers();
+            int[] tintLayers = ((ItemStackRenderStateLayerAccessor) layers[i]).provisuals$getTintLayers();
 
             long red = 0L;
             long green = 0L;
@@ -55,8 +54,8 @@ public final class HeldItemGlowRenderer {
                     if (sample == 0) continue;
 
                     int tintIndex = quad.materialInfo().tintIndex();
-                    if (tintIndex >= 0 && tintIndex < tintLayers.size()) {
-                        int tint = tintLayers.getInt(tintIndex);
+                    if (tintIndex >= 0 && tintIndex < tintLayers.length) {
+                        int tint = tintLayers[tintIndex];
                         sample = multiplyTint(sample, tint);
                     }
 
