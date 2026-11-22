@@ -4,7 +4,6 @@ import de.itzrealshiki.provisuals.HeldItemGlowRenderer;
 import de.itzrealshiki.provisuals.ProVisualsConfig;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.item.ItemDisplayContext;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
