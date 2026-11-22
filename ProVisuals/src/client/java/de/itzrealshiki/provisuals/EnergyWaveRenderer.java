@@ -10,7 +10,6 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
@@ -25,10 +24,10 @@ import java.util.List;
 
 /** Purely visual local hit wave and optional earthquake; world block states are never changed. */
 public final class EnergyWaveRenderer {
-    private record Wave(Vec3 position, long startedAt) {}
+    private record Wave(Vec3 position, long startedAt, int color) {}
     private record ShapeBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {}
     private record LiftBlock(int x, int y, int z, float distance, List<ShapeBox> boxes) {}
-    private record Earthquake(Vec3 anchor, long startedAt, List<LiftBlock> blocks) {}
+    private record Earthquake(Vec3 anchor, long startedAt, List<LiftBlock> blocks, int color) {}
 
     private static final List<Wave> WAVES = new ArrayList<>();
     private static final long DURATION_MS = 620L;
@@ -51,21 +50,22 @@ public final class EnergyWaveRenderer {
             Minecraft client = Minecraft.getInstance();
             boolean waveEnabled = ProVisualsConfig.isEnabled("hits_energy_wave");
             boolean earthquakeEnabled = ProVisualsConfig.isEnabled("earthquake");
-            boolean maceRequirementMet = !ProVisualsConfig.onlyOnMaceHit
-                    || player.getItemInHand(hand).is(Items.MACE);
+            String targetName = entity.getName().getString();
+            int effectColor = FriendManager.isFriend(targetName)
+                    ? FriendManager.colorForName(targetName) : ProVisualsUi.accentPrimary();
             if (level.isClientSide() && player == client.player && entity != player
-                    && (waveEnabled || earthquakeEnabled) && maceRequirementMet) {
-                if (waveEnabled) addWave(entity.position());
-                if (earthquakeEnabled) addEarthquake(player, level);
+                    && (waveEnabled || earthquakeEnabled)) {
+                if (waveEnabled) addWave(entity.position(), effectColor);
+                if (earthquakeEnabled) addEarthquake(player, level, effectColor);
             }
             return InteractionResult.PASS;
         });
         LevelRenderEvents.COLLECT_SUBMITS.register(EnergyWaveRenderer::submitWaves);
     }
 
-    private static synchronized void addWave(Vec3 position) {
+    private static synchronized void addWave(Vec3 position, int color) {
         long now = System.currentTimeMillis();
-        WAVES.add(new Wave(position, now));
+        WAVES.add(new Wave(position, now, color));
         while (WAVES.size() > 16) WAVES.remove(0);
     }
 
@@ -73,7 +73,7 @@ public final class EnergyWaveRenderer {
      * Captures the exposed ground surface in a 20-block radius once per hit.
      * Only render-shape snapshots are stored; no block is moved or modified in the world.
      */
-    private static synchronized void addEarthquake(Player player, BlockGetter level) {
+    private static synchronized void addEarthquake(Player player, BlockGetter level, int color) {
         BlockPos origin = player.blockPosition();
         List<LiftBlock> blocks = new ArrayList<>();
         int centerX = origin.getX();
@@ -117,7 +117,7 @@ public final class EnergyWaveRenderer {
 
         if (!blocks.isEmpty()) {
             activeEarthquake = new Earthquake(
-                    new Vec3(centerX, centerY, centerZ), System.currentTimeMillis(), List.copyOf(blocks));
+                    new Vec3(centerX, centerY, centerZ), System.currentTimeMillis(), List.copyOf(blocks), color);
         }
     }
 
@@ -150,7 +150,7 @@ public final class EnergyWaveRenderer {
             float progress = Math.max(0.0f, Math.min(1.0f, (now - wave.startedAt()) / (float) DURATION_MS));
             float radius = 0.18f + progress * 2.25f;
             int alpha = Math.max(0, Math.round((1.0f - progress) * 170.0f));
-            int color = ProVisualsUi.accentWithAlpha(ProVisualsUi.accentPrimary(), alpha);
+            int color = ProVisualsUi.accentWithAlpha(wave.color(), alpha);
             PoseStack poseStack = context.poseStack();
             poseStack.pushPose();
             poseStack.translate(wave.position().x - camera.x, wave.position().y - camera.y + 0.035,
@@ -195,8 +195,8 @@ public final class EnergyWaveRenderer {
                         float lift = MAX_BLOCK_LIFT * pulse;
                         int topAlpha = Math.max(0, Math.min(180, Math.round(150.0f * pulse)));
                         int sideAlpha = Math.round(topAlpha * 0.62f);
-                        int topColor = ProVisualsUi.accentWithAlpha(ProVisualsUi.accentLight(), topAlpha);
-                        int sideColor = ProVisualsUi.accentWithAlpha(ProVisualsUi.accentPrimary(), sideAlpha);
+                        int topColor = ProVisualsUi.accentWithAlpha(lighten(earthquake.color(), 0.30f), topAlpha);
+                        int sideColor = ProVisualsUi.accentWithAlpha(earthquake.color(), sideAlpha);
 
                         for (ShapeBox box : block.boxes()) {
                             drawLiftedBox(pose, buffer, block.x() + box.minX(),
@@ -207,6 +207,16 @@ public final class EnergyWaveRenderer {
                     }
                 });
         poseStack.popPose();
+    }
+
+    private static int lighten(int color, float amount) {
+        int red = (color >>> 16) & 0xFF;
+        int green = (color >>> 8) & 0xFF;
+        int blue = color & 0xFF;
+        red += Math.round((255 - red) * amount);
+        green += Math.round((255 - green) * amount);
+        blue += Math.round((255 - blue) * amount);
+        return 0xFF000000 | (red << 16) | (green << 8) | blue;
     }
 
     private static void drawLiftedBox(PoseStack.Pose pose, VertexConsumer out,
