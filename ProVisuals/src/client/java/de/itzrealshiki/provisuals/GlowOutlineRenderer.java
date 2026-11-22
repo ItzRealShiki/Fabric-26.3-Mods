@@ -7,25 +7,21 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.client.renderer.entity.state.ItemEntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.BlockOutlineRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/**
- * Client-side outline rendering for ore blocks, armored entities and dropped items.
- *
- * Entity outlines are assigned to Minecraft 26.3's per-frame render states during
- * extraction. Changing Entity#setGlowingTag on a client is not reliable in 26.3:
- * its client-side implementation reads the old shared flag before writing it back.
- */
+/** Client-side outline render-state hooks for dropped items, friends and ore blocks. */
 public final class GlowOutlineRenderer {
-    private static final int OUTLINE_COLOR = 0xFF9A6BFF;
+    public static final int VIOLET = 0xFF9A6BFF;
+    public static final int FRIEND_COLOR = 0xFFFF83C7;
+    public static final int TRIM_COLOR = 0xFFFFD17A;
     private static boolean registered;
 
     private GlowOutlineRenderer() {
@@ -41,33 +37,37 @@ public final class GlowOutlineRenderer {
     }
 
     /**
-     * Applies the outline directly to the render states that Minecraft will submit
-     * to its outline feature renderer. This covers the entity body and attached
-     * armor layers, plus dropped item models.
+     * Assigns entity outlines during 26.3 render-state extraction.
+     * Armor is deliberately excluded here: its four slots are handled separately
+     * by HumanoidArmorLayerMixin so one equipped piece cannot outline the whole body.
      */
     private static void applyEntityOutlines(LevelRenderState levelState) {
-        boolean armorGlow = ProVisualsConfig.isEnabled("armor_glow");
         boolean itemGlow = ProVisualsConfig.isEnabled("item_outline_glow");
-        if (!armorGlow && !itemGlow) return;
+        boolean friendsGlow = ProVisualsConfig.isEnabled("visual_friends");
+        if (!itemGlow && !friendsGlow) return;
 
         for (EntityRenderState state : levelState.entityRenderStates) {
             if (itemGlow && state instanceof ItemEntityRenderState) {
-                state.outlineColor = OUTLINE_COLOR;
+                state.outlineColor = VIOLET;
                 continue;
             }
 
-            if (armorGlow && state instanceof HumanoidRenderState humanoid
-                    && hasArmor(humanoid)) {
-                state.outlineColor = OUTLINE_COLOR;
+            if (friendsGlow && state.nameTag != null
+                    && FriendManager.isFriend(state.nameTag.getString())) {
+                state.outlineColor = FRIEND_COLOR;
             }
         }
     }
 
-    private static boolean hasArmor(HumanoidRenderState state) {
-        return !state.headEquipment.isEmpty()
-                || !state.chestEquipment.isEmpty()
-                || !state.legsEquipment.isEmpty()
-                || !state.feetEquipment.isEmpty();
+    /** Outline color supplied to the individual equipment piece render call. */
+    public static int armorPieceOutline(ItemStack stack, int original) {
+        return ProVisualsConfig.isEnabled("armor_glow") && stack != null && !stack.isEmpty()
+                ? VIOLET : original;
+    }
+
+    /** A trim is a separate submitted model, so it receives its own independent color. */
+    public static int trimOutline(int original) {
+        return ProVisualsConfig.isEnabled("glowing_armor_trims") ? TRIM_COLOR : 0;
     }
 
     private static boolean renderOreOutline(LevelRenderContext context, BlockOutlineRenderState outline) {
