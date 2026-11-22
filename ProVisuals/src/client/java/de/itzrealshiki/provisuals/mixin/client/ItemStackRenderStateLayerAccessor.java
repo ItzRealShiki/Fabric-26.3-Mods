@@ -7,6 +7,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(ItemStackRenderState.LayerRenderState.class)
 public interface ItemStackRenderStateLayerAccessor {
+    @Accessor("tintLayers")
+    int[] provisuals$getTintLayers();
+
     @Accessor("quads")
     ItemQuads provisuals$getQuads();
 }
