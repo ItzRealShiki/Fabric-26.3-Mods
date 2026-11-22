@@ -17,7 +17,6 @@ public final class FeatureRegistry {
             new Feature("glowing_armor_trims", "Glowing Armor Trims", "Glow the trim layer independently from the armor base.", "Armor Glow", true),
             new Feature("item_outline_glow", "Dropped Item Glow", "Outline item entities dropped in the world.", "Item Glow", true),
             new Feature("held_item_glow", "Held Item Glow", "Outline items in both hands using their model texture color.", "Item Glow", true),
-            new Feature("ground_reflections", "Ground Reflections", "Mirrored entity reflections on water and selected solid surfaces.", "World Visuals", true),
             new Feature("custom_sky", "Custom Sky", "Nuit skyboxes from resource packs; preserves the source texture resolution (GPU limit applies).", "World Visuals", true),
             new Feature("fullbright", "Fullbright", "Client-side brightness control.", "World Visuals", true),
             new Feature("armor_hud", "Armor HUD", "Armor icons with durability bars and low-durability warnings.", "HUD & Interface", false),
