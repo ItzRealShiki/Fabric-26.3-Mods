@@ -84,6 +84,14 @@ public final class ProVisualsScreen extends Screen {
                 status = "Page: " + navigationLabel(category);
             } else {
                 selectedSubcategory = subcategory;
+                if ("World".equals(category) && "Sky Lyrics".equals(subcategory)) {
+                    selectedSubcategory = "World Visuals";
+                    if (!MusicLyricsBridge.openNativeSkySettings(this)) {
+                        status = "SkyLyrics is not ready — try again in a moment";
+                        rebuildWidgets();
+                    }
+                    return;
+                }
                 status = subcategoryLabel(subcategory);
             }
             rebuildWidgets();
