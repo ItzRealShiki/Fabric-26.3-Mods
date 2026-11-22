@@ -163,11 +163,19 @@ public final class ProVisualsScreen extends Screen {
 
     private void buildFriendsPage(int x, int py, int contentWidth) {
         sectionHeaders.add(new SectionHeader("Visual Friends",
-                "Add a username to mark that player with a local outline", py + 72));
+                "Add players and choose whether their local outlines are visible", py + 72));
+
+        addSettingRow("Friend outlines", onOff(ProVisualsConfig.isEnabled("visual_friends")),
+                "Outline listed players when their name tags are visible", x, py + 108, contentWidth,
+                b -> {
+                    ProVisualsConfig.toggle("visual_friends");
+                    status = "Friend outlines " + onOff(ProVisualsConfig.isEnabled("visual_friends"));
+                    rebuildWidgets();
+                });
 
         int addButtonWidth = 82;
         int gap = 8;
-        friendNameInput = new EditBox(font, x, py + 112, contentWidth - addButtonWidth - gap,
+        friendNameInput = new EditBox(font, x, py + 151, contentWidth - addButtonWidth - gap,
                 31, ProVisualsUi.component("Minecraft username"));
         friendNameInput.setMaxLength(16);
         addRenderableWidget(friendNameInput);
@@ -180,9 +188,9 @@ public final class ProVisualsScreen extends Screen {
                 status = "Enter a valid, non-duplicate Minecraft username";
             }
             rebuildWidgets();
-        }).bounds(x + contentWidth - addButtonWidth, py + 112, addButtonWidth, 31).build());
+        }).bounds(x + contentWidth - addButtonWidth, py + 151, addButtonWidth, 31).build());
 
-        int y = py + 156;
+        int y = py + 194;
         List<String> friends = FriendManager.friends();
         if (friends.isEmpty()) {
             drawActionRows.add(new ActionRow("No friends added", "",
@@ -190,7 +198,7 @@ public final class ProVisualsScreen extends Screen {
             return;
         }
 
-        for (String friend : friends.stream().limit(6).toList()) {
+        for (String friend : friends.stream().limit(5).toList()) {
             drawActionRows.add(new ActionRow(friend, "REMOVE",
                     "Click this row to remove the friend", x, y, contentWidth, 31, true));
             addRenderableWidget(Button.builder(ProVisualsUi.component(""), button -> {
@@ -198,7 +206,7 @@ public final class ProVisualsScreen extends Screen {
                 status = "Removed friend: " + friend;
                 rebuildWidgets();
             }).bounds(x, y, contentWidth, 31).build());
-            y += 38;
+            y += 36;
         }
     }
 
