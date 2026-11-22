@@ -40,3 +40,9 @@ Requires Java 25, Minecraft 26.3, Fabric Loader 0.20.1, Fabric API 0.166.2+26.3 
 From this directory run: gradle --no-daemon clean build
 
 Output: build/libs/provisuals-0.1.0.jar
+
+## Black Hole Sky
+- The optional Black Hole Sky module registers a permanent Nuit skybox with no dimension filters, so it can render in the Overworld, Nether, End and other dimensions.
+- The skybox texture and original 64-second ambient loop are generated and packaged during the Gradle build.
+- Enable Black Hole Sky under World → World Visuals. The soundtrack has its own enable and volume controls.
+- Nuit must be installed for custom sky rendering.
