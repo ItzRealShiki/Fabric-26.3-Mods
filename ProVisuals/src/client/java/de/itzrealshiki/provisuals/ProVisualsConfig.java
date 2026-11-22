@@ -21,6 +21,7 @@ public final class ProVisualsConfig {
     public static boolean oreInteriorGlow = true;
     public static boolean oreOutlineGlow = true;
     public static boolean heldItemTextureColor = true;
+    public static boolean earthquakeEnabled;
     public static boolean musicIslandEnabled = true;
     public static boolean genreRecognitionEnabled = true;
     public static boolean roundedCorners = true;
@@ -63,6 +64,7 @@ public final class ProVisualsConfig {
             oreInteriorGlow = Boolean.parseBoolean(properties.getProperty("ores.interior", "true"));
             oreOutlineGlow = Boolean.parseBoolean(properties.getProperty("ores.outline", "true"));
             heldItemTextureColor = Boolean.parseBoolean(properties.getProperty("items.texture_color", "true"));
+            earthquakeEnabled = Boolean.parseBoolean(properties.getProperty("combat.earthquake.enabled", "false"));
             musicIslandEnabled = Boolean.parseBoolean(properties.getProperty("music.island.enabled", "true"));
             genreRecognitionEnabled = Boolean.parseBoolean(properties.getProperty("music.genre_recognition.enabled", "true"));
             roundedCorners = Boolean.parseBoolean(properties.getProperty("ui.rounded_corners", "true"));
@@ -75,6 +77,7 @@ public final class ProVisualsConfig {
             roundedCorners = true;
             genreRecognitionEnabled = true;
             heldItemTextureColor = true;
+            earthquakeEnabled = false;
             hotkeyMigrationDone = false;
         }
     }
@@ -110,6 +113,7 @@ public final class ProVisualsConfig {
         properties.setProperty("ores.interior", String.valueOf(oreInteriorGlow));
         properties.setProperty("ores.outline", String.valueOf(oreOutlineGlow));
         properties.setProperty("items.texture_color", String.valueOf(heldItemTextureColor));
+        properties.setProperty("combat.earthquake.enabled", String.valueOf(earthquakeEnabled));
         properties.setProperty("music.island.enabled", String.valueOf(musicIslandEnabled));
         properties.setProperty("music.genre_recognition.enabled", String.valueOf(genreRecognitionEnabled));
         properties.setProperty("ui.rounded_corners", String.valueOf(roundedCorners));
