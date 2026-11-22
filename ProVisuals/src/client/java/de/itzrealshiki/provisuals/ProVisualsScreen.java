@@ -17,6 +17,8 @@ public final class ProVisualsScreen extends Screen {
     private record ActionRow(String title, String value, String description,
                              int x, int y, int width, int height, boolean secondary) {}
     private record AccentSwatch(String palette, int x, int y, int width, int height, int color) {}
+    private record FriendRow(String name, int color, boolean online,
+                             int x, int y, int width, int height) {}
 
     private String page = "Overview";
     private String selectedSubcategory = "Combat Visuals";
@@ -28,6 +30,7 @@ public final class ProVisualsScreen extends Screen {
     private final List<SectionHeader> sectionHeaders = new ArrayList<>();
     private final List<ActionRow> drawActionRows = new ArrayList<>();
     private final List<AccentSwatch> accentSwatches = new ArrayList<>();
+    private final List<FriendRow> friendRows = new ArrayList<>();
 
     public ProVisualsScreen() {
         super(ProVisualsUi.component("ProVisuals"));
@@ -41,6 +44,7 @@ public final class ProVisualsScreen extends Screen {
         sectionHeaders.clear();
         drawActionRows.clear();
         accentSwatches.clear();
+        friendRows.clear();
         friendNameInput = null;
 
         int contentX = panelX() + 164;
@@ -202,15 +206,24 @@ public final class ProVisualsScreen extends Screen {
                         status = "Only on Mace Hit " + onOff(ProVisualsConfig.onlyOnMaceHit);
                         rebuildWidgets();
                     });
+            addSettingRow("Kill Effect Style", killEffectLabel(ProVisualsConfig.killEffectStyle),
+                    "Choose the effect for normal player kills; friends use their own-color lightning",
+                    x, y + 43, contentWidth,
+                    button -> {
+                        ProVisualsConfig.killEffectStyle = nextKillEffectStyle(ProVisualsConfig.killEffectStyle);
+                        ProVisualsConfig.save();
+                        status = "Kill Effect: " + killEffectLabel(ProVisualsConfig.killEffectStyle);
+                        rebuildWidgets();
+                    });
         }
     }
 
     private void buildFriendsPage(int x, int py, int contentWidth) {
         sectionHeaders.add(new SectionHeader("Visual Friends",
-                "Add players and choose whether their local outlines are visible", py + 72));
+                "Personal accent colors, local glow and current-server presence", py + 72));
 
         addSettingRow("Friend outlines", onOff(ProVisualsConfig.isEnabled("visual_friends")),
-                "Outline listed players when their name tags are visible", x, py + 108, contentWidth,
+                "Use each friend's personal color for their player and armor glow", x, py + 108, contentWidth,
                 b -> {
                     ProVisualsConfig.toggle("visual_friends");
                     status = "Friend outlines " + onOff(ProVisualsConfig.isEnabled("visual_friends"));
@@ -242,16 +255,33 @@ public final class ProVisualsScreen extends Screen {
             return;
         }
 
-        for (String friend : friends.stream().limit(5).toList()) {
-            drawActionRows.add(new ActionRow(friend, "REMOVE",
-                    "Click this row to remove the friend", x, y, contentWidth, 31, true));
+        int removeWidth = 62;
+        int rowGap = 7;
+        for (String friend : friends.stream().limit(4).toList()) {
+            int rowWidth = contentWidth - removeWidth - rowGap;
+            friendRows.add(new FriendRow(friend, FriendManager.colorForName(friend),
+                    FriendManager.isOnline(friend), x, y, rowWidth, 31));
+            addRenderableWidget(Button.builder(ProVisualsUi.component(""), button -> {
+                int color = FriendManager.cycleColor(friend);
+                status = friend + " color: " + FriendManager.colorNameFor(friend);
+                rebuildWidgets();
+            }).bounds(x, y, rowWidth, 31).build());
+
             addRenderableWidget(Button.builder(ProVisualsUi.component(""), button -> {
                 FriendManager.remove(friend);
                 status = "Removed friend: " + friend;
                 rebuildWidgets();
-            }).bounds(x, y, contentWidth, 31).build());
+            }).bounds(x + rowWidth + rowGap, y, removeWidth, 31).build());
+
+            drawActionRows.add(new ActionRow("Remove", "×",
+                    "Remove " + friend + " from your local friends list",
+                    x + rowWidth + rowGap, y, removeWidth, 31, true));
             y += 36;
         }
+
+        drawActionRows.add(new ActionRow("Presence", "Current server only",
+                "Shows when a listed friend appears in this server's player list",
+                x, py + 345, contentWidth, 30, false));
     }
 
     private void buildMusicPage(int x, int py, int contentWidth) {
@@ -549,6 +579,24 @@ public final class ProVisualsScreen extends Screen {
         return switch (value) { case "SELECTED" -> "Selected blocks"; case "WATER_ONLY" -> "Water only"; default -> "All blocks"; };
     }
 
+    private static String nextKillEffectStyle(String current) {
+        List<String> styles = List.of("SKULL_RISE", "LIGHTNING", "SOUL_BURST",
+                "ENDER_BURST", "FIREWORKS", "TOTEM_POP");
+        int index = styles.indexOf(current);
+        return styles.get((index + 1) % styles.size());
+    }
+
+    private static String killEffectLabel(String value) {
+        return switch (value) {
+            case "LIGHTNING" -> "Lightning";
+            case "SOUL_BURST" -> "Soul Burst";
+            case "ENDER_BURST" -> "Ender Burst";
+            case "FIREWORKS" -> "Fireworks";
+            case "TOTEM_POP" -> "Totem Pop";
+            default -> "Skull Rise";
+        };
+    }
+
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         graphics.fillGradient(0, 0, width, height, 0xF2090911, 0xF2171027);
@@ -612,13 +660,14 @@ public final class ProVisualsScreen extends Screen {
                     swatch.width() - 4, swatch.height() - 4, 6, swatch.color());
             graphics.centeredText(font, ProVisualsUi.component(swatch.palette()),
                     swatch.x() + swatch.width() / 2, swatch.y() + swatch.height() + 8,
-                    selected ? ProVisualsUi.accentLight() : 0xFFAAA4BA, selected);
+                    selected ? ProVisualsUi.accentLight() : 0xFFAAA4BA);
         }
     }
 
     private void renderFeaturePage(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         renderSectionHeaders(graphics);
         if ("PvP".equals(page) && "Player Visuals".equals(selectedSubcategory)) {
+            for (FriendRow row : friendRows) renderFriendRow(graphics, row, mouseX, mouseY);
             for (ActionRow row : drawActionRows) renderActionRow(graphics, row, mouseX, mouseY);
             return;
         }
@@ -692,6 +741,22 @@ public final class ProVisualsScreen extends Screen {
             ProVisualsUi.text(graphics, font, header.subtitle(), panelX() + 164, header.y() + 15,
                     0xFF9F96B0, false);
         }
+    }
+
+    private void renderFriendRow(GuiGraphicsExtractor graphics, FriendRow row, int mouseX, int mouseY) {
+        boolean hovered = inside(row.x(), row.y(), row.width(), row.height(), mouseX, mouseY);
+        ProVisualsUi.fill(graphics, row.x(), row.y(), row.width(), row.height(), 10,
+                hovered ? 0xFF282338 : 0xFF1D1B29);
+        ProVisualsUi.fill(graphics, row.x() + 9, row.y() + 8, 15, 15, 7, row.color());
+        ProVisualsUi.text(graphics, font, row.name(), row.x() + 32, row.y() + 5,
+                0xFFF1EDFA, true);
+        ProVisualsUi.text(graphics, font, FriendManager.colorNameFor(row.name()),
+                row.x() + 32, row.y() + 18, 0xFFAAA4BA, false);
+        String presence = row.online() ? "ONLINE" : "OFFLINE";
+        int presenceColor = row.online() ? 0xFF78D69A : 0xFF8D8798;
+        ProVisualsUi.text(graphics, font, presence,
+                row.x() + row.width() - ProVisualsUi.width(font, presence) - 10,
+                row.y() + 10, presenceColor, true);
     }
 
     private void renderActionRow(GuiGraphicsExtractor graphics, ActionRow row, int mouseX, int mouseY) {
