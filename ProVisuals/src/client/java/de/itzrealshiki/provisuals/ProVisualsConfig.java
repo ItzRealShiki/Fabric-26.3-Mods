@@ -21,7 +21,6 @@ public final class ProVisualsConfig {
     public static boolean oreInteriorGlow = true;
     public static boolean oreOutlineGlow = true;
     public static boolean heldItemTextureColor = true;
-    public static boolean onlyOnMaceHit;
     public static String killEffectStyle = "SKULL_RISE";
     public static String accentPalette = "VIOLET";
     public static final java.util.List<String> ACCENT_PALETTES =
@@ -74,7 +73,6 @@ public final class ProVisualsConfig {
                 MODULES.put("earthquake", Boolean.parseBoolean(
                         properties.getProperty("combat.earthquake.enabled", "false")));
             }
-            onlyOnMaceHit = Boolean.parseBoolean(properties.getProperty("combat.energy_wave.only_mace_hit", "false"));
             killEffectStyle = properties.getProperty("combat.kill_effect.style", "SKULL_RISE")
                     .toUpperCase(java.util.Locale.ROOT);
             if (!java.util.List.of("SKULL_RISE", "LIGHTNING", "SOUL_BURST", "ENDER_BURST", "FIREWORKS", "TOTEM_POP")
@@ -94,7 +92,6 @@ public final class ProVisualsConfig {
             roundedCorners = true;
             genreRecognitionEnabled = true;
             heldItemTextureColor = true;
-            onlyOnMaceHit = false;
             killEffectStyle = "SKULL_RISE";
             accentPalette = "VIOLET";
             hotkeyMigrationDone = false;
@@ -132,7 +129,6 @@ public final class ProVisualsConfig {
         properties.setProperty("ores.interior", String.valueOf(oreInteriorGlow));
         properties.setProperty("ores.outline", String.valueOf(oreOutlineGlow));
         properties.setProperty("items.texture_color", String.valueOf(heldItemTextureColor));
-        properties.setProperty("combat.energy_wave.only_mace_hit", String.valueOf(onlyOnMaceHit));
         properties.setProperty("combat.kill_effect.style", killEffectStyle);
         properties.setProperty("ui.accent_palette", accentPalette);
         properties.setProperty("music.island.enabled", String.valueOf(musicIslandEnabled));
