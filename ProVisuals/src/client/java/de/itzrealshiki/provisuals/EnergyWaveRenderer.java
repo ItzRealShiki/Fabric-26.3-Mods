@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
@@ -48,8 +49,10 @@ public final class EnergyWaveRenderer {
         registered = true;
         AttackEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {
             Minecraft client = Minecraft.getInstance();
+            boolean maceRequirementMet = !ProVisualsConfig.onlyOnMaceHit
+                    || player.getItemInHand(hand).is(Items.MACE);
             if (level.isClientSide() && player == client.player && entity != player
-                    && ProVisualsConfig.isEnabled("hits_energy_wave")) {
+                    && ProVisualsConfig.isEnabled("hits_energy_wave") && maceRequirementMet) {
                 addWave(entity.position());
                 if (ProVisualsConfig.earthquakeEnabled) {
                     addEarthquake(player, level);
@@ -141,7 +144,7 @@ public final class EnergyWaveRenderer {
             float progress = Math.max(0.0f, Math.min(1.0f, (now - wave.startedAt()) / (float) DURATION_MS));
             float radius = 0.18f + progress * 2.25f;
             int alpha = Math.max(0, Math.round((1.0f - progress) * 170.0f));
-            int color = (alpha << 24) | 0x009A6BFF;
+            int color = ProVisualsUi.accentWithAlpha(ProVisualsUi.accentPrimary(), alpha);
             PoseStack poseStack = context.poseStack();
             poseStack.pushPose();
             poseStack.translate(wave.position().x - camera.x, wave.position().y - camera.y + 0.035,
@@ -182,8 +185,8 @@ public final class EnergyWaveRenderer {
                         float lift = MAX_BLOCK_LIFT * pulse;
                         int topAlpha = Math.max(0, Math.min(180, Math.round(150.0f * pulse)));
                         int sideAlpha = Math.round(topAlpha * 0.62f);
-                        int topColor = (topAlpha << 24) | 0x00C9A5FF;
-                        int sideColor = (sideAlpha << 24) | 0x007F58E8;
+                        int topColor = ProVisualsUi.accentWithAlpha(ProVisualsUi.accentLight(), topAlpha);
+                        int sideColor = ProVisualsUi.accentWithAlpha(ProVisualsUi.accentPrimary(), sideAlpha);
 
                         for (ShapeBox box : block.boxes()) {
                             drawLiftedBox(pose, buffer, block.x() + box.minX(),
