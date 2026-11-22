@@ -194,8 +194,8 @@ public final class FriendManager {
             if (friendName == null) continue;
 
             String serverName = currentServerName(client);
-            client.gui.setOverlayMessage(
-                    Component.literal("Friend online: " + friendName + " joined " + serverName), false);
+            client.showDebugChat(
+                    Component.literal("Friend online: " + friendName + " joined " + serverName));
         }
 
         ONLINE_PLAYERS.clear();
