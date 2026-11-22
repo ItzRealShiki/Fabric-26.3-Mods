@@ -16,6 +16,7 @@ public final class ProVisualsScreen extends Screen {
     private record SubcategoryTab(String title, int x, int y, int width, int height) {}
     private record ActionRow(String title, String value, String description,
                              int x, int y, int width, int height, boolean secondary) {}
+    private record AccentSwatch(String palette, int x, int y, int width, int height, int color) {}
 
     private String page = "Overview";
     private String selectedSubcategory = "Combat Visuals";
@@ -26,6 +27,7 @@ public final class ProVisualsScreen extends Screen {
     private final List<NavigationRow> navigationRows = new ArrayList<>();
     private final List<SectionHeader> sectionHeaders = new ArrayList<>();
     private final List<ActionRow> drawActionRows = new ArrayList<>();
+    private final List<AccentSwatch> accentSwatches = new ArrayList<>();
 
     public ProVisualsScreen() {
         super(ProVisualsUi.component("ProVisuals"));
@@ -38,6 +40,7 @@ public final class ProVisualsScreen extends Screen {
         navigationRows.clear();
         sectionHeaders.clear();
         drawActionRows.clear();
+        accentSwatches.clear();
         friendNameInput = null;
 
         int contentX = panelX() + 164;
@@ -108,11 +111,11 @@ public final class ProVisualsScreen extends Screen {
                     ? row.category().equals(page)
                     : row.category().equals(page) && row.subcategory().equals(selectedSubcategory);
             boolean hovered = inside(row.x(), row.y(), row.width(), row.height(), mouseX, mouseY);
-            int background = selected ? 0xFF392A56 : hovered ? 0xFF262334 : 0x001D1B29;
+            int background = selected ? ProVisualsUi.accentDeep() : hovered ? 0xFF262334 : 0x001D1B29;
             if ((background >>> 24) != 0) {
                 ProVisualsUi.fill(graphics, row.x(), row.y(), row.width(), row.height(), 7, background);
             }
-            int color = selected ? 0xFFF1E9FF
+            int color = selected ? ProVisualsUi.accentLight()
                     : row.subcategory() != null ? 0xFFAAA4BA : 0xFFD1CADF;
             ProVisualsUi.text(graphics, font, row.label(), row.x() + 8, row.y() + 6,
                     color, selected);
@@ -122,6 +125,23 @@ public final class ProVisualsScreen extends Screen {
     private void buildOverview(int x, int py, int contentWidth) {
         sectionHeaders.add(new SectionHeader("Welcome",
                 "Choose a category from the main navigation", py + 76));
+
+        int gap = 7;
+        int swatchWidth = Math.max(28, (contentWidth - gap * 5) / 6);
+        int swatchY = py + 206;
+        int swatchHeight = 35;
+        for (int i = 0; i < ProVisualsConfig.ACCENT_PALETTES.size(); i++) {
+            String palette = ProVisualsConfig.ACCENT_PALETTES.get(i);
+            int swatchX = x + i * (swatchWidth + gap);
+            accentSwatches.add(new AccentSwatch(palette, swatchX, swatchY,
+                    swatchWidth, swatchHeight, ProVisualsUi.accentSwatch(palette)));
+            addRenderableWidget(Button.builder(ProVisualsUi.component(""), button -> {
+                ProVisualsConfig.accentPalette = palette;
+                ProVisualsConfig.save();
+                status = "Accent color: " + palette;
+                rebuildWidgets();
+            }).bounds(swatchX, swatchY, swatchWidth, swatchHeight).build());
+        }
     }
 
     private void buildFeaturePage(int x, int py, int contentWidth) {
@@ -537,7 +557,7 @@ public final class ProVisualsScreen extends Screen {
         int px = panelX();
         int py = panelY();
         ProVisualsUi.fill(graphics, px, py, Math.min(732, width - 24), 392, 18, 0xF0151520);
-        ProVisualsUi.fill(graphics, px, py, 3, 392, 2, 0xFF9A6BFF);
+        ProVisualsUi.fill(graphics, px, py, 3, 392, 2, ProVisualsUi.accentPrimary());
         ProVisualsUi.fill(graphics, px + 16, py + 54, Math.min(700, width - 56), 1, 1, 0x555E536F);
         ProVisualsUi.fill(graphics, px + 148, py + 64, 1, 308, 1, 0x554E455D);
 
@@ -559,7 +579,7 @@ public final class ProVisualsScreen extends Screen {
         int x = panelX() + 20;
         int y = panelY() + 17;
         ProVisualsUi.text(graphics, font, "ProVisuals", x, y, 0xFFFFFFFF, true);
-        ProVisualsUi.text(graphics, font, "Visuals + SkyLyrics  /  Right Shift", x, y + 16, 0xFFBCA4FF, true);
+        ProVisualsUi.text(graphics, font, "Visuals + SkyLyrics  /  Right Shift", x, y + 16, ProVisualsUi.accentSoft(), true);
         renderNavigation(graphics, mouseX, mouseY);
 
         switch (page) {
@@ -570,15 +590,32 @@ public final class ProVisualsScreen extends Screen {
             default -> renderFeaturePage(graphics, mouseX, mouseY);
         }
 
-        ProVisualsUi.text(graphics, font, status, panelX() + 20, panelY() + 372, 0xFFBCA4FF, true);
+        ProVisualsUi.text(graphics, font, status, panelX() + 20, panelY() + 372, ProVisualsUi.accentSoft(), true);
     }
 
     private void renderOverview(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         renderSectionHeaders(graphics);
-        ProVisualsUi.text(graphics, font, "ProVisuals", panelX() + 164,
+        int contentX = panelX() + 164;
+        ProVisualsUi.text(graphics, font, "ProVisuals", contentX,
                 panelY() + 126, 0xFFF1EDFA, true);
         ProVisualsUi.text(graphics, font, "Select a category from the left navigation panel.",
-                panelX() + 164, panelY() + 145, 0xFFAAA4BA, false);
+                contentX, panelY() + 145, 0xFFAAA4BA, false);
+        ProVisualsUi.text(graphics, font, "Global accent color", contentX,
+                panelY() + 171, 0xFFEDE7FA, true);
+        ProVisualsUi.text(graphics, font, "Changes highlights across the menu, Music Island and visual effects",
+                contentX, panelY() + 186, 0xFF9F96B0, false);
+
+        for (AccentSwatch swatch : accentSwatches) {
+            boolean selected = ProVisualsConfig.accentPalette.equals(swatch.palette());
+            int border = selected ? ProVisualsUi.accentSoft() : 0xFF45404F;
+            ProVisualsUi.fill(graphics, swatch.x(), swatch.y(), swatch.width(),
+                    swatch.height(), 8, border);
+            ProVisualsUi.fill(graphics, swatch.x() + 2, swatch.y() + 2,
+                    swatch.width() - 4, swatch.height() - 4, 6, swatch.color());
+            graphics.centeredText(font, ProVisualsUi.component(swatch.palette()),
+                    swatch.x() + swatch.width() / 2, swatch.y() + swatch.height() + 8,
+                    selected ? ProVisualsUi.accentLight() : 0xFFAAA4BA, selected);
+        }
     }
 
     private void renderFeaturePage(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -601,9 +638,9 @@ public final class ProVisualsScreen extends Screen {
             int pillWidth = 44;
             int pillX = row.x() + row.width() - pillWidth - 11;
             ProVisualsUi.fill(graphics, pillX, row.y() + 10, pillWidth, 17, 8,
-                    ProVisualsConfig.isEnabled(feature.key()) ? 0xFF3C3154 : 0xFF302B37);
+                    ProVisualsConfig.isEnabled(feature.key()) ? ProVisualsUi.accentButton() : 0xFF302B37);
             graphics.centeredText(font, ProVisualsUi.component(state), pillX + pillWidth / 2,
-                    row.y() + 14, feature.rendererConnected() ? 0xFFD0BFFF : 0xFFB8AFC2);
+                    row.y() + 14, feature.rendererConnected() ? ProVisualsUi.accentLight() : 0xFFB8AFC2);
         }
 
         for (ActionRow row : drawActionRows) renderActionRow(graphics, row, mouseX, mouseY);
@@ -670,7 +707,7 @@ public final class ProVisualsScreen extends Screen {
         int valueWidth = ProVisualsUi.width(font, row.value());
         ProVisualsUi.text(graphics, font, row.value(),
                 row.x() + row.width() - valueWidth - 14, row.y() + 12,
-                row.secondary() ? 0xFFBCA4FF : 0xFFD0BFFF, true);
+                row.secondary() ? ProVisualsUi.accentSoft() : ProVisualsUi.accentLight(), true);
     }
 
     private static boolean inside(int x, int y, int w, int h, int mouseX, int mouseY) {
