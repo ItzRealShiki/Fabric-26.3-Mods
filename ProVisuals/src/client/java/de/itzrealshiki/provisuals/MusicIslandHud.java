@@ -78,8 +78,8 @@ public final class MusicIslandHud implements HudElement {
         ProVisualsUi.fill(graphics, x + 2, y + 4, panelWidth, panelHeight, 13, 0x55000000);
         ProVisualsUi.fill(graphics, x, y, panelWidth, panelHeight, 13, 0xEF0D0D17);
         ProVisualsUi.fill(graphics, x + 1, y + 1, panelWidth - 2, panelHeight - 2, 12, 0xF313121E);
-        ProVisualsUi.fill(graphics, x + 1, y + 1, panelWidth - 2, 2, 1, 0xFF6E4CC7);
-        ProVisualsUi.fill(graphics, x + 1, y + 9, 2, panelHeight - 18, 1, 0xFF9A6BFF);
+        ProVisualsUi.fill(graphics, x + 1, y + 1, panelWidth - 2, 2, 1, ProVisualsUi.accentPrimary());
+        ProVisualsUi.fill(graphics, x + 1, y + 9, 2, panelHeight - 18, 1, ProVisualsUi.accentPrimary());
 
         drawAlbumArt(graphics, x + 10, y + 20, playing);
 
@@ -88,9 +88,9 @@ public final class MusicIslandHud implements HudElement {
         int contentWidth = Math.max(64, controlsX - contentX - 8);
 
         ProVisualsUi.fill(graphics, contentX, y + 9, 5, 5, 3,
-                playing ? 0xFFBCA4FF : 0xFF777184);
+                playing ? ProVisualsUi.accentSoft() : 0xFF777184);
         ProVisualsUi.text(graphics, font, track == null ? "Waiting for audio" : "Now playing",
-                contentX + 9, y + 7, 0xFFBCA4FF, false);
+                contentX + 9, y + 7, ProVisualsUi.accentSoft(), false);
 
         // Playback controls stay in the title row of this single Music Island.
         previousButton = new Rect(controlsX, y + 5, 18, 18);
@@ -109,7 +109,7 @@ public final class MusicIslandHud implements HudElement {
         int genreWidth = Math.min(contentWidth, Math.max(48, font.width(genre) + 12));
         ProVisualsUi.fill(graphics, contentX, y + 47, genreWidth, 12, 6, 0xFF29233A);
         graphics.text(font, trim(font, genre, genreWidth - 10), contentX + 6, y + 49,
-                0xFFD0BFFF, false);
+                ProVisualsUi.accentLight(), false);
 
         int progressX = contentX;
         int progressY = y + 63;
@@ -119,9 +119,9 @@ public final class MusicIslandHud implements HudElement {
                     Math.min(1.0f, track.positionMs() / (float) track.durationMs()));
             int filledWidth = Math.round(contentWidth * fraction);
             if (filledWidth > 0) {
-                ProVisualsUi.fill(graphics, progressX, progressY, filledWidth, 3, 2, 0xFF9A6BFF);
+                ProVisualsUi.fill(graphics, progressX, progressY, filledWidth, 3, 2, ProVisualsUi.accentPrimary());
                 ProVisualsUi.fill(graphics, progressX + Math.max(0, filledWidth - 2),
-                        progressY - 1, 3, 5, 2, 0xFFD7C7FF);
+                        progressY - 1, 3, 5, 2, ProVisualsUi.accentLight());
             }
         }
 
@@ -191,7 +191,7 @@ public final class MusicIslandHud implements HudElement {
         navigationBounds = new Rect(x, baseY - slide, width, totalHeight + slide);
 
         int background = withAlpha(0xF0181726, navigationProgress);
-        int border = withAlpha(0xFF5E4A83, navigationProgress);
+        int border = withAlpha(ProVisualsUi.accentSoft(), navigationProgress);
         ProVisualsUi.fill(graphics, x, baseY - slide, width, totalHeight, 8, background);
         ProVisualsUi.fill(graphics, x + 7, baseY - slide, width - 14, 1, 1, border);
 
@@ -210,7 +210,7 @@ public final class MusicIslandHud implements HudElement {
             boolean selected = category.equals(activeCategory);
             if (selected) {
                 ProVisualsUi.fill(graphics, cellX + 5, cellY + 2, actualWidth - 10,
-                        NAV_ROW_HEIGHT - 4, 4, withAlpha(0xFF3B2D56, navigationProgress));
+                        NAV_ROW_HEIGHT - 4, 4, withAlpha(ProVisualsUi.accentDeep(), navigationProgress));
             }
             int labelColor = selected ? withAlpha(0xFFF5F1FF, navigationProgress)
                     : withAlpha(0xFFB7B0C5, navigationProgress);
@@ -222,7 +222,7 @@ public final class MusicIslandHud implements HudElement {
                 int totalWidth = gearSize + gap + font.width(label);
                 int startX = cellX + Math.max(2, (actualWidth - totalWidth) / 2);
                 drawSettingsGear(graphics, startX, cellY + 1, gearSize,
-                        selected ? 0xFFE9DDFF : 0xFFB7B0C5,
+                        selected ? ProVisualsUi.accentLight() : 0xFFB7B0C5,
                         selected ? 0xFF3B2D56 : 0xFF262333);
                 ProVisualsUi.text(graphics, font, label, startX + gearSize + gap,
                         cellY + 4, labelColor, false);
@@ -248,9 +248,9 @@ public final class MusicIslandHud implements HudElement {
                 boolean selected = subcategory.equals(activeSubcategory);
                 if (selected) {
                     ProVisualsUi.fill(graphics, cellX + 5, subY + 3, actualWidth - 10,
-                            NAV_SUB_HEIGHT - 5, 4, withAlpha(0xFF332747, navigationProgress));
+                            NAV_SUB_HEIGHT - 5, 4, withAlpha(ProVisualsUi.accentButton(), navigationProgress));
                 }
-                int labelColor = selected ? withAlpha(0xFFDCCEFF, navigationProgress)
+                int labelColor = selected ? withAlpha(ProVisualsUi.accentLight(), navigationProgress)
                         : withAlpha(0xFFAAA4BA, navigationProgress);
                 graphics.centeredText(font, ProVisualsUi.component(navSubcategoryLabel(subcategory)),
                         cellX + actualWidth / 2, subY + 5, labelColor);
@@ -378,17 +378,17 @@ public final class MusicIslandHud implements HudElement {
             int height = Math.max(4, Math.min(21, baseHeights[i] + variation));
             int barX = x + 8 + i * 4;
             ProVisualsUi.fill(graphics, barX, centerY - height / 2, 2, height, 1,
-                    i == 3 ? 0xFFE0D2FF : 0xFF9A6BFF);
+                    i == 3 ? ProVisualsUi.accentLight() : ProVisualsUi.accentPrimary());
         }
         ProVisualsUi.fill(graphics, x + 7, y + 35, 29, 1, 1, 0x557D65B5);
     }
 
     private static void drawControl(GuiGraphicsExtractor graphics, Rect rect, String symbol, boolean primary) {
-        int background = primary ? 0xFF6745A8 : 0xFF252231;
+        int background = primary ? ProVisualsUi.accentButton() : 0xFF252231;
         int foreground = primary ? 0xFFFFFFFF : 0xFFD5CEE5;
         ProVisualsUi.fill(graphics, rect.x(), rect.y(), rect.width(), rect.height(), 6, background);
         if (primary) {
-            ProVisualsUi.fill(graphics, rect.x() + 4, rect.y(), rect.width() - 8, 1, 1, 0xFFBCA4FF);
+            ProVisualsUi.fill(graphics, rect.x() + 4, rect.y(), rect.width() - 8, 1, 1, ProVisualsUi.accentSoft());
         }
         graphics.centeredText(Minecraft.getInstance().font, ProVisualsUi.component(symbol),
                 rect.x() + rect.width() / 2, rect.y() + 4, foreground);
