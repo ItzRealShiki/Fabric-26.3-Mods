@@ -11,9 +11,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
- * First-person hand rendering supplies an outline color of zero at each held-item submit.
- * Redirect those exact submits so the mainhand and offhand receive the same texture-derived
- * outline as third-person held items, without depending on an item display-context shadow.
+ * The hand renderer uses a separate feature-render pass from the world renderer.
+ * Keep the normal item submit intact and add a slightly enlarged, texture-colored
+ * outline submit behind it. FirstPersonHeldItemOutlinePhaseMixin drains that pass.
  */
 @Mixin(FirstPersonHandsAndItemsRenderer.class)
 public abstract class FirstPersonHeldItemGlowMixin {
@@ -32,9 +32,20 @@ public abstract class FirstPersonHeldItemGlowMixin {
             int overlayCoords,
             int originalOutlineColor
     ) {
-        int outlineColor = ProVisualsConfig.isEnabled("held_item_glow")
-                ? HeldItemGlowRenderer.outlineColor(itemState)
-                : originalOutlineColor;
-        itemState.submit(poseStack, collector, lightCoords, overlayCoords, outlineColor);
+        if (!ProVisualsConfig.isEnabled("held_item_glow")) {
+            itemState.submit(poseStack, collector, lightCoords, overlayCoords, originalOutlineColor);
+            return;
+        }
+
+        // Preserve the textured item in the normal hand-render phase.
+        itemState.submit(poseStack, collector, lightCoords, overlayCoords, 0);
+
+        // Add a texture-matched silhouette slightly behind the original item.
+        int sampled = HeldItemGlowRenderer.outlineColor(itemState);
+        int glowColor = (sampled & 0x00FFFFFF) | 0xC0000000;
+        poseStack.pushPose();
+        poseStack.scale(1.09F, 1.09F, 1.09F);
+        itemState.submit(poseStack, collector, lightCoords, overlayCoords, glowColor);
+        poseStack.popPose();
     }
 }
