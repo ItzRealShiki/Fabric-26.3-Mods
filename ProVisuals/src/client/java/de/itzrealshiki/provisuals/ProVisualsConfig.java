@@ -20,6 +20,7 @@ public final class ProVisualsConfig {
     public static String reflectiveSurfaces = "ALL";
     public static boolean oreInteriorGlow = true;
     public static boolean oreOutlineGlow = true;
+    public static boolean heldItemTextureColor = true;
     public static boolean musicIslandEnabled = true;
     public static boolean genreRecognitionEnabled = true;
     public static boolean roundedCorners = true;
@@ -35,6 +36,7 @@ public final class ProVisualsConfig {
         DEFAULTS.put("visual_friends", false);
         DEFAULTS.put("armor_glow", false);
         DEFAULTS.put("item_outline_glow", false);
+        DEFAULTS.put("held_item_glow", false);
         DEFAULTS.put("hits_energy_wave", false);
         DEFAULTS.put("ground_reflections", false);
         DEFAULTS.put("custom_sky", true);
@@ -58,6 +60,7 @@ public final class ProVisualsConfig {
             reflectiveSurfaces = allowed(properties.getProperty("reflection.surfaces"), "ALL", "SELECTED", "WATER_ONLY", "ALL");
             oreInteriorGlow = Boolean.parseBoolean(properties.getProperty("ores.interior", "true"));
             oreOutlineGlow = Boolean.parseBoolean(properties.getProperty("ores.outline", "true"));
+            heldItemTextureColor = Boolean.parseBoolean(properties.getProperty("items.texture_color", "true"));
             musicIslandEnabled = Boolean.parseBoolean(properties.getProperty("music.island.enabled", "true"));
             genreRecognitionEnabled = Boolean.parseBoolean(properties.getProperty("music.genre_recognition.enabled", "true"));
             roundedCorners = Boolean.parseBoolean(properties.getProperty("ui.rounded_corners", "true"));
@@ -68,6 +71,7 @@ public final class ProVisualsConfig {
             MODULES.putAll(DEFAULTS);
             roundedCorners = true;
             genreRecognitionEnabled = true;
+            heldItemTextureColor = true;
         }
     }
 
@@ -101,6 +105,7 @@ public final class ProVisualsConfig {
         properties.setProperty("reflection.surfaces", reflectiveSurfaces);
         properties.setProperty("ores.interior", String.valueOf(oreInteriorGlow));
         properties.setProperty("ores.outline", String.valueOf(oreOutlineGlow));
+        properties.setProperty("items.texture_color", String.valueOf(heldItemTextureColor));
         properties.setProperty("music.island.enabled", String.valueOf(musicIslandEnabled));
         properties.setProperty("music.genre_recognition.enabled", String.valueOf(genreRecognitionEnabled));
         properties.setProperty("ui.rounded_corners", String.valueOf(roundedCorners));
