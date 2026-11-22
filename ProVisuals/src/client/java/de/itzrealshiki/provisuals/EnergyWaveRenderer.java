@@ -12,7 +12,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -54,10 +53,8 @@ public final class EnergyWaveRenderer {
             String targetName = entity.getName().getString();
             int effectColor = FriendManager.isFriend(targetName)
                     ? FriendManager.colorForName(targetName) : ProVisualsUi.accentPrimary();
-            boolean maceRequirementMet = !ProVisualsConfig.onlyOnMaceHit
-                    || player.getItemInHand(hand).is(Items.MACE);
             if (level.isClientSide() && player == client.player && entity != player
-                    && (waveEnabled || earthquakeEnabled) && maceRequirementMet) {
+                    && (waveEnabled || earthquakeEnabled)) {
                 if (waveEnabled) addWave(entity.position(), effectColor);
                 if (earthquakeEnabled) addEarthquake(player, level, effectColor);
             }
