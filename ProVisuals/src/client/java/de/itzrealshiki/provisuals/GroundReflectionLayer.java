@@ -1,5 +1,7 @@
 package de.itzrealshiki.provisuals;
 
+import de.itzrealshiki.provisuals.mixin.client.EntityRendererTextureAccessor;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
