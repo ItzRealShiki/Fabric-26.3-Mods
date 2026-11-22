@@ -48,7 +48,6 @@ public final class ProVisualsClient implements ClientModInitializer {
                 skyLyricsHudEnabled = MusicLyricsBridge.setNowPlayingHudEnabled(true);
             }
             CustomSkyBridge.ensureAllWorldCoverage();
-            GlowOutlineRenderer.tick(client);
             while (openMenuKey.consumeClick()) {
                 if (client.player != null) client.gui.setScreen(new ProVisualsScreen());
             }
