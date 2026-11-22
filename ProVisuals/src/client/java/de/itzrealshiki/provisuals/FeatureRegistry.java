@@ -12,6 +12,7 @@ public final class FeatureRegistry {
     public static final List<Feature> FEATURES = List.of(
             new Feature("hits_energy_wave", "Energy Wave", "A short violet shockwave on hit.", "Combat Visuals", true),
             new Feature("earthquake", "Earthquake", "A separate 20-block circular ground-lift visual on hit.", "Combat Visuals", true),
+            new Feature("kill_effects", "Kill Effects", "Play a custom visual effect when you eliminate another player.", "Combat Visuals", true),
             new Feature("visual_friends", "Visual Friends", "Add local friends and outline their visible name-tagged entities.", "Player Visuals", true),
             new Feature("glowing_ores", "Glowing Ores", "Soft fill and layered outline for the ore block under your crosshair.", "Block Glow", true),
             new Feature("armor_glow", "Armor Piece Glow", "Outline each equipped armor piece separately.", "Armor Glow", true),
