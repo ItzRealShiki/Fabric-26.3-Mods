@@ -32,6 +32,7 @@ public final class ProVisualsClient implements ClientModInitializer {
 
         // Run after every client mod initializer so Nuit cannot overwrite this preference during its own startup.
         ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            migrateLegacyMenuHotkey(client);
             skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
             skyLyricsHudEnabled = MusicLyricsBridge.setNowPlayingHudEnabled(true);
             CustomSkyBridge.ensureAllWorldCoverage();
@@ -57,6 +58,33 @@ public final class ProVisualsClient implements ClientModInitializer {
             applyFullbright(client);
         });
         Diagnostics.info("ProVisuals client initialized");
+    }
+
+    /**
+     * Older ProVisuals builds used M as the menu default. Minecraft persists key mappings
+     * in options.txt, so changing the constructor default alone would leave existing installs
+     * bound to M. Migrate that legacy default once, while keeping any other custom binding.
+     */
+    private static void migrateLegacyMenuHotkey(Minecraft client) {
+        if (ProVisualsConfig.hotkeyMigrationDone) return;
+
+        InputConstants.Key legacyM = InputConstants.Type.KEYBOARD.getOrCreate(77);
+        if (legacyM.equals(openMenuKey.getKey())) {
+            openMenuKey.setKey(InputConstants.Type.KEYBOARD.getOrCreate(InputConstants.KEY_RSHIFT));
+            try {
+                var reset = KeyMapping.class.getDeclaredMethod("resetMapping");
+                reset.setAccessible(true);
+                reset.invoke(null);
+            } catch (ReflectiveOperationException exception) {
+                Diagnostics.warn("Could not refresh key mappings after the Right Shift migration: "
+                        + exception.getMessage());
+            }
+            client.options.save();
+            Diagnostics.info("Migrated ProVisuals menu hotkey from M to Right Shift");
+        }
+
+        ProVisualsConfig.hotkeyMigrationDone = true;
+        ProVisualsConfig.save();
     }
 
     private static void applyFullbright(Minecraft client) {
