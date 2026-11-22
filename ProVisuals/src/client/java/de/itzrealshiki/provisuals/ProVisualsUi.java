@@ -9,6 +9,78 @@ import java.util.Locale;
 public final class ProVisualsUi {
     private ProVisualsUi() {}
 
+    /** Accent colors shared by the menu, Music Island and visual effects. */
+    public static int accentPrimary() {
+        return switch (ProVisualsConfig.accentPalette) {
+            case "BLUE" -> 0xFF579BFF;
+            case "CYAN" -> 0xFF35C9D0;
+            case "PINK" -> 0xFFF36EA9;
+            case "GOLD" -> 0xFFE6AD4E;
+            case "GREEN" -> 0xFF58C98D;
+            default -> 0xFF9A6BFF;
+        };
+    }
+
+    public static int accentSoft() {
+        return switch (ProVisualsConfig.accentPalette) {
+            case "BLUE" -> 0xFF9EC6FF;
+            case "CYAN" -> 0xFF83E4E5;
+            case "PINK" -> 0xFFFFABD0;
+            case "GOLD" -> 0xFFF3CF88;
+            case "GREEN" -> 0xFF9DE6BB;
+            default -> 0xFFBCA4FF;
+        };
+    }
+
+    public static int accentLight() {
+        return switch (ProVisualsConfig.accentPalette) {
+            case "BLUE" -> 0xFFC7DEFF;
+            case "CYAN" -> 0xFFB8F1F0;
+            case "PINK" -> 0xFFFFD0E5;
+            case "GOLD" -> 0xFFFFE6B8;
+            case "GREEN" -> 0xFFC9F5D9;
+            default -> 0xFFD0BFFF;
+        };
+    }
+
+    public static int accentDeep() {
+        return switch (ProVisualsConfig.accentPalette) {
+            case "BLUE" -> 0xFF203B62;
+            case "CYAN" -> 0xFF1B4A50;
+            case "PINK" -> 0xFF582840;
+            case "GOLD" -> 0xFF594323;
+            case "GREEN" -> 0xFF214B37;
+            default -> 0xFF392A56;
+        };
+    }
+
+    public static int accentButton() {
+        return switch (ProVisualsConfig.accentPalette) {
+            case "BLUE" -> 0xFF294C7E;
+            case "CYAN" -> 0xFF24545B;
+            case "PINK" -> 0xFF62304A;
+            case "GOLD" -> 0xFF654E28;
+            case "GREEN" -> 0xFF2E5E45;
+            default -> 0xFF3C3154;
+        };
+    }
+
+    public static int accentWithAlpha(int color, int alpha) {
+        int safeAlpha = Math.max(0, Math.min(255, alpha));
+        return (safeAlpha << 24) | (color & 0x00FFFFFF);
+    }
+
+    public static int accentSwatch(String palette) {
+        return switch (palette) {
+            case "BLUE" -> 0xFF579BFF;
+            case "CYAN" -> 0xFF35C9D0;
+            case "PINK" -> 0xFFF36EA9;
+            case "GOLD" -> 0xFFE6AD4E;
+            case "GREEN" -> 0xFF58C98D;
+            default -> 0xFF9A6BFF;
+        };
+    }
+
     /**
      * Replaces the sharp Unicode small-cap look with regular Minecraft glyphs.
      * All-uppercase UI labels are softened to title case; mixed-case text and
