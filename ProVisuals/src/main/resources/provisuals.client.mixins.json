@@ -12,7 +12,8 @@
     "ItemStackRenderStateAccessor",
     "ItemStackRenderStateLayerAccessor",
     "SpriteContentsImageAccessor",
-    "BossHealthOverlayMixin"
+    "BossHealthOverlayMixin",
+    "ClientPacketListenerKillEffectsMixin"
   ],
   "injectors": {
     "defaultRequire": 1
