@@ -2,31 +2,30 @@ package de.itzrealshiki.provisuals;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.client.renderer.entity.state.ItemEntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.BlockOutlineRenderState;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
-
-/** Low-cost client-side block, armor-wearer and dropped-item outlines. */
+/**
+ * Client-side outline rendering for ore blocks, armored entities and dropped items.
+ *
+ * Entity outlines are assigned to Minecraft 26.3's per-frame render states during
+ * extraction. Changing Entity#setGlowingTag on a client is not reliable in 26.3:
+ * its client-side implementation reads the old shared flag before writing it back.
+ */
 public final class GlowOutlineRenderer {
-    private static final Map<Entity, Boolean> ORIGINAL_GLOW = new WeakHashMap<>();
+    private static final int OUTLINE_COLOR = 0xFF9A6BFF;
     private static boolean registered;
 
     private GlowOutlineRenderer() {
@@ -35,44 +34,40 @@ public final class GlowOutlineRenderer {
     public static void register() {
         if (registered) return;
         registered = true;
+        LevelExtractionEvents.END_EXTRACTION.register(
+                context -> applyEntityOutlines(context.levelState()));
         LevelRenderEvents.BEFORE_BLOCK_OUTLINE.register(GlowOutlineRenderer::renderOreOutline);
+        Diagnostics.info("Glow render-state hooks registered");
     }
 
-    public static void tick(Minecraft client) {
-        Set<Entity> wanted = Collections.newSetFromMap(new IdentityHashMap<>());
-        if (client.level != null) {
-            boolean armorGlow = ProVisualsConfig.isEnabled("armor_glow");
-            boolean itemGlow = ProVisualsConfig.isEnabled("item_outline_glow");
-            if (armorGlow || itemGlow) {
-                for (Entity entity : client.level.entitiesForRendering()) {
-                    boolean shouldGlow = itemGlow && entity instanceof ItemEntity;
-                    if (!shouldGlow && armorGlow && entity instanceof LivingEntity living) {
-                        shouldGlow = hasArmor(living);
-                    }
-                    if (!shouldGlow) continue;
+    /**
+     * Applies the outline directly to the render states that Minecraft will submit
+     * to its outline feature renderer. This covers the entity body and attached
+     * armor layers, plus dropped item models.
+     */
+    private static void applyEntityOutlines(LevelRenderState levelState) {
+        boolean armorGlow = ProVisualsConfig.isEnabled("armor_glow");
+        boolean itemGlow = ProVisualsConfig.isEnabled("item_outline_glow");
+        if (!armorGlow && !itemGlow) return;
 
-                    ORIGINAL_GLOW.putIfAbsent(entity, entity.hasGlowingTag());
-                    entity.setGlowingTag(true);
-                    wanted.add(entity);
-                }
+        for (EntityRenderState state : levelState.entityRenderStates) {
+            if (itemGlow && state instanceof ItemEntityRenderState) {
+                state.outlineColor = OUTLINE_COLOR;
+                continue;
             }
-        }
 
-        Iterator<Map.Entry<Entity, Boolean>> iterator = ORIGINAL_GLOW.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Entity, Boolean> entry = iterator.next();
-            if (!wanted.contains(entry.getKey())) {
-                entry.getKey().setGlowingTag(entry.getValue());
-                iterator.remove();
+            if (armorGlow && state instanceof HumanoidRenderState humanoid
+                    && hasArmor(humanoid)) {
+                state.outlineColor = OUTLINE_COLOR;
             }
         }
     }
 
-    private static boolean hasArmor(LivingEntity living) {
-        return !living.getItemBySlot(EquipmentSlot.HEAD).isEmpty()
-                || !living.getItemBySlot(EquipmentSlot.CHEST).isEmpty()
-                || !living.getItemBySlot(EquipmentSlot.LEGS).isEmpty()
-                || !living.getItemBySlot(EquipmentSlot.FEET).isEmpty();
+    private static boolean hasArmor(HumanoidRenderState state) {
+        return !state.headEquipment.isEmpty()
+                || !state.chestEquipment.isEmpty()
+                || !state.legsEquipment.isEmpty()
+                || !state.feetEquipment.isEmpty();
     }
 
     private static boolean renderOreOutline(LevelRenderContext context, BlockOutlineRenderState outline) {
