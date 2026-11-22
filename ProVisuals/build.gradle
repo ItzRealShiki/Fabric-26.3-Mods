@@ -48,14 +48,14 @@ tasks.register("downloadLyricsModule") {
 
 sourceSets.main.resources.srcDir(layout.buildDirectory.dir("generated/provisuals-resources"))
 
-def blackHoleSkyTexture = layout.buildDirectory.file("generated/provisuals-resources/assets/provisuals/sky/black_hole.png")
+def blackHoleSkyTexture = layout.buildDirectory.file("generated/provisuals-resources/assets/provisuals/textures/sky/black_hole.png")
 tasks.register("generateBlackHoleSkyTexture") {
     outputs.file(blackHoleSkyTexture)
     doLast {
         File destination = blackHoleSkyTexture.get().asFile
         destination.parentFile.mkdirs()
 
-        final int faceSize = 512
+        final int faceSize = 768
         def atlas = new java.awt.image.BufferedImage(faceSize * 3, faceSize * 2,
                 java.awt.image.BufferedImage.TYPE_INT_ARGB)
 
@@ -106,44 +106,46 @@ tasks.register("generateBlackHoleSkyTexture") {
                     double dist = Math.sqrt(tx*tx + ty*ty)
 
                     // Slow diagonal accretion plane with a bright, uneven inner rim.
-                    double tilt = 0.22d
+                    double tilt = 0.25d
                     double angle = Math.toRadians(17d)
                     double qx = tx*Math.cos(angle) + ty*Math.sin(angle)
                     double qy = -tx*Math.sin(angle) + ty*Math.cos(angle)
                     double ellipse = Math.sqrt(qx*qx + (qy/tilt)*(qy/tilt))
-                    double ring = Math.exp(-Math.pow((ellipse-0.285d)/0.072d, 2d))
-                    double innerFade = 1d/(1d+Math.exp(-(ellipse-0.135d)*95d))
-                    double outerFade = 1d/(1d+Math.exp((ellipse-0.435d)*75d))
-                    double swirl = 0.58d + 0.42d*Math.sin(10d*Math.atan2(qy/tilt,qx) + ellipse*74d
-                            + 1.6d*Math.sin(5d*Math.atan2(qy,qx)))
-                    double doppler = 0.68d + 0.32d*Math.max(0d, Math.min(1d, 0.5d - qy/0.20d))
-                    double disk = ring*innerFade*outerFade*swirl*doppler
+                    double ringCore = Math.exp(-Math.pow((ellipse-0.53d)/0.085d, 2d))
+                    double ringInner = Math.exp(-Math.pow((ellipse-0.36d)/0.055d, 2d))*0.24d
+                    double ringOuter = Math.exp(-Math.pow((ellipse-0.70d)/0.045d, 2d))*0.12d
+                    double innerFade = 1d/(1d+Math.exp(-(ellipse-0.18d)*55d))
+                    double outerFade = 1d/(1d+Math.exp((ellipse-0.79d)*40d))
+                    double swirl = 0.57d + 0.43d*Math.sin(10d*Math.atan2(qy/tilt,qx) + ellipse*58d
+                            + 1.8d*Math.sin(5d*Math.atan2(qy,qx)))
+                    double doppler = 0.66d + 0.34d*Math.max(0d, Math.min(1d, 0.5d - qy/0.24d))
+                    double disk = (ringCore + ringInner + ringOuter)*innerFade*outerFade*swirl*doppler
 
-                    double halo = Math.exp(-Math.pow((ellipse-0.31d)/0.145d, 2d))*0.20d
-                    double photonRing = Math.exp(-Math.pow((dist-0.112d)/0.006d, 2d))
-                    double lensGlow = Math.exp(-Math.pow((dist-0.132d)/0.026d, 2d))*0.48d
+                    double halo = Math.exp(-Math.pow((ellipse-0.56d)/0.20d, 2d))*0.16d
+                    double photonRing = Math.exp(-Math.pow((dist-0.188d)/0.008d, 2d))
+                    double lensGlow = Math.exp(-Math.pow((dist-0.222d)/0.045d, 2d))*0.55d
 
                     // Low-contrast cosmic clouds keep the far sides from becoming flat black.
                     double cloudA = Math.sin(dx*17d + dy*23d + dz*11d)
                     double cloudB = Math.cos(dx*29d - dy*13d + dz*19d)
                     double nebula = Math.max(0d, (cloudA*cloudB + 0.22d))*0.5d
-                    double baseR = 2d + nebula*9d + Math.max(0d,dy)*2d
-                    double baseG = 3d + nebula*5d
-                    double baseB = 9d + nebula*23d
+                    double baseR = 2d + nebula*5d + Math.max(0d,dy)*2d
+                    double baseG = 3d + nebula*4d
+                    double baseB = 9d + nebula*16d
 
-                    double warm = disk*1.18d + photonRing*0.95d + lensGlow*0.32d
-                    double violet = disk*0.55d + halo*0.72d + lensGlow*0.55d
+                    double warm = disk*1.25d + photonRing*1.05d + lensGlow*0.38d
+                    double violet = disk*0.62d + halo*0.84d + lensGlow*0.62d
                     double red = baseR + warm*248d + violet*82d
                     double green = baseG + warm*120d + violet*48d
                     double blue = baseB + warm*33d + violet*225d
 
                     // A clean, light-absorbing event horizon with a narrow photon ring.
-                    if (dist < 0.102d) {
-                        red = 0.5d; green = 0.7d; blue = 2.0d
-                    } else if (dist < 0.118d) {
-                        red = Math.max(red, 230d + photonRing*25d)
-                        green = Math.max(green, 155d + photonRing*80d)
-                        blue = Math.max(blue, 92d + photonRing*80d)
+                    if (dist < 0.174d) {
+                        red = 0.25d; green = 0.35d; blue = 1.2d
+                    } else if (dist < 0.205d) {
+                        red = Math.max(red, 235d + photonRing*20d)
+                        green = Math.max(green, 165d + photonRing*75d)
+                        blue = Math.max(blue, 112d + photonRing*72d)
                     }
 
                     // Stable sparse star field, generated from the cubemap texel coordinates.
@@ -166,8 +168,54 @@ tasks.register("generateBlackHoleSkyTexture") {
         javax.imageio.ImageIO.write(atlas, "png", destination)
     }
 }
+def blackHoleAmbience = layout.buildDirectory.file("generated/provisuals-resources/assets/provisuals/sounds/black_hole_ambience.ogg")
+def blackHoleSoundsJson = layout.buildDirectory.file("generated/provisuals-resources/assets/provisuals/sounds.json")
+
+tasks.register("generateBlackHoleAmbience") {
+    outputs.files(blackHoleAmbience, blackHoleSoundsJson)
+    doLast {
+        File audio = blackHoleAmbience.get().asFile
+        File soundDefinitions = blackHoleSoundsJson.get().asFile
+        audio.parentFile.mkdirs()
+        soundDefinitions.parentFile.mkdirs()
+
+        // Original 64-second two-channel synth drone. Every oscillator and modulation
+        // completes an integer number of cycles, so the loop joins cleanly at the seam.
+        String left = "0.105*sin(2*PI*55*t)+0.052*sin(2*PI*82.5*t+0.55*sin(2*PI*t/16))+0.038*sin(2*PI*110*t+0.32*sin(2*PI*t/32))+0.026*sin(2*PI*165*t+0.42*sin(2*PI*t/64))+0.019*sin(2*PI*220*t+0.22*sin(2*PI*t/16))+0.012*sin(2*PI*330*t+0.18*sin(2*PI*t/8))+0.009*sin(2*PI*293.75*t+0.2*sin(2*PI*t/32)"
+        String right = "0.105*sin(2*PI*55*t+0.08)+0.052*sin(2*PI*82.5*t+0.55*sin(2*PI*t/16)+0.12)+0.038*sin(2*PI*110*t+0.32*sin(2*PI*t/32)+0.07)+0.026*sin(2*PI*165*t+0.42*sin(2*PI*t/64)+0.15)+0.019*sin(2*PI*220*t+0.22*sin(2*PI*t/16)+0.22)+0.012*sin(2*PI*330*t+0.18*sin(2*PI*t/8)+0.28)+0.009*sin(2*PI*293.75*t+0.2*sin(2*PI*t/32)+0.2"
+        String source = "aevalsrc=" + left + "|" + right + ":s=48000:d=64"
+        def command = [
+                System.getenv("FFMPEG") ?: "ffmpeg",
+                "-y", "-hide_banner", "-loglevel", "error",
+                "-f", "lavfi", "-i", source,
+                "-c:a", "libvorbis", "-q:a", "5",
+                "-ar", "48000", "-ac", "2",
+                "-metadata", "title=Event Horizon - ProVisuals Original Ambience",
+                "-metadata", "artist=ProVisuals",
+                audio.absolutePath
+        ]
+        Process process = new ProcessBuilder(command).redirectErrorStream(true).start()
+        String output = process.inputStream.getText("UTF-8")
+        int exitCode = process.waitFor()
+        if (exitCode != 0 || !audio.isFile() || audio.length() < 10000) {
+            throw new GradleException("Could not generate Black Hole ambience with FFmpeg: " + output)
+        }
+
+        soundDefinitions.text = """{
+  "black_hole_ambience": {
+    "category": "music",
+    "sounds": [
+      { "name": "provisuals:black_hole_ambience", "stream": true }
+    ]
+  }
+}
+"""
+    }
+}
+
 tasks.named("processResources").configure {
-    dependsOn(tasks.named("downloadLyricsModule"), tasks.named("generateBlackHoleSkyTexture"))
+    dependsOn(tasks.named("downloadLyricsModule"), tasks.named("generateBlackHoleSkyTexture"),
+            tasks.named("generateBlackHoleAmbience"))
     inputs.property "version", project.version
     filesMatching("fabric.mod.json") { expand "version": project.version }
 }
