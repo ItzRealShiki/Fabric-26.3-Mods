@@ -25,7 +25,8 @@ public final class ProVisualsClient implements ClientModInitializer {
         FriendManager.load();
         GlowOutlineRenderer.register();
         EnergyWaveRenderer.register();
-        GroundReflectionRenderer.register();
+        // GroundReflectionRenderer is intentionally not registered: its old layer
+        // mirrored every living entity, causing white ghost models over players and mobs.
         skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.provisuals.open_menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_RSHIFT, CATEGORY));
