@@ -197,15 +197,6 @@ public final class ProVisualsScreen extends Screen {
         }
 
         if ("PvP".equals(page) && "Combat Visuals".equals(selectedSubcategory)) {
-            addSettingRow("Only on Mace Hit", onOff(ProVisualsConfig.onlyOnMaceHit),
-                    "Only trigger the enabled combat visuals when the held weapon is a Mace",
-                    x, y + 2, contentWidth,
-                    button -> {
-                        ProVisualsConfig.onlyOnMaceHit = !ProVisualsConfig.onlyOnMaceHit;
-                        ProVisualsConfig.save();
-                        status = "Only on Mace Hit " + onOff(ProVisualsConfig.onlyOnMaceHit);
-                        rebuildWidgets();
-                    });
             addSettingRow("Kill Effect Style", killEffectLabel(ProVisualsConfig.killEffectStyle),
                     "Choose the effect for normal player kills; friends use their own-color lightning",
                     x, y + 43, contentWidth,
