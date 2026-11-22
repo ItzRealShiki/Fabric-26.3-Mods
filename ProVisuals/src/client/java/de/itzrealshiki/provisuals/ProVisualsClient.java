@@ -25,6 +25,7 @@ public final class ProVisualsClient implements ClientModInitializer {
         FriendManager.load();
         GlowOutlineRenderer.register();
         EnergyWaveRenderer.register();
+        KillEffectsRenderer.register();
         // GroundReflectionRenderer is intentionally not registered: its old layer
         // mirrored every living entity, causing white ghost models over players and mobs.
         skyLyricsSettingsKeyUnbound = MusicLyricsBridge.disableSeparateSettingsKey();
@@ -54,6 +55,7 @@ public final class ProVisualsClient implements ClientModInitializer {
             }
             CustomSkyBridge.ensureAllWorldCoverage();
             FriendManager.tickPresence(client);
+            KillEffectsRenderer.tickTracking(client);
             while (openMenuKey.consumeClick()) {
                 if (client.player != null) client.gui.setScreen(new ProVisualsScreen());
             }
