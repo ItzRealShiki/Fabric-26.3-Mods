@@ -10,7 +10,6 @@
     "ItemStackRenderStateAccessor",
     "ItemStackRenderStateLayerAccessor",
     "SpriteContentsImageAccessor",
-    "EntityRendererTextureAccessor",
     "BossHealthOverlayMixin"
   ],
   "injectors": {
