@@ -49,14 +49,14 @@ public final class EnergyWaveRenderer {
         registered = true;
         AttackEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {
             Minecraft client = Minecraft.getInstance();
+            boolean waveEnabled = ProVisualsConfig.isEnabled("hits_energy_wave");
+            boolean earthquakeEnabled = ProVisualsConfig.isEnabled("earthquake");
             boolean maceRequirementMet = !ProVisualsConfig.onlyOnMaceHit
                     || player.getItemInHand(hand).is(Items.MACE);
             if (level.isClientSide() && player == client.player && entity != player
-                    && ProVisualsConfig.isEnabled("hits_energy_wave") && maceRequirementMet) {
-                addWave(entity.position());
-                if (ProVisualsConfig.earthquakeEnabled) {
-                    addEarthquake(player, level);
-                }
+                    && (waveEnabled || earthquakeEnabled) && maceRequirementMet) {
+                if (waveEnabled) addWave(entity.position());
+                if (earthquakeEnabled) addEarthquake(player, level);
             }
             return InteractionResult.PASS;
         });
@@ -122,7 +122,9 @@ public final class EnergyWaveRenderer {
     }
 
     private static void submitWaves(LevelRenderContext context) {
-        if (!ProVisualsConfig.isEnabled("hits_energy_wave")) {
+        boolean waveEnabled = ProVisualsConfig.isEnabled("hits_energy_wave");
+        boolean earthquakeEnabled = ProVisualsConfig.isEnabled("earthquake");
+        if (!waveEnabled && !earthquakeEnabled) {
             synchronized (WAVES) { WAVES.clear(); }
             synchronized (EnergyWaveRenderer.class) { activeEarthquake = null; }
             return;
@@ -132,11 +134,15 @@ public final class EnergyWaveRenderer {
         Vec3 camera = context.levelState().cameraRenderState.pos;
         List<Wave> active = new ArrayList<>();
         synchronized (WAVES) {
-            Iterator<Wave> iterator = WAVES.iterator();
-            while (iterator.hasNext()) {
-                Wave wave = iterator.next();
-                if (now - wave.startedAt() > DURATION_MS) iterator.remove();
-                else active.add(wave);
+            if (!waveEnabled) {
+                WAVES.clear();
+            } else {
+                Iterator<Wave> iterator = WAVES.iterator();
+                while (iterator.hasNext()) {
+                    Wave wave = iterator.next();
+                    if (now - wave.startedAt() > DURATION_MS) iterator.remove();
+                    else active.add(wave);
+                }
             }
         }
 
@@ -154,7 +160,11 @@ public final class EnergyWaveRenderer {
             poseStack.popPose();
         }
 
-        submitEarthquake(context, camera, now);
+        if (earthquakeEnabled) {
+            submitEarthquake(context, camera, now);
+        } else {
+            synchronized (EnergyWaveRenderer.class) { activeEarthquake = null; }
+        }
     }
 
     private static void submitEarthquake(LevelRenderContext context, Vec3 camera, long now) {
