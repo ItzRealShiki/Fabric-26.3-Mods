@@ -8,6 +8,9 @@ import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.ItemQuads;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.item.ItemDisplayContext;
+import de.itzrealshiki.provisuals.mixin.client.ItemStackRenderStateAccessor;
+import de.itzrealshiki.provisuals.mixin.client.ItemStackRenderStateLayerAccessor;
+import de.itzrealshiki.provisuals.mixin.client.SpriteContentsImageAccessor;
 
 import java.util.Map;
 import java.util.WeakHashMap;
