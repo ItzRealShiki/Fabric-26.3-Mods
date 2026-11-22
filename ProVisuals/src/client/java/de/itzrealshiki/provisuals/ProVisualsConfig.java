@@ -21,7 +21,6 @@ public final class ProVisualsConfig {
     public static boolean oreInteriorGlow = true;
     public static boolean oreOutlineGlow = true;
     public static boolean heldItemTextureColor = true;
-    public static boolean earthquakeEnabled;
     public static boolean onlyOnMaceHit;
     public static String accentPalette = "VIOLET";
     public static final java.util.List<String> ACCENT_PALETTES =
@@ -45,6 +44,7 @@ public final class ProVisualsConfig {
         DEFAULTS.put("item_outline_glow", false);
         DEFAULTS.put("held_item_glow", false);
         DEFAULTS.put("hits_energy_wave", false);
+        DEFAULTS.put("earthquake", false);
         DEFAULTS.put("ground_reflections", false);
         DEFAULTS.put("custom_sky", true);
         MODULES.putAll(DEFAULTS);
@@ -68,7 +68,10 @@ public final class ProVisualsConfig {
             oreInteriorGlow = Boolean.parseBoolean(properties.getProperty("ores.interior", "true"));
             oreOutlineGlow = Boolean.parseBoolean(properties.getProperty("ores.outline", "true"));
             heldItemTextureColor = Boolean.parseBoolean(properties.getProperty("items.texture_color", "true"));
-            earthquakeEnabled = Boolean.parseBoolean(properties.getProperty("combat.earthquake.enabled", "false"));
+            if (!properties.containsKey("module.earthquake")) {
+                MODULES.put("earthquake", Boolean.parseBoolean(
+                        properties.getProperty("combat.earthquake.enabled", "false")));
+            }
             onlyOnMaceHit = Boolean.parseBoolean(properties.getProperty("combat.energy_wave.only_mace_hit", "false"));
             accentPalette = properties.getProperty("ui.accent_palette", "VIOLET").toUpperCase(java.util.Locale.ROOT);
             if (!ACCENT_PALETTES.contains(accentPalette)) accentPalette = "VIOLET";
@@ -76,6 +79,7 @@ public final class ProVisualsConfig {
             genreRecognitionEnabled = Boolean.parseBoolean(properties.getProperty("music.genre_recognition.enabled", "true"));
             roundedCorners = Boolean.parseBoolean(properties.getProperty("ui.rounded_corners", "true"));
             hotkeyMigrationDone = Boolean.parseBoolean(properties.getProperty("hotkey.migration_done", "false"));
+            if (!properties.containsKey("module.earthquake")) save();
             Diagnostics.info("Configuration loaded");
         } catch (Exception exception) {
             Diagnostics.error("Could not load configuration; defaults restored", exception);
@@ -84,7 +88,6 @@ public final class ProVisualsConfig {
             roundedCorners = true;
             genreRecognitionEnabled = true;
             heldItemTextureColor = true;
-            earthquakeEnabled = false;
             onlyOnMaceHit = false;
             accentPalette = "VIOLET";
             hotkeyMigrationDone = false;
@@ -122,7 +125,6 @@ public final class ProVisualsConfig {
         properties.setProperty("ores.interior", String.valueOf(oreInteriorGlow));
         properties.setProperty("ores.outline", String.valueOf(oreOutlineGlow));
         properties.setProperty("items.texture_color", String.valueOf(heldItemTextureColor));
-        properties.setProperty("combat.earthquake.enabled", String.valueOf(earthquakeEnabled));
         properties.setProperty("combat.energy_wave.only_mace_hit", String.valueOf(onlyOnMaceHit));
         properties.setProperty("ui.accent_palette", accentPalette);
         properties.setProperty("music.island.enabled", String.valueOf(musicIslandEnabled));
