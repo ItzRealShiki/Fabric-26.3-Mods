@@ -24,6 +24,8 @@ public final class ProVisualsConfig {
     public static boolean musicIslandEnabled = true;
     public static boolean genreRecognitionEnabled = true;
     public static boolean roundedCorners = true;
+    /** One-time migration of the legacy M keybind to the intended Right Shift default. */
+    public static boolean hotkeyMigrationDone;
 
     static {
         DEFAULTS.put("glowing_ores", false);
@@ -64,6 +66,7 @@ public final class ProVisualsConfig {
             musicIslandEnabled = Boolean.parseBoolean(properties.getProperty("music.island.enabled", "true"));
             genreRecognitionEnabled = Boolean.parseBoolean(properties.getProperty("music.genre_recognition.enabled", "true"));
             roundedCorners = Boolean.parseBoolean(properties.getProperty("ui.rounded_corners", "true"));
+            hotkeyMigrationDone = Boolean.parseBoolean(properties.getProperty("hotkey.migration_done", "false"));
             Diagnostics.info("Configuration loaded");
         } catch (Exception exception) {
             Diagnostics.error("Could not load configuration; defaults restored", exception);
@@ -72,6 +75,7 @@ public final class ProVisualsConfig {
             roundedCorners = true;
             genreRecognitionEnabled = true;
             heldItemTextureColor = true;
+            hotkeyMigrationDone = false;
         }
     }
 
@@ -109,6 +113,7 @@ public final class ProVisualsConfig {
         properties.setProperty("music.island.enabled", String.valueOf(musicIslandEnabled));
         properties.setProperty("music.genre_recognition.enabled", String.valueOf(genreRecognitionEnabled));
         properties.setProperty("ui.rounded_corners", String.valueOf(roundedCorners));
+        properties.setProperty("hotkey.migration_done", String.valueOf(hotkeyMigrationDone));
         try {
             Files.createDirectories(FILE.getParent());
             try (Writer writer = Files.newBufferedWriter(FILE)) { properties.store(writer, "ProVisuals client configuration"); }
