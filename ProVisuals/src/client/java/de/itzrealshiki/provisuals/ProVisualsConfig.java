@@ -27,6 +27,8 @@ public final class ProVisualsConfig {
             java.util.List.of("VIOLET", "BLUE", "CYAN", "PINK", "GOLD", "GREEN");
     public static boolean musicIslandEnabled = true;
     public static boolean genreRecognitionEnabled = true;
+    public static boolean blackHoleMusicEnabled = true;
+    public static float blackHoleMusicVolume = 0.42f;
     public static boolean roundedCorners = true;
     /** One-time migration of the legacy M keybind to the intended Right Shift default. */
     public static boolean hotkeyMigrationDone;
@@ -48,6 +50,7 @@ public final class ProVisualsConfig {
         DEFAULTS.put("kill_effects", false);
         DEFAULTS.put("ground_reflections", false);
         DEFAULTS.put("custom_sky", true);
+        DEFAULTS.put("black_hole_sky", false);
         MODULES.putAll(DEFAULTS);
     }
 
@@ -81,6 +84,8 @@ public final class ProVisualsConfig {
             if (!ACCENT_PALETTES.contains(accentPalette)) accentPalette = "VIOLET";
             musicIslandEnabled = Boolean.parseBoolean(properties.getProperty("music.island.enabled", "true"));
             genreRecognitionEnabled = Boolean.parseBoolean(properties.getProperty("music.genre_recognition.enabled", "true"));
+            blackHoleMusicEnabled = Boolean.parseBoolean(properties.getProperty("world.black_hole.music.enabled", "true"));
+            blackHoleMusicVolume = number(properties.getProperty("world.black_hole.music.volume"), 0.42f);
             roundedCorners = Boolean.parseBoolean(properties.getProperty("ui.rounded_corners", "true"));
             hotkeyMigrationDone = Boolean.parseBoolean(properties.getProperty("hotkey.migration_done", "false"));
             if (!properties.containsKey("module.earthquake")) save();
@@ -133,6 +138,8 @@ public final class ProVisualsConfig {
         properties.setProperty("ui.accent_palette", accentPalette);
         properties.setProperty("music.island.enabled", String.valueOf(musicIslandEnabled));
         properties.setProperty("music.genre_recognition.enabled", String.valueOf(genreRecognitionEnabled));
+        properties.setProperty("world.black_hole.music.enabled", String.valueOf(blackHoleMusicEnabled));
+        properties.setProperty("world.black_hole.music.volume", String.valueOf(blackHoleMusicVolume));
         properties.setProperty("ui.rounded_corners", String.valueOf(roundedCorners));
         properties.setProperty("hotkey.migration_done", String.valueOf(hotkeyMigrationDone));
         try {
