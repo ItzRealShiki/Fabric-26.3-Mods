@@ -232,5 +232,6 @@ java {
 
 // The generated nested-mod resource is also inspected by the source archive task.
 tasks.named("sourcesJar").configure {
-    dependsOn(tasks.named("downloadLyricsModule"), tasks.named("generateBlackHoleSkyTexture"))
+    dependsOn(tasks.named("downloadLyricsModule"), tasks.named("generateBlackHoleSkyTexture"),
+            tasks.named("generateBlackHoleAmbience"))
 }
