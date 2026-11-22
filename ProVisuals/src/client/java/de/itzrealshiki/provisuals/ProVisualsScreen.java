@@ -171,6 +171,20 @@ public final class ProVisualsScreen extends Screen {
             }).bounds(x, y, contentWidth, rowHeight).build());
             y += rowHeight + rowGap;
         }
+
+        if ("PvP".equals(page) && "Combat Visuals".equals(selectedSubcategory)) {
+            int earthquakeY = y + 2;
+            drawActionRows.add(new ActionRow("Earthquake",
+                    onOff(ProVisualsConfig.earthquakeEnabled),
+                    "A 20-block circular wave briefly lifts nearby block visuals",
+                    x, earthquakeY, contentWidth, 37, false));
+            addRenderableWidget(Button.builder(ProVisualsUi.component(""), button -> {
+                ProVisualsConfig.earthquakeEnabled = !ProVisualsConfig.earthquakeEnabled;
+                ProVisualsConfig.save();
+                status = "Earthquake " + onOff(ProVisualsConfig.earthquakeEnabled);
+                rebuildWidgets();
+            }).bounds(x, earthquakeY, contentWidth, 37).build());
+        }
     }
 
     private void buildFriendsPage(int x, int py, int contentWidth) {
@@ -591,6 +605,8 @@ public final class ProVisualsScreen extends Screen {
             graphics.centeredText(font, ProVisualsUi.component(state), pillX + pillWidth / 2,
                     row.y() + 14, feature.rendererConnected() ? 0xFFD0BFFF : 0xFFB8AFC2);
         }
+
+        for (ActionRow row : drawActionRows) renderActionRow(graphics, row, mouseX, mouseY);
 
         if (featureRows.stream().anyMatch(row -> !row.feature().rendererConnected())) {
             ProVisualsUi.text(graphics, font,
