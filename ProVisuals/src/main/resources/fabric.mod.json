@@ -8,6 +8,7 @@
   "license": "All-Rights-Reserved",
   "environment": "client",
   "entrypoints": { "client": ["de.itzrealshiki.provisuals.ProVisualsClient"] },
+  "mixins": [{ "config": "provisuals.client.mixins.json", "environment": "client" }],
   "jars": [{ "file": "META-INF/jars/lyrics-in-the-sky.jar" }],
   "depends": {
     "fabricloader": ">=0.20.1",
