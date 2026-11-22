@@ -6,6 +6,7 @@
   "client": [
     "HumanoidArmorLayerMixin",
     "EquipmentLayerRendererMixin",
+    "FirstPersonHeldItemGlowMixin",
     "ItemStackRenderStateMixin",
     "ItemStackRenderStateAccessor",
     "ItemStackRenderStateLayerAccessor",
