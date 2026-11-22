@@ -18,7 +18,7 @@ import java.util.WeakHashMap;
 /** Samples item model sprites once and derives a bright outline color from their visible pixels. */
 public final class HeldItemGlowRenderer {
     private static final Map<SpriteContents, Integer> COLOR_CACHE = new WeakHashMap<>();
-    private static final int FALLBACK = GlowOutlineRenderer.VIOLET;
+    private static int fallback() { return GlowOutlineRenderer.accentColor(); }
 
     private HeldItemGlowRenderer() {
     }
@@ -31,7 +31,7 @@ public final class HeldItemGlowRenderer {
     }
 
     public static int outlineColor(ItemStackRenderState state) {
-        if (!ProVisualsConfig.heldItemTextureColor) return FALLBACK;
+        if (!ProVisualsConfig.heldItemTextureColor) return fallback();
 
         try {
             ItemStackRenderStateAccessor access = (ItemStackRenderStateAccessor) state;
@@ -68,14 +68,14 @@ public final class HeldItemGlowRenderer {
                 if (count >= 96) break;
             }
 
-            if (count == 0) return FALLBACK;
+            if (count == 0) return fallback();
             int r = brighten((int) (red / count));
             int g = brighten((int) (green / count));
             int b = brighten((int) (blue / count));
             return 0xFF000000 | (r << 16) | (g << 8) | b;
         } catch (Throwable throwable) {
             Diagnostics.warn("Could not sample held-item texture for glow: " + throwable.getClass().getSimpleName());
-            return FALLBACK;
+            return fallback();
         }
     }
 
